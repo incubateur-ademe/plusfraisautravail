@@ -10,6 +10,7 @@ export interface WagtailPage {
 
 interface WagtailContextValue {
   pages: Record<string, WagtailPage>;
+  loading: boolean;
   prefetchSolutionPages: (questions: Question[]) => void;
 }
 
@@ -17,6 +18,7 @@ const WagtailContext = createContext<WagtailContextValue | null>(null);
 
 export function WagtailProvider({ children }: { children: React.ReactNode }) {
   const [pages, setPages] = useState<Record<string, WagtailPage>>({});
+  const [loading, setLoading] = useState(false);
   const fetchedIds = useRef<Set<number>>(new Set());
 
   function prefetchSolutionPages(questions: Question[]) {
@@ -38,19 +40,22 @@ export function WagtailProvider({ children }: { children: React.ReactNode }) {
       fetchedIds.current.add(pageId);
     }
 
+    setLoading(true);
+
     Promise.all(
       toFetch.map(async ({ themeId, pageId }) => {
         try {
-          const res = await fetch(
-            `https://plusfraisautravail.beta.gouv.fr/api/v2/pages/${pageId}/?fields=title,meta`
-          );
+          const base = import.meta.env.DEV
+            ? ''
+            : 'https://plusfraisautravail.beta.gouv.fr';
+          const res = await fetch(`${base}/api/v2/pages/${pageId}/`);
           if (!res.ok) return null;
           const json = await res.json();
           const page: WagtailPage = {
             id: json.id,
-            title: json.title,
+            title: json.title ?? '',
             searchDescription: json.meta?.search_description ?? '',
-            htmlUrl: json.meta?.html_url ?? '',
+            htmlUrl: (json.meta?.html_url ?? '').replace(/^http:\/\//, 'https://'),
           };
           return { themeId, page };
         } catch {
@@ -65,11 +70,12 @@ export function WagtailProvider({ children }: { children: React.ReactNode }) {
       if (Object.keys(updates).length > 0) {
         setPages((prev) => ({ ...prev, ...updates }));
       }
+      setLoading(false);
     });
   }
 
   return (
-    <WagtailContext.Provider value={{ pages, prefetchSolutionPages }}>
+    <WagtailContext.Provider value={{ pages, loading, prefetchSolutionPages }}>
       {children}
     </WagtailContext.Provider>
   );

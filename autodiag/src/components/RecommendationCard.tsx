@@ -27,16 +27,14 @@ interface RecommendationCardProps {
 }
 
 export function RecommendationCard({ score, rank }: RecommendationCardProps) {
-  const { pages } = useWagtail();
+  const { pages, loading } = useWagtail();
   const severity = getSeverity(score.score);
   const displayScore = Math.round(score.score * 10) / 10;
   const page = pages[score.themeId];
 
-  const title = page ? page.title : null;
+  const title = page?.title || null;
   const description = page?.searchDescription || score.description;
-  const solutionUrl = page?.htmlUrl
-    ? `https://plusfraisautravail.beta.gouv.fr${page.htmlUrl}`
-    : null;
+  const solutionUrl = page?.htmlUrl || null;
 
   return (
     <div className={`autodiag-reco-card autodiag-reco-card--${severity}`}>
@@ -53,7 +51,11 @@ export function RecommendationCard({ score, rank }: RecommendationCardProps) {
         </div>
         {title && <p className="fr-text--bold" style={{ marginBottom: '0.25rem' }}>{title}</p>}
         <p className="autodiag-reco-description">{description}</p>
-        {solutionUrl && (
+        {loading && !solutionUrl ? (
+          <Button size="small" priority="secondary" disabled>
+            Chargement…
+          </Button>
+        ) : solutionUrl ? (
           <Button
             linkProps={{
               href: solutionUrl,
@@ -67,7 +69,7 @@ export function RecommendationCard({ score, rank }: RecommendationCardProps) {
           >
             Voir les solutions
           </Button>
-        )}
+        ) : null}
       </div>
     </div>
   );

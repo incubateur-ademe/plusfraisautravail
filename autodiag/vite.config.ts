@@ -6,4 +6,13 @@ import yaml from '@rollup/plugin-yaml'
 export default defineConfig({
   plugins: [react(), yaml()],
   base: '/autodiag/',
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://plusfraisautravail.beta.gouv.fr',
+        changeOrigin: true,
+        secure: true,
+      },
+    },
+  },
 })
