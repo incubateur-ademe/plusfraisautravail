@@ -1,0 +1,100 @@
+questions:
+  - id: sol
+    themeId: sol
+    themeLabel: Sol
+    themeIcon: "🌱"
+    solutionPageId: 80
+    question: "Avez-vous engagé une démarche de désimperméabilisation des sols ?"
+    options:
+      - score: 0
+        label: "Non, nous n'avons pas engagé de démarche et n'y avons pas réfléchi."
+      - score: 1
+        label: "Non, mais nous avons réalisé un diagnostic de nos surfaces imperméabilisées."
+      - score: 2
+        label: "Non, mais nous avons un projet de désimperméabilisation en cours de définition."
+      - score: 3
+        label: "Oui, nous avons désimperméabilisé quelques surfaces (moins de 25 % de notre emprise)."
+      - score: 4
+        label: "Oui, nous avons désimperméabilisé une part significative de nos surfaces (25–50 %)."
+      - score: 5
+        label: "Oui, nous avons désimperméabilisé la majorité de nos surfaces (plus de 50 %)."
+
+  - id: eaux-pluviales
+    themeId: eaux-pluviales
+    themeLabel: Eaux pluviales
+    themeIcon: "💧"
+    solutionPageId: 81
+    question: "Valorisez-vous vos eaux pluviales ?"
+    options:
+      - score: 0
+        label: "Non, toutes nos eaux pluviales sont rejetées au réseau ou ruissellent sur des surfaces imperméables."
+      - score: 1
+        label: "Non, mais nous avons engagé une réflexion sur la gestion de nos eaux pluviales."
+      - score: 2
+        label: "Partiellement : nous avons mis en place quelques dispositifs (noues, jardinières…) mais de manière limitée."
+      - score: 3
+        label: "Oui, nous infiltrons ou stockons une partie de nos eaux pluviales pour les valoriser."
+      - score: 4
+        label: "Oui, nous avons un système structuré de récupération et valorisation des eaux pluviales (arrosage, usage process…)."
+      - score: 5
+        label: "Oui, nous gérons la quasi-totalité de nos eaux pluviales sur site avec valorisation maximale."
+
+  - id: espaces-verts
+    themeId: espaces-verts
+    themeLabel: Espaces verts
+    themeIcon: "🌳"
+    solutionPageId: 82
+    question: "Comment valorisez-vous vos espaces verts pour créer des îlots de rafraîchissement ?"
+    options:
+      - score: 0
+        label: "Nous n'avons pas d'espaces verts ou ils ne sont pas entretenus dans une optique de rafraîchissement."
+      - score: 1
+        label: "Nos espaces verts existent mais ne sont pas pensés pour le confort thermique des occupants."
+      - score: 2
+        label: "Nous avons planté quelques arbres ou végétalisé quelques surfaces, mais sans stratégie d'ensemble."
+      - score: 3
+        label: "Nous avons une démarche de végétalisation avec un plan de plantations adapté aux enjeux de chaleur."
+      - score: 4
+        label: "Nos espaces verts créent des zones d'ombre et de fraîcheur significatives, accessibles aux salariés."
+      - score: 5
+        label: "Nos espaces verts forment un véritable îlot de fraîcheur intégré à l'aménagement du site, avec des essences adaptées au changement climatique."
+
+  - id: batiments-1
+    themeId: batiments
+    themeLabel: Bâtiments
+    themeIcon: "🏢"
+    solutionPageId: 77
+    question: "Comment réduisez-vous vos besoins en rafraîchissement ?"
+    options:
+      - score: 0
+        label: "Aucune mesure de réduction des besoins n'a été prise."
+      - score: 1
+        label: "Quelques gestes simples sont pratiqués (fermeture des volets, ventilation nocturne) mais sans organisation."
+      - score: 2
+        label: "Des protections solaires existent sur certains bâtiments (stores, films solaires, végétation en façade)."
+      - score: 3
+        label: "Des travaux d'isolation ou de protection solaire ont été réalisés sur une partie des bâtiments."
+      - score: 4
+        label: "Un audit thermique a été réalisé et un programme de travaux est en cours pour réduire les besoins."
+      - score: 5
+        label: "Nos bâtiments sont bien isolés et protégés du soleil : les besoins en rafraîchissement sont très limités."
+
+  - id: batiments-2
+    themeId: batiments
+    themeLabel: Bâtiments
+    themeIcon: "🏢"
+    solutionPageId: 77
+    question: "Comment répondez-vous à vos besoins de rafraîchissement ?"
+    options:
+      - score: 0
+        label: "Aucun système de rafraîchissement n'est en place, les salariés subissent la chaleur."
+      - score: 1
+        label: "Des ventilateurs ou climatiseurs individuels sont utilisés de manière ponctuelle."
+      - score: 2
+        label: "Un système de climatisation est en place dans certaines zones, mais sans optimisation."
+      - score: 3
+        label: "Un système de climatisation couvre l'essentiel des espaces de travail avec une gestion de la température."
+      - score: 4
+        label: "Des solutions de rafraîchissement passif ou actif efficaces sont déployées avec une gestion énergétique."
+      - score: 5
+        label: "Nos systèmes de rafraîchissement sont optimisés (free-cooling, géothermie, rafraîchissement adiabatique…) et peu énergivores."
