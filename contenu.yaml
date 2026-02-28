@@ -1,5 +1,5 @@
 welcome:
-  title: "Auto-diagnostic îlot de fraîcheur"
+  title: "Auto-diagnostic"
   lead: "Évaluez la capacité d'adaptation de votre site de travail face aux vagues de chaleur. Cet outil vous permet d'identifier les axes d'amélioration prioritaires."
   callout_title: "Comment fonctionne cet outil ?"
   callout_body: "Ce diagnostic comprend <strong>5 questions</strong> réparties en <strong>4 thèmes</strong>. Pour chaque question, sélectionnez la réponse qui correspond le mieux à la situation actuelle de votre site. Vous obtiendrez ensuite un score par thème et des recommandations personnalisées."
@@ -24,6 +24,9 @@ results:
 
 navigation:
   button_back: "Retour"
+  button_back_home: "Retour à l'accueil"
+  button_next: "Suivant"
+  button_dont_know: "Je ne sais pas"
 
 card:
   score_suffix: "/5"

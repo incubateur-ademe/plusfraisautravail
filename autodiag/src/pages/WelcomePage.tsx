@@ -1,3 +1,4 @@
+import { fr } from '@codegouvfr/react-dsfr';
 import { CallOut } from '@codegouvfr/react-dsfr/CallOut';
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { useNavigate } from 'react-router-dom';
@@ -7,7 +8,7 @@ import { CONTENU } from '../data/contenu';
 
 export function WelcomePage() {
   const navigate = useNavigate();
-  const { answers, isComplete } = useFormContext();
+  const { answers, isComplete, resetAnswers } = useFormContext();
   const firstQuestion = QUESTIONS[0];
 
   const firstUnansweredQuestion = QUESTIONS.find((q) => answers[q.id] === undefined);
@@ -19,27 +20,29 @@ export function WelcomePage() {
   const c = CONTENU.welcome;
 
   return (
-    <div className="fr-container autodiag-welcome">
-      <div className="fr-grid-row">
-        <div className="fr-col-12">
+    <div className={`${fr.cx('fr-container', 'fr-py-4w')} autodiag-welcome`}>
+      <div className={fr.cx('fr-grid-row')}>
+        <div className={fr.cx('fr-col-12')}>
           <h1>{c.title}</h1>
-          <p className="fr-text--lead">{c.lead}</p>
+          <p className={fr.cx('fr-text--lead')}>{c.lead}</p>
 
           <CallOut title={c.callout_title} iconId="fr-icon-information-line">
             <p dangerouslySetInnerHTML={{ __html: c.callout_body }} />
-            <p style={{ marginBottom: 0 }} dangerouslySetInnerHTML={{ __html: c.callout_duration }} />
+            <p className={fr.cx('fr-mb-0')} dangerouslySetInnerHTML={{ __html: c.callout_duration }} />
           </CallOut>
 
-          <div className="autodiag-welcome-themes">
+          <ul className={`${fr.cx('fr-tags-group', 'fr-mt-3w')} autodiag-welcome-themes`} aria-label="Thèmes abordés">
             {THEMES.map((theme) => (
-              <div key={theme.id} className="autodiag-theme-pill">
-                <span className="autodiag-theme-icon">{theme.icon}</span>
-                <span>{theme.label}</span>
-              </div>
+              <li key={theme.id}>
+                <p className={fr.cx('fr-tag')}>
+                  <span aria-hidden="true">{theme.icon}</span>{' '}
+                  {theme.label}
+                </p>
+              </li>
             ))}
-          </div>
+          </ul>
 
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginTop: '2rem' }}>
+          <div className={fr.cx('fr-mt-4w')} style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
             {hasStarted ? (
               <>
                 <Button
@@ -51,7 +54,7 @@ export function WelcomePage() {
                   {c.button_resume}
                 </Button>
                 <Button
-                  onClick={() => navigate(`/${firstQuestion.id}`)}
+                  onClick={() => { resetAnswers(); navigate(`/${firstQuestion.id}`); }}
                   priority="secondary"
                   size="large"
                 >
@@ -71,10 +74,10 @@ export function WelcomePage() {
           </div>
 
           {isComplete && (
-            <div style={{ marginTop: '1rem' }}>
+            <div className={fr.cx('fr-mt-2w')}>
               <Button
                 onClick={() => navigate('/resultats')}
-                priority="tertiary"
+                priority="tertiary no outline"
                 iconId="fr-icon-award-line"
                 iconPosition="left"
               >

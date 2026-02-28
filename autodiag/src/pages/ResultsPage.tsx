@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { fr } from '@codegouvfr/react-dsfr';
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { RadarChartComponent } from '../components/RadarChartComponent';
 import { RecommendationCard } from '../components/RecommendationCard';
@@ -30,33 +31,34 @@ export function ResultsPage() {
   }
 
   return (
-    <div className="fr-container autodiag-results">
-      <div className="fr-grid-row">
-        <div className="fr-col-12">
+    <div className={`${fr.cx('fr-container', 'fr-py-4w')} autodiag-results`}>
+      <div className={fr.cx('fr-grid-row')}>
+        <div className={fr.cx('fr-col-12')}>
           <h1>{c.title}</h1>
-          <p className="fr-text--lead">{c.lead}</p>
+          <p className={fr.cx('fr-text--lead')}>{c.lead}</p>
 
-          <div className="autodiag-score-global">
-            {c.score_global_label} : {Math.round(globalAverage * 10) / 10}/{c.score_max}
-          </div>
+          <p className={fr.cx('fr-display--xs', 'fr-my-3w')} style={{ textAlign: 'center' }}>
+            <span className={fr.cx('fr-sr-only')}>{c.score_global_label} : </span>
+            {Math.round(globalAverage * 10) / 10}/{c.score_max}
+          </p>
 
-          <h2 className="fr-h3">{c.section_overview}</h2>
-          <p className="fr-sr-only">
+          <h2 className={fr.cx('fr-h3')}>{c.section_overview}</h2>
+          <p className={fr.cx('fr-sr-only')}>
             {c.radar_sr_prefix}{' '}
             {scores.map((s) => `${s.themeLabel} : ${Math.round(s.score * 10) / 10}/${c.score_max}`).join(', ')}.
           </p>
           <RadarChartComponent scores={scores} />
 
-          <h2 className="fr-h3">{c.section_recommendations}</h2>
+          <h2 className={fr.cx('fr-h3')}>{c.section_recommendations}</h2>
           <p>{c.recommendations_lead}</p>
 
-          <div className="autodiag-recommendations">
+          <div className={fr.cx('fr-mt-3w')} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {sortedScores.map((score, index) => (
               <RecommendationCard key={score.themeId} score={score} rank={index + 1} />
             ))}
           </div>
 
-          <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem', flexWrap: 'wrap' }}>
+          <div className={fr.cx('fr-mt-4w')} style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
             <Button
               onClick={handleRestart}
               priority="secondary"

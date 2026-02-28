@@ -72,7 +72,7 @@ export function computeScores(answers: Answers): ThemeScore[] {
     const themeQuestions = QUESTIONS.filter((q) => q.themeId === theme.id);
     const scores = themeQuestions
       .map((q) => answers[q.id])
-      .filter((s) => s !== undefined);
+      .filter((s) => s !== undefined && s >= 0);
     const avg = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
 
     return {

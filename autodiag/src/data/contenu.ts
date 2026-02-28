@@ -32,6 +32,9 @@ interface Contenu {
   };
   navigation: {
     button_back: string;
+    button_back_home: string;
+    button_next: string;
+    button_dont_know: string;
   };
   card: {
     score_suffix: string;

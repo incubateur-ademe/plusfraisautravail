@@ -8,6 +8,7 @@ import { FormProvider } from './context/FormContext.tsx';
 import '@codegouvfr/react-dsfr/main.css';
 import './styles/index.css';
 
+
 startReactDsfr({ defaultColorScheme: 'system', Link });
 
 createRoot(document.getElementById('root')!).render(

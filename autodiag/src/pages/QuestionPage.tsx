@@ -1,10 +1,13 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { fr } from '@codegouvfr/react-dsfr';
+import { Button } from '@codegouvfr/react-dsfr/Button';
 import { ProgressHeader } from '../components/ProgressHeader';
 import { QuestionCard } from '../components/QuestionCard';
 import { useFormContext } from '../context/FormContext';
 import { useWagtail } from '../context/WagtailContext';
 import { QUESTIONS, THEMES } from '../data/questions';
+import { CONTENU } from '../data/contenu';
 
 export function QuestionPage() {
   const { questionId } = useParams<{ questionId: string }>();
@@ -22,7 +25,6 @@ export function QuestionPage() {
       return;
     }
 
-    // Entry animation
     const el = containerRef.current;
     if (el) {
       el.animate(
@@ -37,45 +39,71 @@ export function QuestionPage() {
 
   if (!question) return null;
 
-  const selectedScore = answers[question.id];
+  const rawAnswer = answers[question.id];
+  const selectedScore = rawAnswer !== undefined && rawAnswer >= 0 ? rawAnswer : undefined;
+  const hasSelection = selectedScore !== undefined;
+  const c = CONTENU.navigation;
 
-  function handleSelect(score: number) {
-    setAnswer(question!.id, score);
+  function triggerPrefetch() {
     if (question!.id === QUESTIONS[0].id) {
       prefetchSolutionPages(THEMES);
     }
-    setTimeout(() => {
-      if (question!.nextRoute) {
-        navigate(question!.nextRoute);
-      } else {
-        navigate('/resultats');
-      }
-    }, 350);
+  }
+
+  function handleSelect(score: number) {
+    setAnswer(question!.id, score);
+    triggerPrefetch();
+  }
+
+  function handleNext() {
+    triggerPrefetch();
+    navigate(question!.nextRoute ?? '/resultats');
+  }
+
+  function handleDontKnow() {
+    setAnswer(question!.id, -1);
+    triggerPrefetch();
+    navigate(question!.nextRoute ?? '/resultats');
   }
 
   return (
-    <div className="fr-container" style={{ paddingTop: '2rem', paddingBottom: '3rem' }} ref={containerRef}>
-      <div className="fr-grid-row fr-grid-row--center">
-        <div className="fr-col-12 fr-col-md-10 fr-col-lg-8">
-          <ProgressHeader question={question} />
+    <div ref={containerRef} className="autodiag-question-page">
+      <ProgressHeader question={question} theme={theme} />
 
-          {theme && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-              <span style={{ fontSize: '1.5rem' }}>{theme.icon}</span>
-              <span className="fr-badge fr-badge--blue-cumulus fr-badge--sm">
-                {theme.label}
-              </span>
-            </div>
-          )}
+      <div className={`${fr.cx('fr-container', 'fr-py-4w')} autodiag-question-body`}>
+        <div className={fr.cx('fr-grid-row', 'fr-grid-row--center')}>
+          <div className={fr.cx('fr-col-12', 'fr-col-md-10', 'fr-col-lg-8')}>
+            <h2 className={fr.cx('fr-h3')}>{question.question}</h2>
 
-          <h2 className="fr-h3">{question.question}</h2>
+            <QuestionCard
+              questionId={question.id}
+              options={question.options}
+              selectedScore={selectedScore}
+              onSelect={handleSelect}
+            />
+          </div>
+        </div>
+      </div>
 
-          <QuestionCard
-            questionId={question.id}
-            options={question.options}
-            selectedScore={selectedScore}
-            onSelect={handleSelect}
-          />
+      <div className="autodiag-bottom-nav">
+        <div className={fr.cx('fr-container')}>
+          <div className="autodiag-bottom-nav__inner">
+            <Button
+              priority={hasSelection ? 'primary' : 'secondary'}
+              iconId="fr-icon-arrow-right-line"
+              iconPosition="right"
+              onClick={handleNext}
+              disabled={!hasSelection}
+            >
+              {c.button_next}
+            </Button>
+            <Button
+              priority="tertiary no outline"
+              onClick={handleDontKnow}
+            >
+              {c.button_dont_know}
+            </Button>
+          </div>
         </div>
       </div>
     </div>
