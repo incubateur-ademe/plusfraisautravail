@@ -1,0 +1,24 @@
+themes:
+  - id: sol
+    label: Sol
+    icon: "🌱"
+    solutionPageId: 80
+    description: "La désimperméabilisation des sols permet de réduire les îlots de chaleur urbains en favorisant l'infiltration de l'eau et en permettant la végétalisation."
+
+  - id: eaux-pluviales
+    label: Eaux pluviales
+    icon: "💧"
+    solutionPageId: 81
+    description: "La valorisation des eaux pluviales contribue au rafraîchissement naturel du site et réduit les ruissellements qui amplifient les effets de chaleur."
+
+  - id: espaces-verts
+    label: Espaces verts
+    icon: "🌳"
+    solutionPageId: 82
+    description: "Les espaces verts, notamment les arbres, créent de l'ombre et réduisent la température ambiante par évapotranspiration, essentiels pour le confort des salariés."
+
+  - id: batiments
+    label: Bâtiments
+    icon: "🏢"
+    solutionPageId: 77
+    description: "L'adaptation des bâtiments (isolation, protections solaires, systèmes de rafraîchissement) est cruciale pour maintenir des conditions de travail acceptables lors des vagues de chaleur."

@@ -5,10 +5,12 @@ import { RadarChartComponent } from '../components/RadarChartComponent';
 import { RecommendationCard } from '../components/RecommendationCard';
 import { useFormContext } from '../context/FormContext';
 import { computeScores } from '../data/questions';
+import { CONTENU } from '../data/contenu';
 
 export function ResultsPage() {
   const navigate = useNavigate();
   const { answers, isComplete, resetAnswers } = useFormContext();
+  const c = CONTENU.results;
 
   useEffect(() => {
     if (!isComplete) {
@@ -31,28 +33,22 @@ export function ResultsPage() {
     <div className="fr-container autodiag-results">
       <div className="fr-grid-row">
         <div className="fr-col-12">
-          <h1>Vos résultats</h1>
-          <p className="fr-text--lead">
-            Voici l'évaluation de la capacité de votre site à faire face aux vagues de chaleur,
-            basée sur vos réponses.
-          </p>
+          <h1>{c.title}</h1>
+          <p className="fr-text--lead">{c.lead}</p>
 
           <div className="autodiag-score-global">
-            Score global : {Math.round(globalAverage * 10) / 10}/5
+            {c.score_global_label} : {Math.round(globalAverage * 10) / 10}/{c.score_max}
           </div>
 
-          <h2 className="fr-h3">Vue d'ensemble</h2>
+          <h2 className="fr-h3">{c.section_overview}</h2>
           <p className="fr-sr-only">
-            Graphique en radar présentant vos scores par thème. Les scores sont :{' '}
-            {scores.map((s) => `${s.themeLabel} : ${Math.round(s.score * 10) / 10}/5`).join(', ')}.
+            {c.radar_sr_prefix}{' '}
+            {scores.map((s) => `${s.themeLabel} : ${Math.round(s.score * 10) / 10}/${c.score_max}`).join(', ')}.
           </p>
           <RadarChartComponent scores={scores} />
 
-          <h2 className="fr-h3">Recommandations prioritaires</h2>
-          <p>
-            Les thèmes sont classés du plus urgent au moins urgent. Commencez par les thèmes avec
-            les scores les plus faibles.
-          </p>
+          <h2 className="fr-h3">{c.section_recommendations}</h2>
+          <p>{c.recommendations_lead}</p>
 
           <div className="autodiag-recommendations">
             {sortedScores.map((score, index) => (
@@ -67,18 +63,18 @@ export function ResultsPage() {
               iconId="fr-icon-refresh-line"
               iconPosition="left"
             >
-              Recommencer
+              {c.button_restart}
             </Button>
             <Button
               linkProps={{
-                href: 'https://plusfraisautravail.beta.gouv.fr/agir/',
+                href: c.all_solutions_url,
                 target: '_blank',
                 rel: 'noopener noreferrer',
               }}
               iconId="fr-icon-external-link-line"
               iconPosition="right"
             >
-              Découvrir toutes les solutions
+              {c.button_all_solutions}
             </Button>
           </div>
         </div>

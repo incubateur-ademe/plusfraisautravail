@@ -3,6 +3,7 @@ import { Stepper } from '@codegouvfr/react-dsfr/Stepper';
 import { useNavigate } from 'react-router-dom';
 import type { Question } from '../data/questions';
 import { QUESTIONS } from '../data/questions';
+import { CONTENU } from '../data/contenu';
 
 interface ProgressHeaderProps {
   question: Question;
@@ -21,7 +22,7 @@ export function ProgressHeader({ question }: ProgressHeaderProps) {
           onClick={() => navigate(question.prevRoute!)}
           style={{ marginBottom: '1rem' }}
         >
-          Retour
+          {CONTENU.navigation.button_back}
         </button>
       )}
       <Stepper

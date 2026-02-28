@@ -1,9 +1,6 @@
 questions:
   - id: sol
     themeId: sol
-    themeLabel: Sol
-    themeIcon: "🌱"
-    solutionPageId: 80
     question: "Avez-vous engagé une démarche de désimperméabilisation des sols ?"
     options:
       - score: 0
@@ -21,9 +18,6 @@ questions:
 
   - id: eaux-pluviales
     themeId: eaux-pluviales
-    themeLabel: Eaux pluviales
-    themeIcon: "💧"
-    solutionPageId: 81
     question: "Valorisez-vous vos eaux pluviales ?"
     options:
       - score: 0
@@ -41,9 +35,6 @@ questions:
 
   - id: espaces-verts
     themeId: espaces-verts
-    themeLabel: Espaces verts
-    themeIcon: "🌳"
-    solutionPageId: 82
     question: "Comment valorisez-vous vos espaces verts pour créer des îlots de rafraîchissement ?"
     options:
       - score: 0
@@ -61,9 +52,6 @@ questions:
 
   - id: batiments-1
     themeId: batiments
-    themeLabel: Bâtiments
-    themeIcon: "🏢"
-    solutionPageId: 77
     question: "Comment réduisez-vous vos besoins en rafraîchissement ?"
     options:
       - score: 0
@@ -81,9 +69,6 @@ questions:
 
   - id: batiments-2
     themeId: batiments
-    themeLabel: Bâtiments
-    themeIcon: "🏢"
-    solutionPageId: 77
     question: "Comment répondez-vous à vos besoins de rafraîchissement ?"
     options:
       - score: 0

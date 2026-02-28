@@ -2,6 +2,7 @@ import { Badge } from '@codegouvfr/react-dsfr/Badge';
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import type { ThemeScore } from '../data/questions';
 import { useWagtail } from '../context/WagtailContext';
+import { CONTENU, getSeverityLabel } from '../data/contenu';
 
 type BadgeSeverity = 'error' | 'warning' | 'info' | 'new' | 'success';
 
@@ -11,14 +12,6 @@ function getSeverity(score: number): BadgeSeverity {
   if (score <= 3) return 'info';
   if (score <= 4) return 'new';
   return 'success';
-}
-
-function getSeverityLabel(score: number): string {
-  if (score <= 1) return 'Urgent';
-  if (score <= 2) return 'À améliorer';
-  if (score <= 3) return 'Moyen';
-  if (score <= 4) return 'Bon';
-  return 'Excellent';
 }
 
 interface RecommendationCardProps {
@@ -31,6 +24,7 @@ export function RecommendationCard({ score, rank }: RecommendationCardProps) {
   const severity = getSeverity(score.score);
   const displayScore = Math.round(score.score * 10) / 10;
   const page = pages[score.themeId];
+  const c = CONTENU.card;
 
   const title = page?.title || null;
   const description = page?.searchDescription || score.description;
@@ -47,13 +41,13 @@ export function RecommendationCard({ score, rank }: RecommendationCardProps) {
           <Badge severity={severity} small>
             {getSeverityLabel(score.score)}
           </Badge>
-          <span className="autodiag-reco-score">{displayScore}/5</span>
+          <span className="autodiag-reco-score">{displayScore}{c.score_suffix}</span>
         </div>
         {title && <p className="fr-text--bold" style={{ marginBottom: '0.25rem' }}>{title}</p>}
         <p className="autodiag-reco-description">{description}</p>
         {loading && !solutionUrl ? (
           <Button size="small" priority="secondary" disabled>
-            Chargement…
+            {c.button_loading}
           </Button>
         ) : solutionUrl ? (
           <Button
@@ -67,7 +61,7 @@ export function RecommendationCard({ score, rank }: RecommendationCardProps) {
             iconId="fr-icon-external-link-line"
             iconPosition="right"
           >
-            Voir les solutions
+            {c.button_solutions}
           </Button>
         ) : null}
       </div>

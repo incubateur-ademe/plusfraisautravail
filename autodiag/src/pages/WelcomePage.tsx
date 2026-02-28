@@ -1,57 +1,38 @@
 import { CallOut } from '@codegouvfr/react-dsfr/CallOut';
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { useNavigate } from 'react-router-dom';
-import { QUESTIONS } from '../data/questions';
+import { QUESTIONS, THEMES } from '../data/questions';
 import { useFormContext } from '../context/FormContext';
-
-const THEMES = [
-  { icon: '🌱', label: 'Sol' },
-  { icon: '💧', label: 'Eaux pluviales' },
-  { icon: '🌳', label: 'Espaces verts' },
-  { icon: '🏢', label: 'Bâtiments' },
-];
+import { CONTENU } from '../data/contenu';
 
 export function WelcomePage() {
   const navigate = useNavigate();
   const { answers, isComplete } = useFormContext();
   const firstQuestion = QUESTIONS[0];
 
-  // Find first unanswered question to resume
   const firstUnansweredQuestion = QUESTIONS.find((q) => answers[q.id] === undefined);
   const resumeRoute = firstUnansweredQuestion
     ? `/${firstUnansweredQuestion.id}`
     : `/${firstQuestion.id}`;
 
   const hasStarted = Object.keys(answers).length > 0;
+  const c = CONTENU.welcome;
 
   return (
     <div className="fr-container autodiag-welcome">
       <div className="fr-grid-row">
         <div className="fr-col-12">
-          <h1>Auto-diagnostic îlot de fraîcheur</h1>
-          <p className="fr-text--lead">
-            Évaluez la capacité d'adaptation de votre site de travail face aux vagues de chaleur.
-            Cet outil vous permet d'identifier les axes d'amélioration prioritaires.
-          </p>
+          <h1>{c.title}</h1>
+          <p className="fr-text--lead">{c.lead}</p>
 
-          <CallOut
-            title="Comment fonctionne cet outil ?"
-            iconId="fr-icon-information-line"
-          >
-            <p>
-              Ce diagnostic comprend <strong>5 questions</strong> réparties en <strong>4 thèmes</strong>.
-              Pour chaque question, sélectionnez la réponse qui correspond le mieux à la situation
-              actuelle de votre site. Vous obtiendrez ensuite un score par thème et des recommandations
-              personnalisées.
-            </p>
-            <p style={{ marginBottom: 0 }}>
-              Durée estimée : <strong>5 minutes</strong>.
-            </p>
+          <CallOut title={c.callout_title} iconId="fr-icon-information-line">
+            <p dangerouslySetInnerHTML={{ __html: c.callout_body }} />
+            <p style={{ marginBottom: 0 }} dangerouslySetInnerHTML={{ __html: c.callout_duration }} />
           </CallOut>
 
           <div className="autodiag-welcome-themes">
             {THEMES.map((theme) => (
-              <div key={theme.label} className="autodiag-theme-pill">
+              <div key={theme.id} className="autodiag-theme-pill">
                 <span className="autodiag-theme-icon">{theme.icon}</span>
                 <span>{theme.label}</span>
               </div>
@@ -67,14 +48,14 @@ export function WelcomePage() {
                   iconPosition="right"
                   size="large"
                 >
-                  Reprendre le diagnostic
+                  {c.button_resume}
                 </Button>
                 <Button
                   onClick={() => navigate(`/${firstQuestion.id}`)}
                   priority="secondary"
                   size="large"
                 >
-                  Recommencer depuis le début
+                  {c.button_restart}
                 </Button>
               </>
             ) : (
@@ -84,7 +65,7 @@ export function WelcomePage() {
                 iconPosition="right"
                 size="large"
               >
-                Commencer le diagnostic
+                {c.button_start}
               </Button>
             )}
           </div>
@@ -97,7 +78,7 @@ export function WelcomePage() {
                 iconId="fr-icon-award-line"
                 iconPosition="left"
               >
-                Voir mes résultats
+                {c.button_results}
               </Button>
             </div>
           )}

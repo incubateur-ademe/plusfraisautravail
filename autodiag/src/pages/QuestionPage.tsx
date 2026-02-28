@@ -4,7 +4,7 @@ import { ProgressHeader } from '../components/ProgressHeader';
 import { QuestionCard } from '../components/QuestionCard';
 import { useFormContext } from '../context/FormContext';
 import { useWagtail } from '../context/WagtailContext';
-import { QUESTIONS } from '../data/questions';
+import { QUESTIONS, THEMES } from '../data/questions';
 
 export function QuestionPage() {
   const { questionId } = useParams<{ questionId: string }>();
@@ -14,6 +14,7 @@ export function QuestionPage() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const question = QUESTIONS.find((q) => q.id === questionId);
+  const theme = THEMES.find((t) => t.id === question?.themeId);
 
   useEffect(() => {
     if (!question) {
@@ -41,7 +42,7 @@ export function QuestionPage() {
   function handleSelect(score: number) {
     setAnswer(question!.id, score);
     if (question!.id === QUESTIONS[0].id) {
-      prefetchSolutionPages(QUESTIONS);
+      prefetchSolutionPages(THEMES);
     }
     setTimeout(() => {
       if (question!.nextRoute) {
@@ -58,12 +59,14 @@ export function QuestionPage() {
         <div className="fr-col-12 fr-col-md-10 fr-col-lg-8">
           <ProgressHeader question={question} />
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-            <span style={{ fontSize: '1.5rem' }}>{question.themeIcon}</span>
-            <span className="fr-badge fr-badge--blue-cumulus fr-badge--sm">
-              {question.themeLabel}
-            </span>
-          </div>
+          {theme && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+              <span style={{ fontSize: '1.5rem' }}>{theme.icon}</span>
+              <span className="fr-badge fr-badge--blue-cumulus fr-badge--sm">
+                {theme.label}
+              </span>
+            </div>
+          )}
 
           <h2 className="fr-h3">{question.question}</h2>
 

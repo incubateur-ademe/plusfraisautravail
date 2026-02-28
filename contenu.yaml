@@ -1,0 +1,41 @@
+welcome:
+  title: "Auto-diagnostic îlot de fraîcheur"
+  lead: "Évaluez la capacité d'adaptation de votre site de travail face aux vagues de chaleur. Cet outil vous permet d'identifier les axes d'amélioration prioritaires."
+  callout_title: "Comment fonctionne cet outil ?"
+  callout_body: "Ce diagnostic comprend <strong>5 questions</strong> réparties en <strong>4 thèmes</strong>. Pour chaque question, sélectionnez la réponse qui correspond le mieux à la situation actuelle de votre site. Vous obtiendrez ensuite un score par thème et des recommandations personnalisées."
+  callout_duration: "Durée estimée : <strong>5 minutes</strong>."
+  button_start: "Commencer le diagnostic"
+  button_resume: "Reprendre le diagnostic"
+  button_restart: "Recommencer depuis le début"
+  button_results: "Voir mes résultats"
+
+results:
+  title: "Vos résultats"
+  lead: "Voici l'évaluation de la capacité de votre site à faire face aux vagues de chaleur, basée sur vos réponses."
+  score_global_label: "Score global"
+  score_max: 5
+  section_overview: "Vue d'ensemble"
+  radar_sr_prefix: "Graphique en radar présentant vos scores par thème. Les scores sont :"
+  section_recommendations: "Recommandations prioritaires"
+  recommendations_lead: "Les thèmes sont classés du plus urgent au moins urgent. Commencez par les thèmes avec les scores les plus faibles."
+  button_restart: "Recommencer"
+  button_all_solutions: "Découvrir toutes les solutions"
+  all_solutions_url: "https://plusfraisautravail.beta.gouv.fr/agir/"
+
+navigation:
+  button_back: "Retour"
+
+card:
+  score_suffix: "/5"
+  button_loading: "Chargement…"
+  button_solutions: "Voir les solutions"
+  severity_labels:
+    - max_score: 1
+      label: "Urgent"
+    - max_score: 2
+      label: "À améliorer"
+    - max_score: 3
+      label: "Moyen"
+    - max_score: 4
+      label: "Bon"
+    - label: "Excellent"
