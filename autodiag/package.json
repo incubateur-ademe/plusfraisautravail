@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && BUILD_TARGET=embed vite build",
+    "build:embed": "tsc -b && BUILD_TARGET=embed vite build",
+    "preview:embed": "npm run build:embed && cp dist/autodiag-embed.js test-embed/ && npx serve test-embed -p 4173",
     "lint": "eslint .",
     "preview": "vite preview"
   },

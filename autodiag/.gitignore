@@ -9,6 +9,7 @@ lerna-debug.log*
 
 node_modules
 dist
+test-embed/autodiag-embed.js
 dist-ssr
 *.local
 
