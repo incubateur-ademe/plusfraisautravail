@@ -13,7 +13,7 @@ startReactDsfr({ defaultColorScheme: 'system', Link });
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter basename="/autodiag">
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <FormProvider>
         <App />
       </FormProvider>
