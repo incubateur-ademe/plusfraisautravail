@@ -4,82 +4,82 @@ questions:
     question: "Avez-vous engagé une démarche de désimperméabilisation des sols ?"
     options:
       - score: 0
-        label: "Non, nous n'avons pas engagé de démarche et n'y avons pas réfléchi."
+        label: "100% de mes sols hors bâtiment sont imperméabilisés ou je n'ai pas de foncier"
       - score: 1
-        label: "Non, mais nous avons réalisé un diagnostic de nos surfaces imperméabilisées."
+        label: "Sensibilisation avec mon agence de l'eau ou une organisation spécialiste (ADOPTA, GRAIE, ...)"
       - score: 2
-        label: "Non, mais nous avons un projet de désimperméabilisation en cours de définition."
+        label: "Etude de faisabilité programmée ou réalisée"
       - score: 3
-        label: "Oui, nous avons désimperméabilisé quelques surfaces (moins de 25 % de notre emprise)."
+        label: "Travaux de désimperméabilisation programmés ou en cours"
       - score: 4
-        label: "Oui, nous avons désimperméabilisé une part significative de nos surfaces (25–50 %)."
+        label: "100% de mes sols sont désimperméabilisés"
       - score: 5
-        label: "Oui, nous avons désimperméabilisé la majorité de nos surfaces (plus de 50 %)."
+        label: "100% de mes sols sont désimperméabilisés et ma toiture est végétalisée"
 
   - id: eaux-pluviales
     themeId: eaux-pluviales
     question: "Valorisez-vous vos eaux pluviales ?"
     options:
       - score: 0
-        label: "Non, toutes nos eaux pluviales sont rejetées au réseau ou ruissellent sur des surfaces imperméables."
+        label: "Gestion des eaux pluviales par un réseau d'assainissement"
       - score: 1
-        label: "Non, mais nous avons engagé une réflexion sur la gestion de nos eaux pluviales."
+        label: "Sensibilisation avec mon agence de l'eau ou une organisation spécialiste (ADOPTA, GRAIE, ...)"
       - score: 2
-        label: "Partiellement : nous avons mis en place quelques dispositifs (noues, jardinières…) mais de manière limitée."
+        label: "Etude de faisabilité de l'infiltration dans les espaces verts programmée ou réalisée"
       - score: 3
-        label: "Oui, nous infiltrons ou stockons une partie de nos eaux pluviales pour les valoriser."
+        label: "Travaux de végétalisation interceptant les ruissellements"
       - score: 4
-        label: "Oui, nous avons un système structuré de récupération et valorisation des eaux pluviales (arrosage, usage process…)."
+        label: "100% des eaux pluviales en gestion intégrée et durable"
       - score: 5
-        label: "Oui, nous gérons la quasi-totalité de nos eaux pluviales sur site avec valorisation maximale."
+        label: "100% des eaux pluviales en gestion intégrée et durable et 100% de mes sols sont désimperméabilisés"
 
   - id: espaces-verts
     themeId: espaces-verts
     question: "Comment valorisez-vous vos espaces verts pour créer des îlots de rafraîchissement ?"
     options:
       - score: 0
-        label: "Nous n'avons pas d'espaces verts ou ils ne sont pas entretenus dans une optique de rafraîchissement."
+        label: "Pas d'espaces verts"
       - score: 1
-        label: "Nos espaces verts existent mais ne sont pas pensés pour le confort thermique des occupants."
+        label: "Espaces verts constitués d'une strate herbacée sans ombrage porté sur les lieux de travail"
       - score: 2
-        label: "Nous avons planté quelques arbres ou végétalisé quelques surfaces, mais sans stratégie d'ensemble."
+        label: "Etude de faisabilité programmée ou réalisée en lien avec un acteur protégeant la biodiversité (Agences de l'eau, OFB/ARB, conservatoire botanique, LPO, ...) pour végétaliser et rafraîchir la surface du site"
       - score: 3
-        label: "Nous avons une démarche de végétalisation avec un plan de plantations adapté aux enjeux de chaleur."
+        label: "Espaces verts en gestion différenciée constitués d'arbres et d'arbustes apportant un ombrage sur les lieux de travail et parking sur moins de 25% de la surface du site"
       - score: 4
-        label: "Nos espaces verts créent des zones d'ombre et de fraîcheur significatives, accessibles aux salariés."
+        label: "Espaces verts en gestion différenciée constitués d'arbres et d'arbustes apportant un ombrage sur les lieux de travail et parking sur moins de 50% de la surface du site"
       - score: 5
-        label: "Nos espaces verts forment un véritable îlot de fraîcheur intégré à l'aménagement du site, avec des essences adaptées au changement climatique."
+        label: "Espaces verts en gestion différenciée constitués d'arbres et d'arbustes apportant un ombrage sur les lieux de travail et parking sur plus de 50% de la surface du site"
 
   - id: batiments-1
     themeId: batiments
     question: "Comment réduisez-vous vos besoins en rafraîchissement ?"
     options:
       - score: 0
-        label: "Aucune mesure de réduction des besoins n'a été prise."
+        label: "Aucune action"
       - score: 1
-        label: "Quelques gestes simples sont pratiqués (fermeture des volets, ventilation nocturne) mais sans organisation."
+        label: "Prise d'informations auprès d'un centre de ressources public (ADEME, CSTB, …) ou d'un prestataire privé (Bureau d'études, entreprises, …) et actions de sensibilisation auprès des utilisateurs."
       - score: 2
-        label: "Des protections solaires existent sur certains bâtiments (stores, films solaires, végétation en façade)."
+        label: "Audit thermique programmée ou réalisée"
       - score: 3
-        label: "Des travaux d'isolation ou de protection solaire ont été réalisés sur une partie des bâtiments."
+        label: "Travaux liés aux protections solaires programmés ou réalisés"
       - score: 4
-        label: "Un audit thermique a été réalisé et un programme de travaux est en cours pour réduire les besoins."
+        label: "Travaux liés aux protections solaires et à l'isolation programmés ou réalisés"
       - score: 5
-        label: "Nos bâtiments sont bien isolés et protégés du soleil : les besoins en rafraîchissement sont très limités."
+        label: "Travaux liés aux protections solaires et à l'isolation incluant des solutions fondées sur la nature (toitures et/ou murs végétalisés)"
 
   - id: batiments-2
     themeId: batiments
     question: "Comment répondez-vous à vos besoins de rafraîchissement ?"
     options:
       - score: 0
-        label: "Aucun système de rafraîchissement n'est en place, les salariés subissent la chaleur."
+        label: "Aucune action"
       - score: 1
-        label: "Des ventilateurs ou climatiseurs individuels sont utilisés de manière ponctuelle."
+        label: "Prise d'informations auprès d'un centre de ressources public (ADEME, CSTB, …) ou d'un prestataire privé (Bureau d'études, entreprises, …) et actions de sensibilisation auprès des utilisateurs."
       - score: 2
-        label: "Un système de climatisation est en place dans certaines zones, mais sans optimisation."
+        label: "Audit thermique programmée ou réalisée"
       - score: 3
-        label: "Un système de climatisation couvre l'essentiel des espaces de travail avec une gestion de la température."
+        label: "Travaux liés à la ventilation naturelle programmés ou réalisés"
       - score: 4
-        label: "Des solutions de rafraîchissement passif ou actif efficaces sont déployées avec une gestion énergétique."
+        label: "Travaux liés à la ventilation naturelle réalisés et travaux liés aux brasseurs d'air programmés ou réalisés"
       - score: 5
-        label: "Nos systèmes de rafraîchissement sont optimisés (free-cooling, géothermie, rafraîchissement adiabatique…) et peu énergivores."
+        label: "Travaux liés à un système de rafraîchissement programmés ou réalisés : adiabatique intégré ventilation/CTA, raccordement à un réseau de froid urbain, raccordement à une PAC AIR EAU performante, puits climatique/géocooling"
