@@ -1,11 +1,11 @@
 welcome:
-  title: "Auto-diagnostic"
-  lead: "Évaluez la capacité d'adaptation de votre site de travail face aux vagues de chaleur. Cet outil vous permet d'identifier les axes d'amélioration prioritaires."
+  title: "Auto-évaluation"
+  lead: "Évaluez la capacité d'adaptation de votre site de travail face à la chaleur. Cet outil vous permet d'identifier les axes d'amélioration prioritaires."
   callout_title: "Comment fonctionne cet outil ?"
-  callout_body: "Ce diagnostic comprend <strong>5 questions</strong> réparties en <strong>4 thèmes</strong>. Pour chaque question, sélectionnez la réponse qui correspond le mieux à la situation actuelle de votre site. Vous obtiendrez ensuite un score par thème et des recommandations personnalisées."
+  callout_body: "Cette évaluation comprend <strong>5 questions</strong> réparties en <strong>4 thèmes</strong>. Pour chaque question, sélectionnez la réponse qui correspond le mieux à la situation actuelle de votre site. Vous obtiendrez ensuite un score par thème et des recommandations personnalisées."
   callout_duration: "Durée estimée : <strong>5 minutes</strong>."
-  button_start: "Commencer le diagnostic"
-  button_resume: "Reprendre le diagnostic"
+  button_start: "Commencer l'évaluation"
+  button_resume: "Reprendre l'évaluation"
   button_restart: "Recommencer depuis le début"
   button_results: "Voir mes résultats"
 
