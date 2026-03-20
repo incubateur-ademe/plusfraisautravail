@@ -1,23 +1,23 @@
 welcome:
-  title: "Auto-évaluation"
-  lead: "Évaluez la capacité d'adaptation de votre site de travail face à la chaleur. Cet outil vous permet d'identifier les axes d'amélioration prioritaires."
+  title: "Evaluer votre site de travail face à la chaleur"
+  lead: "Les vagues de chaleur deviennent de plus en plus fréquentes et intenses. Répondez à 5 questions pour identifier les premières actions permettant d’améliorer les conditions de travail de vos équipes sur votre site."
   callout_title: "Comment fonctionne cet outil ?"
-  callout_body: "Cette évaluation comprend <strong>5 questions</strong> réparties en <strong>4 thèmes</strong>. Pour chaque question, sélectionnez la réponse qui correspond le mieux à la situation actuelle de votre site. Vous obtiendrez ensuite un score par thème et des recommandations personnalisées."
-  callout_duration: "Durée estimée : <strong>5 minutes</strong>."
-  button_start: "Commencer l'évaluation"
-  button_resume: "Reprendre l'évaluation"
+  callout_body: "<strong>5 questions</strong> - <strong>4 leviers d'action</strong> : 🌱 Sols, 💧 Eau de pluie, 🌳 Espaces verts et 🏢 Bâtiments. Choisissez la réponse la plus proche de la situation de votre site de travail. Et vous obtiendrez un aperçu de votre situation et des leviers d’action concrets à actionner."
+  callout_duration: "Durée estimée : environ <strong>5 minutes</strong>."
+  button_start: "Commencer le questionnaire"
+  button_resume: "Reprendre le questionnaire"
   button_restart: "Recommencer depuis le début"
-  button_results: "Voir mes résultats"
+  button_results: "Voir les recommandations"
 
 results:
-  title: "Vos résultats"
-  lead: "Voici l'évaluation de la capacité de votre site à faire face aux vagues de chaleur, basée sur vos réponses."
+  title: "Vos recommandations"
+  lead: "Basée sur vos réponses au questionnaire, voici l'évaluation de la situation de votre site à faire face aux vagues de chaleur."
   score_global_label: "Score global"
   score_max: 5
   section_overview: "Vue d'ensemble"
   radar_sr_prefix: "Graphique en radar présentant vos scores par thème. Les scores sont :"
   section_recommendations: "Recommandations prioritaires"
-  recommendations_lead: "Les thèmes sont classés du plus urgent au moins urgent. Commencez par les thèmes avec les scores les plus faibles."
+  recommendations_lead: "Les leviers d'action sont classés du plus prioritaire au moins prioritaire, commencez par les 1ers leviers d'action"
   button_restart: "Recommencer"
   button_all_solutions: "Découvrir toutes les solutions"
   all_solutions_url: "https://plusfraisautravail.beta.gouv.fr/agir/"
@@ -34,11 +34,11 @@ card:
   button_solutions: "Voir les solutions"
   severity_labels:
     - max_score: 1
-      label: "Urgent"
+      label: "A prioriser"
     - max_score: 2
-      label: "À améliorer"
+      label: "À engager"
     - max_score: 3
-      label: "Moyen"
+      label: "A renforcer"
     - max_score: 4
-      label: "Bon"
-    - label: "Excellent"
+      label: "Bonne situation"
+    - label: "Déjà en place"
