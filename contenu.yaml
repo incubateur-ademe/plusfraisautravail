@@ -1,8 +1,8 @@
 welcome:
-  title: "Evaluer votre site de travail face à la chaleur"
-  lead: "Les vagues de chaleur deviennent de plus en plus fréquentes et intenses. Répondez à 5 questions pour identifier les premières actions permettant d’améliorer les conditions de travail de vos équipes sur votre site."
+  title: "Evaluez votre site de travail face à la chaleur"
+  lead: "Les vagues de chaleur deviennent de plus en plus fréquentes et intenses. Répondez à ce questionnaire pour identifier <strong>les 1ères actions permettant d'améliorer les conditions de travail de vos équipes</strong>."
   callout_title: "Comment fonctionne cet outil ?"
-  callout_body: "<strong>5 questions</strong> - <strong>4 leviers d'action</strong> : 🌱 Sols, 💧 Eau de pluie, 🌳 Espaces verts et 🏢 Bâtiments. Choisissez la réponse la plus proche de la situation de votre site de travail. Et vous obtiendrez un aperçu de votre situation et des leviers d’action concrets à actionner."
+  callout_body: "5 questions couvrant <strong>4 leviers d'action</strong> :<br> <strong>🌱 Sols, 💧 Eau de pluie, 🌳 Espaces verts et 🏢 Bâtiments</strong> <br>Choisissez la réponse la plus proche de la situation de votre site de travail.<br>Vous obtiendrez <strong>un aperçu de votre situation et des recommandations prioritaires pour agir</strong>."
   callout_duration: "Durée estimée : environ <strong>5 minutes</strong>."
   button_start: "Commencer le questionnaire"
   button_resume: "Reprendre le questionnaire"
@@ -11,13 +11,13 @@ welcome:
 
 results:
   title: "Vos recommandations"
-  lead: "Basée sur vos réponses au questionnaire, voici l'évaluation de la situation de votre site à faire face aux vagues de chaleur."
+  lead: "Voici comment votre site de travail se situe sur chaque levier d'action pour faire face aux vagues de chaleur, d'après vos réponses au questionnaire."
   score_global_label: "Score global"
   score_max: 5
   section_overview: "Vue d'ensemble"
   radar_sr_prefix: "Graphique en radar présentant vos scores par thème. Les scores sont :"
   section_recommendations: "Recommandations prioritaires"
-  recommendations_lead: "Les leviers d'action sont classés du plus prioritaire au moins prioritaire, commencez par les 1ers leviers d'action"
+  recommendations_lead: "Les leviers d'action sont classés du plus prioritaire au moins prioritaire, commencez par les 1ers pour améliorer les conditions de travail."
   button_restart: "Recommencer"
   button_all_solutions: "Découvrir toutes les solutions"
   all_solutions_url: "https://plusfraisautravail.beta.gouv.fr/agir/"
