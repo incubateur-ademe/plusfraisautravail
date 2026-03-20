@@ -2,12 +2,12 @@ welcome:
   title: "Evaluez votre site de travail face à la chaleur"
   lead: "Les vagues de chaleur deviennent de plus en plus fréquentes et intenses. Répondez à ce questionnaire pour identifier les 1ères actions permettant d'améliorer les conditions de travail de vos équipes."
   callout_title: "Comment fonctionne cet outil ?"
-  callout_body: "5 questions couvrant <strong>4 leviers d'action</strong> :<br> <strong>🌱 Sols, 💧 Eau de pluie, 🌳 Espaces verts et 🏢 Bâtiments</strong> <br>Choisissez la réponse la plus proche de la situation de votre site de travail, vous obtiendrez <strong>un aperçu de votre situation et des pistes prioritaires pour agir</strong>."
+  callout_body: "5 questions couvrant <strong>4 leviers d'action</strong> :<br> <strong>🌱 Sols, 💧 Eau pluviales, 🌳 Espaces verts et 🏢 Bâtiments</strong> <br>Choisissez la réponse la plus proche de la situation de votre site de travail, vous obtiendrez <strong>un aperçu de votre situation et des pistes prioritaires pour agir</strong>."
   callout_duration: "Durée estimée : environ <strong>5 minutes</strong>."
   button_start: "Commencer le questionnaire"
   button_resume: "Reprendre le questionnaire"
   button_restart: "Recommencer depuis le début"
-  button_results: "Voir les recommandations"
+  button_results: "Voir les pistes d'amélioration"
 
 results:
   title: "Votre site de travail"
