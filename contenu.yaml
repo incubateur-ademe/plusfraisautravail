@@ -2,7 +2,7 @@ welcome:
   title: "Evaluez votre site de travail face à la chaleur"
   lead: "Les vagues de chaleur deviennent de plus en plus fréquentes et intenses. Répondez à ce questionnaire pour identifier les 1ères actions permettant d'améliorer les conditions de travail de vos équipes."
   callout_title: "Comment fonctionne cet outil ?"
-  callout_body: "5 questions couvrant <strong>4 leviers d'action</strong> :<br> <strong>🌱 Sols, 💧 Eau pluviales, 🌳 Espaces verts et 🏢 Bâtiments</strong> <br>Choisissez la réponse la plus proche de la situation de votre site de travail, vous obtiendrez <strong>un aperçu de votre situation et des pistes prioritaires pour agir</strong>."
+  callout_body: "5 questions couvrant <strong>4 leviers d'action</strong> :<br> <strong>🌱 Sols<br>💧 Eau pluviales<br>🌳 Espaces verts<br>🏢 Bâtiments</strong> <br>Choisissez la réponse la plus proche de la situation de votre site de travail, vous obtiendrez <strong>un aperçu de votre situation et des pistes prioritaires pour agir</strong>."
   callout_duration: "Durée estimée : environ <strong>5 minutes</strong>."
   button_start: "Commencer le questionnaire"
   button_resume: "Reprendre le questionnaire"
@@ -10,14 +10,14 @@ welcome:
   button_results: "Voir les pistes d'amélioration"
 
 results:
-  title: "Votre site de travail"
-  lead: "Voici comment votre site de travail se situe sur chaque levier d'action pour faire face aux vagues de chaleur, d'après vos réponses au questionnaire."
+  title: "Vos résultats"
+  lead: "À partir de vos réponses, voici les leviers déjà en place sur votre site et ceux à renforcer."
   score_global_label: "Score global"
   score_max: 5
   section_overview: "Situation face à la chaleur"
   radar_sr_prefix: "Graphique en radar présentant vos scores par thème. Les scores sont :"
   section_recommendations: "Pistes d'amélioration"
-  recommendations_lead: "Votre site de travail présente plusieurs pistes pour mieux face aux fortes chaleurs et améliorer les conditions de travail. Voici par où commencer :"
+  recommendations_lead: "Votre site présente plusieurs pistes pour mieux face aux fortes chaleurs et améliorer les conditions de travail. Voici par où commencer :"
   button_restart: "Recommencer"
   button_all_solutions: "Découvrir toutes les solutions"
   all_solutions_url: "https://plusfraisautravail.beta.gouv.fr/agir/"
@@ -40,5 +40,5 @@ card:
     - max_score: 3
       label: "A renforcer"
     - max_score: 4
-      label: "Bonne situation"
-    - label: "Déjà en place"
+      label: "Déjà en place"
+    - label: "Optimisé"
