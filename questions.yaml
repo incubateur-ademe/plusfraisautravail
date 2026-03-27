@@ -52,34 +52,34 @@ questions:
 
   - id: batiments-1
     themeId: batiments
-    question: "Comment réduisez-vous vos besoins en rafraîchissement ?"
+    question: "Aujourd’hui, comment empêchez-vous la chaleur de rentrer dans votre bâtiment ?"
     options:
       - score: 0
-        label: "Aucune action"
+        label: "Aucune action en place"
       - score: 1
-        label: "Prise d'informations auprès d'un centre de ressources public (ADEME, CSTB, …) ou d'un prestataire privé (Bureau d'études, entreprises, …) et actions de sensibilisation auprès des utilisateurs."
+        label: "Prise d'informations auprès d'un centre de ressources public (ADEME, CSTB, …) ou d'un prestataire privé (Bureau d'études, entreprises, …) et sensibilisation des équipes"
       - score: 2
-        label: "Audit thermique programmée ou réalisée"
+        label: "Un audit thermique réalisé ou programmé"
       - score: 3
-        label: "Travaux liés aux protections solaires programmés ou réalisés"
+        label: "Travaux liés aux protections solaires déjà installés ou prévus"
       - score: 4
-        label: "Travaux liés aux protections solaires et à l'isolation programmés ou réalisés"
+        label: "Travaux liés aux protections solaires et à l'isolation déjà réalisés ou prévus"
       - score: 5
         label: "Travaux liés aux protections solaires et à l'isolation incluant des solutions fondées sur la nature (toitures et/ou murs végétalisés)"
 
   - id: batiments-2
     themeId: batiments
-    question: "Comment répondez-vous à vos besoins de rafraîchissement ?"
+    question: "Comment rafraîchissez-vous votre ambiance de travail à l’intérieur de votre bâtiment ?"
     options:
       - score: 0
-        label: "Aucune action"
+        label: "Rien de particulier n’est mis en place"
       - score: 1
-        label: "Prise d'informations auprès d'un centre de ressources public (ADEME, CSTB, …) ou d'un prestataire privé (Bureau d'études, entreprises, …) et actions de sensibilisation auprès des utilisateurs."
+        label: "Le sujet est en cours d’exploration (recherche d’informations, échanges…) auprès d’un centre de ressources public (ADEME, CSTB…) ou d'un prestataire privé (Bureau d'études, entreprise …) et sensibilisation des équipes"
       - score: 2
-        label: "Audit thermique programmée ou réalisée"
+        label: "Un audit thermique a été réalisé ou est en cours"
       - score: 3
-        label: "Travaux liés à la ventilation naturelle programmés ou réalisés"
+        label: "Des travaux de ventilation naturelle sont réalisés ou prévus"
       - score: 4
-        label: "Travaux liés à la ventilation naturelle réalisés et travaux liés aux brasseurs d'air programmés ou réalisés"
+        label: "Des travaux de ventilation naturelle et des brasseurs d’air sont en place ou prévus"
       - score: 5
-        label: "Travaux liés à un système de rafraîchissement programmés ou réalisés : adiabatique intégré ventilation/CTA, raccordement à un réseau de froid urbain, raccordement à une PAC AIR EAU performante, puits climatique/géocooling"
+        label: "Des systèmes de rafraîchissement sont en place ou prévus (rafraîchissement adiabatique, réseau de froid, PAC air/eau performante, géocooling…)"
