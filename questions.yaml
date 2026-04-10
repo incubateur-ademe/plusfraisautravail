@@ -56,15 +56,15 @@ questions:
     options:
       - score: 0
         label: "Rien n’a été engagé pour le moment"
-      - score: 10
+      - score: 1
         label: "Des premières réflexions sont en cours (recherche d’infos, échanges avec des acteurs public ou privés)"
-      - score: 25
+      - score: 2
         label: "Un audit thermique a été réalisé (ou est en cours)"
-      - score: 50
+      - score: 3
         label: "Des travaux/aménagements sont programmés (ex : protections solaires, isolation…)"
-      - score: 75
+      - score: 4
         label: "Des travaux/aménagement sont déjà en place (ex : protections solaires, isolation…)"
-      - score: 100
+      - score: 5
         label: "Plusieurs types d’aménagements sont en place pour limiter la chaleur (protections solaires, isolation…), incluant des solutions fondées sur la nature (toiture et/ou murs végétalisé…)"
 
   - id: batiments-2
@@ -73,35 +73,35 @@ questions:
     options:
       - score: 0
         label: "Rien n’a été engagé pour le moment"
-      - score: 25
+      - score: 1,25
         label: "Le sujet est en cours d’exploration (recherche d’informations, échanges…) auprès d’un centre de ressources public (ADEME, CSTB…) ou d'un prestataire privé (Bureau d'études, entreprise …) et sensibilisation des équipes"
-      - score: 50
+      - score: 2,5
         label: "Des travaux pour rafraîchir mes ambiances de travail sont programmés"
-      - score: 100
+      - score: 5
         label: "Des travaux  pour rafraîchir mes ambiances de travail sont déjà en place"
 
   - id: batiments-3
     themeId: batiments
-    question: "Quelle solution prévoyez-vous d’utiliser ?"
+    question: "Quelle solution prévoyez-vous d’utiliser pour le rafraîchissement ?"
     options:
-      - score: 25
+      - score: 1,25
         label: "Ventilation naturelle"
-      - score: 25
+      - score: 1,25
         label: "Brasseurs d’air"
-      - score: 50
+      - score: 2,5
         label: "Système de rafraichissement actif (rafraîchissement adiabatique, réseau de froid, PAC air/eau performante, géocooling…)"
-      - score: 10
+      - score: 0,5
         label: "Système de climatisation conventionnelle"
 
   - id: batiments-4
     themeId: batiments
-    question: "Quelle solution utillisez-vous ?"
+    question: "Quelle solution utillisez-vous pour le rafraîchissement ?"
     options:
-      - score: 25
+      - score: 1,25
         label: "Ventilation naturelle"
-      - score: 25
+      - score: 1,25
         label: "Brasseurs d’air"
-      - score: 50
+      - score: 2,5
         label: "Système de rafraichissement actif (rafraîchissement adiabatique, réseau de froid, PAC air/eau performante, géocooling…)"
-      - score: 10
+      - score: 0,5
         label: "Système de climatisation conventionnelle"
