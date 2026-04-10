@@ -1,6 +1,6 @@
 themes:
   - id: sol
-    label: Sol
+    label: Désimperméabilisation des sols
     icon: "🌱"
     solutionPageId: 80
     description: "La désimperméabilisation des sols permet de réduire les îlots de chaleur urbains en favorisant l'infiltration de l'eau de pluie et en permettant la végétalisation."
@@ -12,7 +12,7 @@ themes:
     description: "La valorisation des eaux pluviales contribue au rafraîchissement naturel du site en alimentant le sol et la végétation. De plus elle contribue à réduire les inondations par ruissellement."
 
   - id: espaces-verts
-    label: Espaces verts
+    label: Îlots de rafraîchissement
     icon: "🌳"
     solutionPageId: 82
     description: "Les espaces verts, notamment les arbres réduisent la température ambiante par évapotranspiration et grâce à leur ombrage, essentiels pour le confort des salariés. Alimentés en eau grâce à une gestion des eaux pluviales adaptée et plantés dans un sol perméable, les espaces verts permettent de créer des îlots de rafraîchissement. Ils accueillent également la biodiversité et stockent du carbone."
