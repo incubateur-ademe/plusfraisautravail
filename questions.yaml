@@ -73,9 +73,9 @@ questions:
     options:
       - score: 0
         label: "Rien n’a été engagé pour le moment"
-      - score: 1,25
+      - score: 1.25
         label: "Le sujet est en cours d’exploration (recherche d’informations, échanges…) auprès d’un centre de ressources public (ADEME, CSTB…) ou d'un prestataire privé (Bureau d'études, entreprise …) et sensibilisation des équipes"
-      - score: 2,5
+      - score: 2.5
         label: "Des travaux pour rafraîchir mes ambiances de travail sont programmés"
       - score: 5
         label: "Des travaux  pour rafraîchir mes ambiances de travail sont déjà en place"
@@ -84,24 +84,24 @@ questions:
     themeId: batiments
     question: "Quelle solution prévoyez-vous d’utiliser pour le rafraîchissement ?"
     options:
-      - score: 1,25
+      - score: 1.25
         label: "Ventilation naturelle"
-      - score: 1,25
+      - score: 1.25
         label: "Brasseurs d’air"
-      - score: 2,5
+      - score: 2.5
         label: "Système de rafraichissement actif (rafraîchissement adiabatique, réseau de froid, PAC air/eau performante, géocooling…)"
-      - score: 0,5
+      - score: 0.5
         label: "Système de climatisation conventionnelle"
 
   - id: batiments-4
     themeId: batiments
     question: "Quelle solution utillisez-vous pour le rafraîchissement ?"
     options:
-      - score: 1,25
+      - score: 1.25
         label: "Ventilation naturelle"
-      - score: 1,25
+      - score: 1.25
         label: "Brasseurs d’air"
-      - score: 2,5
+      - score: 2.5
         label: "Système de rafraichissement actif (rafraîchissement adiabatique, réseau de froid, PAC air/eau performante, géocooling…)"
-      - score: 0,5
+      - score: 0.5
         label: "Système de climatisation conventionnelle"
