@@ -1,88 +1,120 @@
 questions:
-  - id: sol
+  - id: sol-1
     themeId: sol
-    question: "Avez-vous engagé une démarche de désimperméabilisation des sols ?"
+    question: "Autour de vos bâtiments, les sols sont-ils plutôt bétonnés ou perméables ?"
     options:
       - score: 0
-        label: "100% de mes sols hors bâtiment sont imperméabilisés ou je n'ai pas de foncier"
-      - score: 1
-        label: "Sensibilisation avec mon agence de l'eau ou une organisation spécialiste (ADOPTA, GRAIE, ...)"
-      - score: 2
-        label: "Etude de faisabilité programmée ou réalisée"
-      - score: 3
-        label: "Travaux de désimperméabilisation programmés ou en cours"
-      - score: 4
-        label: "100% de mes sols sont désimperméabilisés"
+        label: "La plupart des surfaces sont bétonnées ou goudronnées (cour, parking…)."
+      - score: 2.5
+        label: "Il y a à la fois des surfaces bétonnées/goudronnées et des zones perméables (espaces verts, béton poreux…)."
       - score: 5
-        label: "100% de mes sols sont désimperméabilisés et ma toiture est végétalisée"
+        label: "La majorité des sols sont perméables, et l’eau de pluie peut s’infiltrer."
 
-  - id: eaux-pluviales
+  - id: sol-2
+    themeId: sol
+    question: "Avez-vous déjà agi pour rendre certains sols plus perméables ?"
+    options:
+      - score: 0
+        label: "Non, rien n’a été fait pour le moment."
+      - score: 1.25
+        label: "Oui, on y réfléchit ou on a commencé à se renseigner (étude de faisabilité programmée ou en cours, ADOPTA, GRAIE...)."
+      - score: 2.5
+        label: "Oui, des actions sont prévues (travaux programmés ou en cours…)."
+      - score: 5
+        label: "Oui, des aménagements ont déjà été réalisés."
+
+  - id: eaux-pluviales-1
     themeId: eaux-pluviales
-    question: "Valorisez-vous vos eaux pluviales ?"
+    question: "Quand il pleut, que devient l’eau de pluie sur votre site ?"
     options:
       - score: 0
-        label: "Gestion des eaux pluviales par un réseau d'assainissement"
-      - score: 1
-        label: "Sensibilisation avec mon agence de l'eau ou une organisation spécialiste (ADOPTA, GRAIE, ...)"
-      - score: 2
-        label: "Etude de faisabilité de l'infiltration dans les espaces verts programmée ou réalisée"
-      - score: 3
-        label: "Travaux de végétalisation interceptant les ruissellements"
-      - score: 4
-        label: "100% des eaux pluviales en gestion intégrée et durable"
+        label: "Elle est principalement évacuée vers le réseau d’assainissement (canalisations, égouts…)."
+      - score: 2.5
+        label: "Une partie est évacuée dans le réseau d’assainissement, une autre s’infiltre sur place."
       - score: 5
-        label: "100% des eaux pluviales en gestion intégrée et durable et 100% de mes sols sont désimperméabilisés"
+        label: "Elle s’infiltre majoritairement sur place (espaces verts, chaussées perméables…)."
+        
+   - id: eaux-pluviales-2
+    themeId: eaux-pluviales
+    question: "Avez-vous déjà mis en place des solutions pour mieux gérer l’eau de pluie ?"
+    options:
+      - score: 0
+        label: "Non, rien n’a été fait pour le moment."
+      - score: 1.25
+        label: "Oui, on y réfléchit ou on a commencé à se renseigner (agence de l’eau, ADOPTA, GRAIE…)."
+      - score: 2.5
+        label: "Oui, des actions sont prévues (travaux de végétalisation interceptant les ruissellements prévus ou en cours…)."
+      - score: 5
+        label: "Oui, des aménagements ont déjà été réalisés (travaux de végétalisation interceptant les ruissellements déjà réalisés…)."  
 
-  - id: espaces-verts
+    - id: eaux-pluviales-3
+    themeId: eaux-pluviales
+    question: "Récupérez-vous l’eau de pluie pour des usages sur votre bâtiment (arrosage, nettoyage de l’unité de production…) ?"
+    options:
+      - score: 0
+        label: "Non"
+      - score: 2.5
+        label: "Oui, en partie"
+      - score: 5
+        label: "Oui, de manière régulière"
+
+  - id: espaces-verts-1
     themeId: espaces-verts
-    question: "Comment valorisez-vous vos espaces verts pour créer des îlots de rafraîchissement ?"
+    question: "Autour de vos bâtiments, avez-vous des espaces végétalisés ?"
     options:
       - score: 0
-        label: "Pas d'espaces verts"
-      - score: 1
-        label: "Espaces verts constitués d'une strate herbacée sans ombrage porté sur les lieux de travail"
-      - score: 2
-        label: "Etude de faisabilité programmée ou réalisée en lien avec un acteur protégeant la biodiversité (Agences de l'eau, OFB/ARB, conservatoire botanique, LPO, ...) pour végétaliser et rafraîchir la surface du site"
-      - score: 3
-        label: "Espaces verts en gestion différenciée constitués d'arbres et d'arbustes apportant un ombrage sur les lieux de travail et parking sur moins de 25% de la surface du site"
-      - score: 4
-        label: "Espaces verts en gestion différenciée constitués d'arbres et d'arbustes apportant un ombrage sur les lieux de travail et parking sur moins de 50% de la surface du site"
-      - score: 5
-        label: "Espaces verts en gestion différenciée constitués d'arbres et d'arbustes apportant un ombrage sur les lieux de travail et parking sur plus de 50% de la surface du site"
-
+        label: "Il n’y a pas d’espaces verts."
+      - score: 1.25
+        label: "Il y a des espaces verts, mais ils sont surtout composés d’herbe."
+      - score: 3.75
+        label: "Il y a des arbres ou arbustes."
+        
+  - id: espaces-verts-2
+    themeId: espaces-verts
+    question: "Est ce que la végétation (notamment arbres et arbustes) apporte de l’ombre dans  les zones où travaillent vos équipes (postes, pauses, parkings…) ?"
+    options:
+      - score: 0
+        label: "Aucune zone de travail n’est ombragée."
+      - score: 1.25
+        label: "Quelques zones de travail sont ombragées."
+      - score: 2.5
+        label: "Plusieurs zones de travail  sont ombragées."
+      - score: 100
+        label: "La majorité des zones de travail sont ombragées."
+        
   - id: batiments-1
     themeId: batiments
     question: "Aujourd’hui, comment empêchez-vous la chaleur de rentrer dans votre bâtiment ?"
     options:
       - score: 0
-        label: "Rien n’a été engagé pour le moment"
+        label: "Rien n’a été engagé pour le moment."
       - score: 1
-        label: "Des premières réflexions sont en cours (recherche d’infos, échanges avec des acteurs public ou privés)"
+        label: "Des premières réflexions sont en cours (recherche d’infos, échanges avec des acteurs public ou privés)."
       - score: 2
-        label: "Un audit thermique a été réalisé (ou est en cours)"
+        label: "Un audit thermique a été réalisé (ou est en cours)."
       - score: 3
-        label: "Des travaux/aménagements sont programmés (ex : protections solaires, isolation…)"
+        label: "Des travaux/aménagements sont programmés (ex : protections solaires, isolation…)."
       - score: 4
-        label: "Des travaux/aménagement sont déjà en place (ex : protections solaires, isolation…)"
+        label: "Des travaux/aménagement sont déjà en place (ex : protections solaires, isolation…)."
       - score: 5
-        label: "Plusieurs types d’aménagements sont en place pour limiter la chaleur (protections solaires, isolation…), incluant des solutions fondées sur la nature (toiture et/ou murs végétalisé…)"
+        label: "Plusieurs types d’aménagements sont en place pour limiter la chaleur (protections solaires, isolation…), incluant des solutions fondées sur la nature (toiture et/ou murs végétalisé…)."
 
   - id: batiments-2
     themeId: batiments
     question: "Comment rafraîchissez-vous votre ambiance de travail à l’intérieur de votre bâtiment ?"
     options:
       - score: 0
-        label: "Rien n’a été engagé pour le moment"
+        label: "Rien n’a été engagé pour le moment."
       - score: 1.25
-        label: "Le sujet est en cours d’exploration (recherche d’informations, échanges…) auprès d’un centre de ressources public (ADEME, CSTB…) ou d'un prestataire privé (Bureau d'études, entreprise …) et sensibilisation des équipes"
+        label: "Le sujet est en cours d’exploration (recherche d’informations, échanges…) auprès d’un centre de ressources public (ADEME, CSTB…) ou d'un prestataire privé (Bureau d'études, entreprise …) et sensibilisation des équipes."
       - score: 2.5
-        label: "Des travaux pour rafraîchir mes ambiances de travail sont programmés"
+        label: "Des travaux pour rafraîchir mes ambiances de travail sont programmés."
       - score: 5
-        label: "Des travaux  pour rafraîchir mes ambiances de travail sont déjà en place"
+        label: "Des travaux  pour rafraîchir mes ambiances de travail sont déjà en place."
 
   - id: batiments-3
     themeId: batiments
-    question: "Quelle solution prévoyez-vous d’utiliser pour le rafraîchissement ?"
+    question: "Quelle solution prévoyez-vous d’utiliser pour le rafraîchissement ?."
     options:
       - score: 1.25
         label: "Ventilation naturelle"
