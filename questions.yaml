@@ -79,7 +79,7 @@ questions:
         label: "Quelques zones de travail sont ombragées."
       - score: 2.5
         label: "Plusieurs zones de travail  sont ombragées."
-      - score: 100
+      - score: 5
         label: "La majorité des zones de travail sont ombragées."
         
   - id: batiments-1
