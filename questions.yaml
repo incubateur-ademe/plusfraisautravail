@@ -33,8 +33,8 @@ questions:
         label: "Une partie est évacuée dans le réseau d’assainissement, une autre s’infiltre sur place."
       - score: 5
         label: "Elle s’infiltre majoritairement sur place (espaces verts, chaussées perméables…)."
-        
-   - id: eaux-pluviales-2
+
+  - id: eaux-pluviales-2
     themeId: eaux-pluviales
     question: "Avez-vous déjà mis en place des solutions pour mieux gérer l’eau de pluie ?"
     options:
@@ -45,9 +45,9 @@ questions:
       - score: 2.5
         label: "Oui, des actions sont prévues (travaux de végétalisation interceptant les ruissellements prévus ou en cours…)."
       - score: 5
-        label: "Oui, des aménagements ont déjà été réalisés (travaux de végétalisation interceptant les ruissellements déjà réalisés…)."  
+        label: "Oui, des aménagements ont déjà été réalisés (travaux de végétalisation interceptant les ruissellements déjà réalisés…)."
 
-    - id: eaux-pluviales-3
+  - id: eaux-pluviales-3
     themeId: eaux-pluviales
     question: "Récupérez-vous l’eau de pluie pour des usages sur votre bâtiment (arrosage, nettoyage de l’unité de production…) ?"
     options:
