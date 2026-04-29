@@ -1,0 +1,30 @@
+FROM python:3.12-slim AS builder
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    UV_LINK_MODE=copy \
+    UV_COMPILE_BYTECODE=1
+
+COPY --from=ghcr.io/astral-sh/uv:0.5 /uv /usr/local/bin/uv
+
+WORKDIR /app
+
+COPY pyproject.toml uv.lock* ./
+RUN uv sync --frozen --no-install-project --no-dev || uv sync --no-install-project --no-dev
+
+COPY src ./src
+RUN uv sync --frozen --no-dev || uv sync --no-dev
+
+FROM python:3.12-slim AS runtime
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PATH="/app/.venv/bin:$PATH"
+
+WORKDIR /app
+
+COPY --from=builder /app /app
+
+EXPOSE 8080
+
+CMD ["uvicorn", "pfat_api.main:app", "--host", "0.0.0.0", "--port", "8080"]

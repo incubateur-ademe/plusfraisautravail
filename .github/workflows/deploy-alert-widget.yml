@@ -1,0 +1,52 @@
+name: Deploy alert-widget
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/alert-widget/**"
+      - "packages/api-client/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/deploy-alert-widget.yml"
+  workflow_dispatch:
+
+env:
+  BUCKET: pfat-alert-widget-prod
+  REGION: fr-par
+  S3_ENDPOINT: https://s3.fr-par.scw.cloud
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build
+        run: npm run build --workspace @pfat/alert-widget
+        env:
+          VITE_API_BASE_URL: ${{ vars.API_BASE_URL }}
+
+      - name: Configure AWS CLI for Scaleway
+        run: |
+          aws configure set aws_access_key_id "$SCW_ACCESS_KEY"
+          aws configure set aws_secret_access_key "$SCW_SECRET_KEY"
+          aws configure set default.region "$REGION"
+        env:
+          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+
+      - name: Sync to bucket
+        run: |
+          aws --endpoint-url=$S3_ENDPOINT s3 sync \
+            apps/alert-widget/dist/ s3://$BUCKET/ \
+            --delete \
+            --cache-control "public, max-age=300"

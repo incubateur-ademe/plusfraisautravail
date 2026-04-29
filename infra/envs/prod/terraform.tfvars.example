@@ -1,0 +1,6 @@
+vigilance_app_id = "your-meteo-france-application-id"
+
+# On first apply, leave api_deploy = false. After pushing an image to the
+# registry, set api_image to the full reference and api_deploy = true.
+api_image  = ""
+api_deploy = false
