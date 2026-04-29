@@ -1,10 +1,6 @@
-import os
+from fastapi.testclient import TestClient
 
-os.environ.setdefault("VIGILANCE_APP_ID", "test-app-id")
-
-from fastapi.testclient import TestClient  # noqa: E402
-
-from pfat_api.main import app  # noqa: E402
+from pfat_api.main import app
 
 
 def test_health() -> None:

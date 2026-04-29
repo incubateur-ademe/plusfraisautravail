@@ -4,6 +4,21 @@ import { startReactDsfr } from '@codegouvfr/react-dsfr/spa';
 
 import { AlertWidget } from './AlertWidget';
 
+const DSFR_CDN_URL = 'https://unpkg.com/@gouvfr/dsfr@1.14.2/dist/dsfr/dsfr.min.css';
+
+function ensureDsfrCss(): void {
+  const alreadyPresent =
+    document.querySelector('link[href*="/dsfr"]') ||
+    getComputedStyle(document.documentElement)
+      .getPropertyValue('--blue-france-sun-113-625')
+      .trim() !== '';
+  if (alreadyPresent) return;
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = DSFR_CDN_URL;
+  document.head.appendChild(link);
+}
+
 interface MountOptions {
   target: string | HTMLElement;
   apiBaseUrl: string;
@@ -21,7 +36,8 @@ declare global {
 let dsfrStarted = false;
 
 function mount(options: MountOptions): void {
-  if (!dsfrStarted) {
+  ensureDsfrCss();
+  if (!dsfrStarted && !document.documentElement.dataset.frScheme) {
     startReactDsfr({ defaultColorScheme: 'system' });
     dsfrStarted = true;
   }

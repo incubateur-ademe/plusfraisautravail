@@ -1,5 +1,9 @@
-from pydantic import Field
+from pydantic import Field, ValidationError
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class ConfigError(RuntimeError):
+    """Raised when required configuration is missing or invalid."""
 
 
 class Settings(BaseSettings):
@@ -19,4 +23,23 @@ class Settings(BaseSettings):
     cache_ttl_seconds: int = Field(default=3600, description="TTL for upstream-data cache.")
 
 
-settings = Settings()  # type: ignore[call-arg]
+def _load_settings() -> Settings:
+    try:
+        return Settings()  # type: ignore[call-arg]
+    except ValidationError as exc:
+        missing = [
+            ".".join(str(loc) for loc in err["loc"])
+            for err in exc.errors()
+            if err["type"] == "missing"
+        ]
+        if missing:
+            env_names = ", ".join(name.upper() for name in missing)
+            raise ConfigError(
+                f"Missing required configuration: {env_names}. "
+                "Copy api/.env.example to api/.env and fill it in, "
+                "or export the variables in your shell before starting the API."
+            ) from exc
+        raise
+
+
+settings = _load_settings()

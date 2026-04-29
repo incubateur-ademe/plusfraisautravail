@@ -2,6 +2,8 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { startReactDsfr } from '@codegouvfr/react-dsfr/spa';
 
+import '@codegouvfr/react-dsfr/main.css';
+
 import { AlertWidget } from './AlertWidget';
 
 startReactDsfr({ defaultColorScheme: 'system' });

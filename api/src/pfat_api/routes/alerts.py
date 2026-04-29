@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException
 from pfat_api.cache import TTLCache
 from pfat_api.config import settings
 from pfat_api.schemas import HeatwaveSnapshot, SourceMeta
-from pfat_api.sources.meteofrance import fetch_heatwave
+from pfat_api.sources.meteofrance import UpstreamError, fetch_heatwave
 
 router = APIRouter()
 
@@ -15,14 +15,21 @@ _heatwave_cache: TTLCache[HeatwaveSnapshot] = TTLCache(
 )
 
 
+async def _load_heatwave() -> HeatwaveSnapshot:
+    try:
+        return await _heatwave_cache.get()
+    except UpstreamError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
 @router.get("/alerts/heatwave", response_model=HeatwaveSnapshot)
 async def get_heatwave() -> HeatwaveSnapshot:
-    return await _heatwave_cache.get()
+    return await _load_heatwave()
 
 
 @router.get("/alerts/heatwave/{dept}", response_model=HeatwaveSnapshot)
 async def get_heatwave_for_department(dept: str) -> HeatwaveSnapshot:
-    snapshot = await _heatwave_cache.get()
+    snapshot = await _load_heatwave()
     code = dept.upper()
     matching = [d for d in snapshot.departments if d.code == code]
     if not matching:
