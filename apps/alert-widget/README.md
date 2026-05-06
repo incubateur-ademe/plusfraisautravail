@@ -17,8 +17,8 @@ Set `VITE_API_BASE_URL` to override the API base URL at build time.
 
 `npm run build` produces:
 
-- `dist/index.html` and assets — standalone SPA, deployed to its own bucket.
-- `dist/alert-widget-embed.js` — IIFE bundle exposing `window.PfatAlertWidget.mount(...)`.
+- `dist/index.html` and assets - standalone SPA, deployed to its own bucket.
+- `dist/alert-widget-embed.js` - IIFE bundle exposing `window.PfatAlertWidget.mount(...)`.
 
 ```html
 <div id="alert-root"></div>

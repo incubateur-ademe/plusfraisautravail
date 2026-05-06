@@ -24,7 +24,7 @@ EOF
   exit 1
 fi
 
-# Pull S3 creds from Scalingo env (one call, parsed locally — no values printed)
+# Pull S3 creds from Scalingo env (one call, parsed locally - no values printed)
 echo "Fetching S3 credentials from Scalingo app: $APP ..."
 ENV_DUMP="$(scalingo --app "$APP" env)"
 

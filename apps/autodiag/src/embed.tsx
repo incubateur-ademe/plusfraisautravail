@@ -27,7 +27,7 @@ if (!document.documentElement.dataset.frScheme) {
   startReactDsfr({ defaultColorScheme: 'system', Link });
 }
 
-// Create mount point — insert after the current script tag, or append to body
+// Create mount point - insert after the current script tag, or append to body
 const container = document.createElement('div');
 container.id = 'autodiag-root';
 const currentScript = document.currentScript;

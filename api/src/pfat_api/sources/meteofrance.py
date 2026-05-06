@@ -30,7 +30,7 @@ PHENOMENON_NAMES: dict[str, str] = {
     "9": "vagues-submersion",
 }
 
-# Echeance values returned by meteole — "J" is today, "J1" is tomorrow.
+# Echeance values returned by meteole - "J" is today, "J1" is tomorrow.
 ECHEANCE_DAY1 = "J"
 ECHEANCE_DAY2 = "J1"
 
@@ -40,7 +40,7 @@ class UpstreamError(RuntimeError):
 
 
 def _fetch_snapshot_sync() -> MeteoSnapshot:
-    """Synchronous fetch — runs in a worker thread to avoid blocking the event loop."""
+    """Synchronous fetch - runs in a worker thread to avoid blocking the event loop."""
     try:
         vigi = Vigilance(application_id=settings.vigilance_app_id)
         _, df_timelaps = vigi.get_phenomenon()

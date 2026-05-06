@@ -4,14 +4,14 @@ FastAPI gateway aggregating alert sources for plusfraisautravail.beta.gouv.fr.
 
 ## Sources
 
-- **Météo-France Vigilance** (via [`meteole`](https://pypi.org/project/meteole/)) — heatwave (phenomenon `8`).
+- **Météo-France Vigilance** (via [`meteole`](https://pypi.org/project/meteole/)) - heatwave (phenomenon `8`).
 
 ## Endpoints
 
 - `GET /health`
-- `GET /alerts/heatwave` — nationwide snapshot (all departments).
-- `GET /alerts/heatwave/{dept}` — single department (e.g. `75`, `2A`).
-- `GET /sources` — source metadata.
+- `GET /alerts/heatwave` - nationwide snapshot (all departments).
+- `GET /alerts/heatwave/{dept}` - single department (e.g. `75`, `2A`).
+- `GET /sources` - source metadata.
 
 ## Local dev
 

@@ -15,11 +15,11 @@ The stack is provisioned with [OpenTofu](https://opentofu.org/) (`infra/envs/pro
 
 CI/CD lives under `.github/workflows/`:
 
-- `ci.yml` — JS build + Python ruff + pytest on every PR/push.
-- `terraform-plan.yml` — `tofu plan` on PRs touching `infra/**`.
-- `deploy-api.yml` — Docker build, push to registry, `PATCH redeploy=true`.
-- `deploy-autodiag.yml` — Vite build, `aws s3 sync` to the bucket.
-- `deploy-alert-widget.yml` — Vite build, `aws s3 sync` to the bucket.
+- `ci.yml` - JS build + Python ruff + pytest on every PR/push.
+- `terraform-plan.yml` - `tofu plan` on PRs touching `infra/**`.
+- `deploy-api.yml` - Docker build, push to registry, `PATCH redeploy=true`.
+- `deploy-autodiag.yml` - Vite build, `aws s3 sync` to the bucket.
+- `deploy-alert-widget.yml` - Vite build, `aws s3 sync` to the bucket.
 
 ---
 
@@ -31,7 +31,7 @@ Install once on your workstation:
 - Météo-France [Vigilance API](https://portail-api.meteofrance.fr/) application ID.
 - (optional) RTE Ecowatt OAuth2 client ID & secret. Without these the `/alerts/electricity` endpoint returns 503; everything else still works.
 - [GitHub CLI](https://cli.github.com/) (`gh auth login`).
-- [AWS CLI v2](https://docs.aws.amazon.com/cli/) — used as a Scaleway S3 client.
+- [AWS CLI v2](https://docs.aws.amazon.com/cli/) - used as a Scaleway S3 client.
 - [OpenTofu](https://opentofu.org/) 1.8+ (`tofu` CLI).
 - Docker.
 - [`just`](https://github.com/casey/just) (already used as the task runner here).
@@ -70,7 +70,7 @@ export AWS_SECRET_ACCESS_KEY="$SCW_SECRET_KEY"
 
 ### 2.2 Create the OpenTofu state bucket
 
-OpenTofu can't manage its own state bucket — bootstrap it once:
+OpenTofu can't manage its own state bucket - bootstrap it once:
 
 ```bash
 just bootstrap-state
@@ -127,7 +127,7 @@ just tf-apply
 just status
 ```
 
-Note the `container_id` and `api_url` outputs — you need them for the next step.
+Note the `container_id` and `api_url` outputs - you need them for the next step.
 
 ### 2.10 Set GitHub secrets and environments
 
@@ -140,7 +140,7 @@ just bootstrap-environments   # creates api / autodiag / alert-widget envs + the
 
 `bootstrap-environments` reads `SCW_*`, `VIGILANCE_APP_ID`, `RTE_*` from your shell and `api_url` / `container_id` / bucket URLs from `tofu output`. It creates each environment with a `branch=main` policy so only main-branch deploys can read those secrets.
 
-**Why two scopes:** `terraform-plan.yml` runs on PRs from any branch; environment-scoped secrets aren't readable from non-main refs, so its credentials live at repo level. `deploy-*.yml` workflows live in their respective environments — the GitHub UI shows a deployment history per environment with a clickable URL.
+**Why two scopes:** `terraform-plan.yml` runs on PRs from any branch; environment-scoped secrets aren't readable from non-main refs, so its credentials live at repo level. `deploy-*.yml` workflows live in their respective environments - the GitHub UI shows a deployment history per environment with a clickable URL.
 
 You're done. The next push to `main` touching `api/**` will redeploy the container; `apps/autodiag/**` and `apps/alert-widget/**` will sync to their buckets. The deploy progress is visible at:
 
@@ -160,7 +160,7 @@ https://github.com/incubateur-ademe/plusfraisautravail/deployments
 | PR touching `infra/**` | `terraform-plan.yml` posts a plan as a step summary. |
 | Push to `main` touching `infra/**` | `terraform-apply.yml` runs `tofu apply` against prod. The deployment shows up in the `tofu-apply` GitHub Environment. |
 
-The container `registry_image` has `lifecycle { ignore_changes = [registry_image] }` so `tofu apply` won't fight `deploy-api.yml` — image rollouts go through the API workflow, infra changes go through Tofu, neither steps on the other.
+The container `registry_image` has `lifecycle { ignore_changes = [registry_image] }` so `tofu apply` won't fight `deploy-api.yml` - image rollouts go through the API workflow, infra changes go through Tofu, neither steps on the other.
 
 Manual triggers from your machine:
 
@@ -183,7 +183,7 @@ Both SPAs are built with `VITE_BASE_URL=/` in CI so all asset URLs are root-rela
 - `https://pfat-autodiag-prod.s3-website.fr-par.scw.cloud/`
 - `https://pfat-alert-widget-prod.s3-website.fr-par.scw.cloud/`
 
-The local dev server keeps the historical sub-path (`/autodiag/`, `/alert-widget/`) — only the deployed bundles use root.
+The local dev server keeps the historical sub-path (`/autodiag/`, `/alert-widget/`) - only the deployed bundles use root.
 
 ---
 
@@ -193,13 +193,13 @@ The local dev server keeps the historical sub-path (`/autodiag/`, `/alert-widget
 You forgot `api_deploy=false` for the first pass. Set it, apply, then push the image with `just deploy-api-bootstrap`, then flip `api_deploy=true` and apply again.
 
 **API returns 502.**
-The container is up but the app crashed at boot. Check Scaleway dashboard → Containers → `api-prod` → Logs (or `scw container container logs <id>` if you have the CLI). Most common cause: missing/wrong `VIGILANCE_APP_ID`. RTE is optional; if the creds are wrong only `/alerts/electricity` will 503.
+The container is up but the app crashed at boot. Check Scaleway dashboard -> Containers -> `api-prod` -> Logs (or `scw container container logs <id>` if you have the CLI). Most common cause: missing/wrong `VIGILANCE_APP_ID`. RTE is optional; if the creds are wrong only `/alerts/electricity` will 503.
 
 **API returns 503 on `/alerts/electricity`.**
 RTE creds are missing or wrong. Set `rte_client_id` / `rte_client_secret` in `terraform.tfvars` and re-apply, or set the corresponding GitHub secrets and re-run `terraform-plan.yml` for visibility (the actual variable injection happens at `tofu apply` time, locally).
 
 **GitHub Actions deploy fails on `aws s3 sync` or registry login.**
-Check `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` repo secrets — both deploy workflows use the same credentials.
+Check `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` repo secrets - both deploy workflows use the same credentials.
 
 **`tofu apply` fails with "state lock".**
 Someone else is mid-apply, or a previous run was killed. Identify the lock with `tofu plan` (it prints the lock ID) and release with:

@@ -126,13 +126,13 @@ def test_multiple_phenomena_kept(monkeypatch: pytest.MonkeyPatch) -> None:
     by_code = {d.code: d for d in snapshot.departments}
     p_by_id = {p.id: p for p in by_code["13"].phenomena}
 
-    # storm: jaune today, vert tomorrow → kept
+    # storm: jaune today, vert tomorrow -> kept
     assert p_by_id["3"].day1 == Severity.JAUNE
     assert p_by_id["3"].day2 == Severity.VERT
-    # canicule: orange → rouge
+    # canicule: orange -> rouge
     assert p_by_id["6"].day1 == Severity.ORANGE
     assert p_by_id["6"].day2 == Severity.ROUGE
-    # wind stayed vert both days → dropped
+    # wind stayed vert both days -> dropped
     assert "1" not in p_by_id
 
 

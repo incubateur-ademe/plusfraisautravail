@@ -1,4 +1,4 @@
-"""RTE Ecowatt v5 — national electricity grid tension forecast.
+"""RTE Ecowatt v5 - national electricity grid tension forecast.
 
 Auth flow: OAuth2 client_credentials, Basic-auth on the token endpoint, JWT bearer
 on the API. Token TTL is 2h; signals are rate-limited to 1 call / 15 min so the
@@ -127,7 +127,7 @@ def _fetch_signals(url: str, client_id: str, client_secret: str) -> list[dict]:
         body = resp.json()
     except httpx.HTTPStatusError as exc:
         if exc.response.status_code == 429:
-            logger.warning("RTE rate limit hit (429) — caller should cache more aggressively")
+            logger.warning("RTE rate limit hit (429) - caller should cache more aggressively")
         logger.exception("RTE signals fetch failed")
         raise UpstreamError(
             f"RTE Ecowatt signals returned HTTP {exc.response.status_code}."
@@ -141,7 +141,7 @@ def _fetch_signals(url: str, client_id: str, client_secret: str) -> list[dict]:
 def _parse_signals(signals: list[dict]) -> ElectricitySnapshot:
     days: list[ElectricityDayForecast] = []
     for s in signals:
-        # `jour` is ISO with timezone, e.g. "2026-05-06T00:00:00+02:00" — keep only the date.
+        # `jour` is ISO with timezone, e.g. "2026-05-06T00:00:00+02:00" - keep only the date.
         jour = str(s.get("jour", ""))[:10]
         dvalue = int(s.get("dvalue", 1))
         # dvalue 0 (carbon-free) only appears on hourly hvalue, not day-level; clamp defensively.

@@ -1,4 +1,4 @@
-"""Metropolitan French departments — code → human-readable name."""
+"""Metropolitan French departments - code -> human-readable name."""
 
 DEPARTMENT_NAMES: dict[str, str] = {
     "01": "Ain",

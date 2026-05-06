@@ -1,4 +1,4 @@
-/* Layout containers — max-width only, no visual design */
+/* Layout containers - max-width only, no visual design */
 .autodiag-welcome,
 .autodiag-results {
   max-width: 800px;
@@ -19,7 +19,7 @@
   }
 }
 
-/* Radar chart — constrain width so it doesn't stretch on wide screens */
+/* Radar chart - constrain width so it doesn't stretch on wide screens */
 .autodiag-radar-container {
   max-width: 500px;
   margin: 0 auto 2rem;
@@ -41,7 +41,7 @@
   padding: 0.5rem 0;
 }
 
-/* ===== Question page layout — full height flex column ===== */
+/* ===== Question page layout - full height flex column ===== */
 .autodiag-question-page {
   display: flex;
   flex-direction: column;

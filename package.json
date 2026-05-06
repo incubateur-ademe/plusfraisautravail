@@ -2,7 +2,7 @@
   "name": "plusfraisautravail",
   "private": true,
   "version": "0.0.0",
-  "description": "Monorepo for plusfraisautravail.beta.gouv.fr — API gateway, frontends, scripts.",
+  "description": "Monorepo for plusfraisautravail.beta.gouv.fr - API gateway, frontends, scripts.",
   "workspaces": [
     "apps/*",
     "packages/*"

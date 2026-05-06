@@ -1,4 +1,4 @@
-# plusfraisautravail — local dev commands
+# plusfraisautravail - local dev commands
 #
 # Run `just` to list available recipes, or `just <recipe>` to run one.
 # Requires: node 22+, uv, opentofu (`tofu`), awscli (for bucket sync).
@@ -37,7 +37,7 @@ autodiag:
     npm run dev --workspace @pfat/autodiag
 
 # Run the alert-widget SPA on :5173 (http://localhost:5173/alert-widget/).
-# Vite proxies /api/* → http://localhost:8080 — start `just api` in another terminal.
+# Vite proxies /api/* -> http://localhost:8080 - start `just api` in another terminal.
 alert-widget:
     npm run dev --workspace @pfat/alert-widget
 
@@ -156,7 +156,7 @@ bootstrap-tfvars:
     set -euo pipefail
     cd infra/envs/prod
     if [[ -f terraform.tfvars ]]; then
-      echo "infra/envs/prod/terraform.tfvars already exists — opening it."
+      echo "infra/envs/prod/terraform.tfvars already exists - opening it."
     else
       cp terraform.tfvars.example terraform.tfvars
       echo "Created infra/envs/prod/terraform.tfvars from the example."
@@ -165,7 +165,7 @@ bootstrap-tfvars:
 
 # Push repo-level secrets used by terraform-plan.yml (which runs on PRs from
 # any branch and can't read environment-scoped secrets). For the deploy
-# workflows, use `just bootstrap-environments` instead — those secrets live
+# workflows, use `just bootstrap-environments` instead - those secrets live
 # on the api / autodiag / alert-widget GitHub Environments.
 bootstrap-secrets:
     #!/usr/bin/env bash
@@ -260,7 +260,7 @@ bootstrap-environments:
     read -r -p "Create/update environments api, autodiag, alert-widget and push secrets? [y/N] " ans
     [[ "$ans" =~ ^[Yy]$ ]] || { echo "Aborted."; exit 1; }
 
-    # Capture tofu outputs once. Empty strings are OK — set_env_variable skips.
+    # Capture tofu outputs once. Empty strings are OK - set_env_variable skips.
     api_url=""
     container_id=""
     autodiag_url=""
@@ -274,7 +274,7 @@ bootstrap-environments:
       autodiag_url=$(cd infra/envs/prod && tofu output -raw autodiag_url)
       alert_widget_url=$(cd infra/envs/prod && tofu output -raw alert_widget_url)
     else
-      echo "  warn   tofu output unavailable — *_URL / SCW_API_CONTAINER_ID will be skipped."
+      echo "  warn   tofu output unavailable - *_URL / SCW_API_CONTAINER_ID will be skipped."
       echo "         Run \`just tf-apply\` (with the container created), then re-run this."
     fi
 
@@ -339,7 +339,7 @@ deploy-api-bootstrap:
     IMAGE="$REGISTRY/$NAMESPACE/api:bootstrap"
     # Scaleway Serverless Containers only run amd64. `buildx --push` builds
     # cross-arch and uploads in one step (no need to materialize the image
-    # locally — handy on Apple Silicon).
+    # locally - handy on Apple Silicon).
     echo "About to:"
     echo "  1. docker login $REGISTRY (user=nologin, password=\$SCW_SECRET_KEY)"
     echo "  2. docker buildx build --platform linux/amd64 --push api/ -t $IMAGE"
@@ -387,14 +387,14 @@ status:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "── tofu outputs ───────────────────────────────────────────────"
-    (cd infra/envs/prod && tofu output) || echo "(tofu output failed — did you run \`just tf-init\` + \`just tf-apply\`?)"
+    (cd infra/envs/prod && tofu output) || echo "(tofu output failed - did you run \`just tf-init\` + \`just tf-apply\`?)"
     echo
     echo "── last GitHub Actions runs ───────────────────────────────────"
     for wf in deploy-api.yml deploy-autodiag.yml deploy-alert-widget.yml; do
       printf '%-30s ' "$wf"
       gh run list --workflow="$wf" --limit 1 \
         --json status,conclusion,createdAt,url \
-        --jq '.[] | "\(.status)/\(.conclusion // "—")  \(.createdAt)  \(.url)"' \
+        --jq '.[] | "\(.status)/\(.conclusion // " - ")  \(.createdAt)  \(.url)"' \
         2>/dev/null || echo "(no runs yet)"
     done
 

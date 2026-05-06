@@ -93,7 +93,7 @@ const DATE_FORMATTER = new Intl.DateTimeFormat('fr-FR', {
 });
 
 function formatDay(iso: string): string {
-  // ISO date "YYYY-MM-DD" — interpret as local date so Intl picks the right weekday.
+  // ISO date "YYYY-MM-DD" - interpret as local date so Intl picks the right weekday.
   const [y, m, d] = iso.split('-').map((s) => parseInt(s, 10));
   if (!y || !m || !d) return iso;
   return DATE_FORMATTER.format(new Date(y, m - 1, d));
@@ -152,7 +152,7 @@ export interface AlertWidgetProps {
   apiBaseUrl: string;
   preventionUrl?: string;
   leversUrl?: string;
-  /** Override the API client — used by the demo/test mode to inject canned data. */
+  /** Override the API client - used by the demo/test mode to inject canned data. */
   client?: ApiClient;
 }
 
@@ -187,7 +187,7 @@ export function AlertWidget({
         if (electricityRes.status === 'fulfilled') {
           setElectricity(electricityRes.value);
         }
-        // Electricity failures are non-fatal — the endpoint is optional and may be
+        // Electricity failures are non-fatal - the endpoint is optional and may be
         // 503 when RTE creds aren't configured. Just skip the section.
       })
       .finally(() => {
@@ -198,7 +198,7 @@ export function AlertWidget({
     };
   }, [client]);
 
-  if (loading) return <p>Chargement…</p>;
+  if (loading) return <p>Chargement...</p>;
   if (meteoError) {
     return <Alert severity="error" title="Erreur" description={meteoError} small closable={false} />;
   }

@@ -12,7 +12,7 @@ locals {
 
   api_env = {
     RTE_USE_SANDBOX = var.rte_use_sandbox ? "true" : "false"
-    # JSON-encoded list — pydantic-settings parses this as list[str].
+    # JSON-encoded list - pydantic-settings parses this as list[str].
     # Includes the deployed alert-widget bucket origin so the embed can call
     # the API without a CORS preflight failure.
     CORS_ORIGINS = jsonencode(concat(
@@ -21,7 +21,7 @@ locals {
         "http://localhost:4173",
         "https://plusfraisautravail.beta.gouv.fr",
         # website_endpoint is "<bucket>.s3-website.<region>.scw.cloud" (with bucket).
-        # website_domain is the region-only suffix — using it here would give an
+        # website_domain is the region-only suffix - using it here would give an
         # origin that matches every bucket in the region, which is wrong.
         "https://${module.alert_widget_site.website_endpoint}",
         "https://${module.autodiag_site.website_endpoint}",

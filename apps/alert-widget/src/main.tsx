@@ -20,7 +20,7 @@ createRoot(document.getElementById('root')!).render(
       <AlertWidget apiBaseUrl={apiBaseUrl} client={fakeClient} />
       {scenario && (
         <p className="fr-mt-3w fr-text--sm" style={{ color: '#666666' }}>
-          Mode démo — données fictives (<code>?test={scenario}</code>).
+          Mode démo - données fictives (<code>?test={scenario}</code>).
         </p>
       )}
     </main>

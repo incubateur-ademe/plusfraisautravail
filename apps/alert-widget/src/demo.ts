@@ -2,7 +2,7 @@
  * Named demo scenarios for the alert-widget.
  *
  * Triggered via the `?test` URL flag on the standalone preview (main.tsx).
- * NOT included in the embed bundle — visitors of the live host page can't enable it.
+ * NOT included in the embed bundle - visitors of the live host page can't enable it.
  */
 import {
   ApiClient,
