@@ -83,6 +83,9 @@ jobs:
           CONTAINER_ID: ${{ vars.SCW_API_CONTAINER_ID }}
           IMAGE: ${{ needs.build-push.outputs.image }}
         run: |
+          # Tofu's `output container_id` is "fr-par/<uuid>"; the Scaleway REST API
+          # expects just the UUID. Strip any leading "<region>/" defensively.
+          CONTAINER_ID="${CONTAINER_ID##*/}"
           curl --fail-with-body -X PATCH \
             "https://api.scaleway.com/containers/v1beta1/regions/$REGION/containers/$CONTAINER_ID" \
             -H "X-Auth-Token: $SCW_SECRET_KEY" \

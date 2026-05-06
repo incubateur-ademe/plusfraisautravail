@@ -267,7 +267,10 @@ bootstrap-environments:
     alert_widget_url=""
     if (cd infra/envs/prod && tofu output -raw api_url) >/dev/null 2>&1; then
       api_url=$(cd infra/envs/prod && tofu output -raw api_url)
+      # Scaleway REST API expects the bare UUID, not the "fr-par/<uuid>" form
+      # that `tofu output` returns.
       container_id=$(cd infra/envs/prod && tofu output -raw container_id)
+      container_id="${container_id##*/}"
       autodiag_url=$(cd infra/envs/prod && tofu output -raw autodiag_url)
       alert_widget_url=$(cd infra/envs/prod && tofu output -raw alert_widget_url)
     else
