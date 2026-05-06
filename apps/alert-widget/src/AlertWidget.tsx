@@ -198,14 +198,20 @@ export interface AlertWidgetProps {
   apiBaseUrl: string;
   preventionUrl?: string;
   leversUrl?: string;
+  /** Override the API client — used by the demo/test mode to inject canned data. */
+  client?: ApiClient;
 }
 
 export function AlertWidget({
   apiBaseUrl,
   preventionUrl = DEFAULT_PREVENTION_URL,
   leversUrl = DEFAULT_LEVERS_URL,
+  client: clientProp,
 }: AlertWidgetProps) {
-  const client = useMemo(() => new ApiClient({ baseUrl: apiBaseUrl }), [apiBaseUrl]);
+  const client = useMemo(
+    () => clientProp ?? new ApiClient({ baseUrl: apiBaseUrl }),
+    [clientProp, apiBaseUrl],
+  );
 
   const [meteo, setMeteo] = useState<MeteoSnapshot | null>(null);
   const [electricity, setElectricity] = useState<ElectricitySnapshot | null>(null);
