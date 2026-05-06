@@ -32,9 +32,7 @@ def _make_snapshot(*, active: bool = True) -> MeteoSnapshot:
                     PhenomenonAlert(
                         id="6", name="canicule", day1=Severity.ORANGE, day2=Severity.ROUGE
                     ),
-                    PhenomenonAlert(
-                        id="3", name="orages", day1=Severity.JAUNE, day2=Severity.VERT
-                    ),
+                    PhenomenonAlert(id="3", name="orages", day1=Severity.JAUNE, day2=Severity.VERT),
                 ],
             ),
             DepartmentMeteoAlert(
@@ -86,9 +84,7 @@ def test_get_meteo_returns_active_departments(client: TestClient) -> None:
     }
 
 
-def test_get_meteo_when_no_active(
-    client: TestClient, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_get_meteo_when_no_active(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
     quiet = _make_snapshot(active=False)
 
     async def quiet_loader() -> MeteoSnapshot:

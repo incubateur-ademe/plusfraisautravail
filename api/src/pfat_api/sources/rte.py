@@ -4,6 +4,7 @@ Auth flow: OAuth2 client_credentials, Basic-auth on the token endpoint, JWT bear
 on the API. Token TTL is 2h; signals are rate-limited to 1 call / 15 min so the
 caller is responsible for caching the result (we do that one level up via TTLCache).
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -26,9 +27,7 @@ logger = logging.getLogger(__name__)
 
 TOKEN_URL = "https://digital.iservices.rte-france.com/token/oauth/"
 SIGNALS_URL_PROD = "https://digital.iservices.rte-france.com/open_api/ecowatt/v5/signals"
-SIGNALS_URL_SANDBOX = (
-    "https://digital.iservices.rte-france.com/open_api/ecowatt/v5/sandbox/signals"
-)
+SIGNALS_URL_SANDBOX = "https://digital.iservices.rte-france.com/open_api/ecowatt/v5/sandbox/signals"
 
 TOKEN_REQUEST_TIMEOUT_S = 15.0
 SIGNALS_REQUEST_TIMEOUT_S = 30.0
@@ -45,7 +44,7 @@ class UpstreamError(RuntimeError):
     """Raised when the RTE API can't be reached or returns garbage."""
 
 
-class CredentialsMissing(RuntimeError):
+class CredentialsMissingError(RuntimeError):
     """Raised when neither sandbox mode nor production creds are configured."""
 
 
@@ -107,7 +106,7 @@ def _fetch_snapshot_sync() -> ElectricitySnapshot:
     requires a valid OAuth token from the same RTE Data API account.
     """
     if not (settings.rte_client_id and settings.rte_client_secret):
-        raise CredentialsMissing(
+        raise CredentialsMissingError(
             "RTE Ecowatt is not configured. Set RTE_CLIENT_ID and RTE_CLIENT_SECRET. "
             "Both prod and sandbox endpoints require an OAuth token."
         )

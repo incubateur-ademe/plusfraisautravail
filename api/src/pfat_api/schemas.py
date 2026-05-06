@@ -64,9 +64,7 @@ class ElectricityDayForecast(BaseModel):
 
 class ElectricitySnapshot(BaseModel):
     days: list[ElectricityDayForecast]
-    currently_strained: bool = Field(
-        ..., description="True if today's level is orange or rouge."
-    )
+    currently_strained: bool = Field(..., description="True if today's level is orange or rouge.")
     upcoming_strain: bool = Field(
         ..., description="True if any of the next 3 days is orange or rouge."
     )

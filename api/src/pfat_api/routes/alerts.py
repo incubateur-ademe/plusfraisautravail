@@ -50,7 +50,7 @@ async def get_electricity_alerts() -> ElectricitySnapshot:
     """
     try:
         return await _electricity_cache.get()
-    except rte.CredentialsMissing as exc:
+    except rte.CredentialsMissingError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except rte.UpstreamError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc

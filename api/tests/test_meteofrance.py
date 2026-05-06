@@ -19,8 +19,7 @@ class FakeDataframe:
         self._rows = [_FakeRow(r) for r in rows]
 
     def iterrows(self) -> Any:
-        for i, r in enumerate(self._rows):
-            yield i, r
+        yield from enumerate(self._rows)
 
 
 class FakeVigilance:

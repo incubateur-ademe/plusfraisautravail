@@ -1,4 +1,5 @@
 """Tests for the RTE Ecowatt source + /alerts/electricity route."""
+
 from collections.abc import Iterator
 from typing import Any
 
@@ -158,7 +159,7 @@ def test_missing_credentials_raises(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(rte.settings, "rte_use_sandbox", False)
     monkeypatch.setattr(rte.settings, "rte_client_id", None)
     monkeypatch.setattr(rte.settings, "rte_client_secret", None)
-    with pytest.raises(rte.CredentialsMissing):
+    with pytest.raises(rte.CredentialsMissingError):
         rte._fetch_snapshot_sync()
 
 
@@ -166,7 +167,7 @@ def test_missing_credentials_raises_even_in_sandbox_mode(monkeypatch: pytest.Mon
     monkeypatch.setattr(rte.settings, "rte_use_sandbox", True)
     monkeypatch.setattr(rte.settings, "rte_client_id", None)
     monkeypatch.setattr(rte.settings, "rte_client_secret", None)
-    with pytest.raises(rte.CredentialsMissing):
+    with pytest.raises(rte.CredentialsMissingError):
         rte._fetch_snapshot_sync()
 
 
@@ -186,7 +187,7 @@ def test_route_returns_503_when_credentials_missing(
     client: TestClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     async def boom() -> Any:
-        raise rte.CredentialsMissing("no creds")
+        raise rte.CredentialsMissingError("no creds")
 
     monkeypatch.setattr(alerts_module._electricity_cache, "_loader", boom)
     resp = client.get("/alerts/electricity")
