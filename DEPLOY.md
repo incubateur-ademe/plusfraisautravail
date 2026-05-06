@@ -157,7 +157,10 @@ https://github.com/incubateur-ademe/plusfraisautravail/deployments
 | Push to `main` touching `api/**` | `deploy-api.yml` builds + pushes a new image, then `PATCH`es the container with `redeploy=true`. |
 | Push to `main` touching `apps/autodiag/**` | `deploy-autodiag.yml` builds and `aws s3 sync`s to `pfat-autodiag-prod`. |
 | Push to `main` touching `apps/alert-widget/**` | `deploy-alert-widget.yml` builds and `aws s3 sync`s to `pfat-alert-widget-prod`. |
-| PR touching `infra/**` | `terraform-plan.yml` posts a plan. Apply is manual via `just tf-apply`. |
+| PR touching `infra/**` | `terraform-plan.yml` posts a plan as a step summary. |
+| Push to `main` touching `infra/**` | `terraform-apply.yml` runs `tofu apply` against prod. The deployment shows up in the `tofu-apply` GitHub Environment. |
+
+The container `registry_image` has `lifecycle { ignore_changes = [registry_image] }` so `tofu apply` won't fight `deploy-api.yml` — image rollouts go through the API workflow, infra changes go through Tofu, neither steps on the other.
 
 Manual triggers from your machine:
 
@@ -165,10 +168,11 @@ Manual triggers from your machine:
 just deploy-api
 just deploy-autodiag
 just deploy-alert-widget
+just tf-apply          # local apply, still works as an escape hatch
 just status            # current outputs + last-run timestamps
 ```
 
-To roll out an infrastructure change, edit `infra/envs/prod/**`, open a PR, review the plan in CI, merge, then run `just tf-apply` locally.
+To roll out an infrastructure change: edit `infra/envs/prod/**`, open a PR, review the plan in CI, merge. CI handles the apply.
 
 ---
 

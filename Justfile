@@ -306,6 +306,20 @@ bootstrap-environments:
     set_env_variable alert-widget SITE_URL       "$alert_widget_url"
 
     echo
+    echo "── tofu-apply environment ───────────────────────────────────"
+    # Used by terraform-apply.yml. Needs the full set of Scaleway creds
+    # plus the TF_VAR_* secrets that drive the runtime configuration.
+    create_env_main_only tofu-apply
+    set_env_secret   tofu-apply SCW_ACCESS_KEY              "${SCW_ACCESS_KEY:-}"
+    set_env_secret   tofu-apply SCW_SECRET_KEY              "${SCW_SECRET_KEY:-}"
+    set_env_secret   tofu-apply SCW_DEFAULT_PROJECT_ID      "${SCW_DEFAULT_PROJECT_ID:-}"
+    set_env_secret   tofu-apply SCW_DEFAULT_ORGANIZATION_ID "${SCW_DEFAULT_ORGANIZATION_ID:-}"
+    set_env_secret   tofu-apply VIGILANCE_APP_ID            "${VIGILANCE_APP_ID:-}"
+    set_env_secret   tofu-apply RTE_CLIENT_ID               "${RTE_CLIENT_ID:-}"
+    set_env_secret   tofu-apply RTE_CLIENT_SECRET           "${RTE_CLIENT_SECRET:-}"
+    set_env_variable tofu-apply API_URL                     "$api_url"
+
+    echo
     echo "Done. Verify in the GitHub UI:"
     echo "  https://github.com/$REPO/settings/environments"
 
