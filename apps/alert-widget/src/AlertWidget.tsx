@@ -227,13 +227,14 @@ export function AlertWidget({
                       {i < group.entries.length - 1 && ' '}
                     </span>
                   ))}
-                  {' · '}
+                </p>
+                <p className="fr-mb-1v">
+                  {copy.message(leversUrl, preventionUrl)}
+                </p>
+                <p className="fr-mb-0 fr-text--xs">
                   <a href={copy.sourceUrl} target="_blank" rel="noreferrer noopener">
                     {copy.sourceLabel}
                   </a>
-                </p>
-                <p className="fr-mb-0 fr-text--sm">
-                  {copy.message(leversUrl, preventionUrl)}
                 </p>
               </div>
             );
