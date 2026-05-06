@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Alert } from '@codegouvfr/react-dsfr/Alert';
-import { Tooltip } from '@codegouvfr/react-dsfr/Tooltip';
 import {
   ApiClient,
-  type ElectricityDayForecast,
   type ElectricityLevel,
   type ElectricitySnapshot,
   type MeteoSnapshot,
@@ -24,6 +22,8 @@ const ELECTRICITY_KEY = 'electricity';
 interface PhenomenonCopy {
   label: string;
   message: (leversUrl: string, preventionUrl: string) => React.ReactNode;
+  sourceUrl: string;
+  sourceLabel: string;
 }
 
 const PHENOMENON_COPY: Record<string, PhenomenonCopy> = {
@@ -36,6 +36,8 @@ const PHENOMENON_COPY: Record<string, PhenomenonCopy> = {
         de chaleur.
       </>
     ),
+    sourceUrl: VIGILANCE_METEO_URL,
+    sourceLabel: 'Voir sur vigilance.meteofrance.fr',
   },
   '3': {
     label: 'Orages',
@@ -45,6 +47,8 @@ const PHENOMENON_COPY: Record<string, PhenomenonCopy> = {
         <a href={leversUrl}>découvrez les leviers ici</a>.
       </>
     ),
+    sourceUrl: VIGILANCE_METEO_URL,
+    sourceLabel: 'Voir sur vigilance.meteofrance.fr',
   },
   [ELECTRICITY_KEY]: {
     label: 'Tension électrique',
@@ -55,6 +59,8 @@ const PHENOMENON_COPY: Record<string, PhenomenonCopy> = {
         <a href={leversUrl}>Découvrez les leviers ici</a>.
       </>
     ),
+    sourceUrl: VIGILANCE_ECOWATT_URL,
+    sourceLabel: 'Voir sur monecowatt.fr',
   },
 };
 
@@ -80,13 +86,6 @@ const ELECTRICITY_STYLE: Record<ElectricityLevel, { background: string; color: s
   rouge: SEVERITY_STYLE.rouge,
 };
 
-const SEVERITY_LABEL: Record<Severity, string> = {
-  vert: 'Vert',
-  jaune: 'Jaune',
-  orange: 'Orange',
-  rouge: 'Rouge',
-};
-
 const DATE_FORMATTER = new Intl.DateTimeFormat('fr-FR', {
   weekday: 'long',
   day: 'numeric',
@@ -104,52 +103,9 @@ function maxSeverity(p: PhenomenonAlert): Severity {
   return SEVERITY_RANK[p.day1] >= SEVERITY_RANK[p.day2] ? p.day1 : p.day2;
 }
 
-interface TagEntry {
-  id: string;
-  label: string;
-  tone: Severity | ElectricityLevel;
-  tooltip: React.ReactNode;
-}
-
 interface PhenomenonGroup {
   key: string;
-  entries: TagEntry[];
-}
-
-function meteoTooltip(phenomenonLabel: string, p: PhenomenonAlert): React.ReactNode {
-  return (
-    <>
-      <strong>{phenomenonLabel}</strong>
-      <br />
-      Aujourd'hui : {SEVERITY_LABEL[p.day1]}
-      <br />
-      Demain : {SEVERITY_LABEL[p.day2]}
-      <br />
-      <a href={VIGILANCE_METEO_URL} target="_blank" rel="noreferrer noopener">
-        Voir sur vigilance.meteofrance.fr
-      </a>
-    </>
-  );
-}
-
-function electricityTooltip(d: ElectricityDayForecast): React.ReactNode {
-  return (
-    <>
-      <strong>Tension électrique</strong>
-      <br />
-      Niveau : {SEVERITY_LABEL[d.level as Severity] ?? d.level}
-      {d.message && (
-        <>
-          <br />
-          {d.message}
-        </>
-      )}
-      <br />
-      <a href={VIGILANCE_ECOWATT_URL} target="_blank" rel="noreferrer noopener">
-        Voir sur monecowatt.fr
-      </a>
-    </>
-  );
+  entries: { id: string; label: string; tone: Severity | ElectricityLevel }[];
 }
 
 function groupMeteoByPhenomenon(snapshot: MeteoSnapshot): PhenomenonGroup[] {
@@ -166,7 +122,6 @@ function groupMeteoByPhenomenon(snapshot: MeteoSnapshot): PhenomenonGroup[] {
         id: dept.code,
         label: dept.name,
         tone: maxSeverity(phenom),
-        tooltip: meteoTooltip(PHENOMENON_COPY[phenom.id]?.label ?? phenom.name, phenom),
       });
     }
   }
@@ -189,7 +144,6 @@ function buildElectricityGroup(snapshot: ElectricitySnapshot): PhenomenonGroup |
       id: d.date,
       label: formatDay(d.date),
       tone: d.level,
-      tooltip: electricityTooltip(d),
     })),
   };
 }
@@ -269,14 +223,14 @@ export function AlertWidget({
                   <strong>{copy.label}</strong> :{' '}
                   {group.entries.map((entry, i) => (
                     <span key={entry.id}>
-                      <Tag
-                        label={entry.label}
-                        tone={entry.tone}
-                        tooltip={entry.tooltip}
-                      />
+                      <Tag label={entry.label} tone={entry.tone} />
                       {i < group.entries.length - 1 && ' '}
                     </span>
                   ))}
+                  {' · '}
+                  <a href={copy.sourceUrl} target="_blank" rel="noreferrer noopener">
+                    {copy.sourceLabel}
+                  </a>
                 </p>
                 <p className="fr-mb-0 fr-text--sm">
                   {copy.message(leversUrl, preventionUrl)}
@@ -291,33 +245,22 @@ export function AlertWidget({
   );
 }
 
-function Tag({
-  label,
-  tone,
-  tooltip,
-}: {
-  label: string;
-  tone: Severity | ElectricityLevel;
-  tooltip: React.ReactNode;
-}) {
+function Tag({ label, tone }: { label: string; tone: Severity | ElectricityLevel }) {
   const style =
     tone in SEVERITY_STYLE
       ? SEVERITY_STYLE[tone as Severity]
       : ELECTRICITY_STYLE[tone as ElectricityLevel];
   return (
-    <Tooltip kind="hover" title={tooltip}>
-      <span
-        className="fr-badge fr-badge--sm"
-        style={{
-          backgroundColor: style.background,
-          color: style.color,
-          marginRight: '0.25rem',
-          cursor: 'help',
-        }}
-        tabIndex={0}
-      >
-        {label}
-      </span>
-    </Tooltip>
+    <span
+      className="fr-badge fr-badge--sm"
+      style={{
+        backgroundColor: style.background,
+        color: style.color,
+        marginRight: '0.25rem',
+      }}
+      title={`Vigilance ${tone}`}
+    >
+      {label}
+    </span>
   );
 }

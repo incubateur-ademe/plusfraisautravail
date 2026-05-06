@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alert widget embed — avec DSFR</title>
+  <link rel="stylesheet" href="https://unpkg.com/@gouvfr/dsfr@1.14.2/dist/dsfr/dsfr.min.css" />
+</head>
+<body>
+  <div class="fr-container" style="padding-top: 2rem;">
+    <h1 class="fr-h1">Page parente (avec DSFR)</h1>
+    <p class="fr-text--lead">DSFR déjà chargé — le script ne doit pas re-injecter la CSS.</p>
+
+    <div id="pfat-alert-widget"></div>
+
+    <script src="/alert-widget-embed.js"></script>
+    <script>
+      var apiBaseUrl = new URLSearchParams(location.search).get('api')
+        || 'https://apiprodff018daa-api-prod.functions.fnc.fr-par.scw.cloud';
+      window.PfatAlertWidget.mount({
+        target: '#pfat-alert-widget',
+        apiBaseUrl: apiBaseUrl,
+      });
+    </script>
+  </div>
+</body>
+</html>
