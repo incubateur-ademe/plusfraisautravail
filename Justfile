@@ -85,6 +85,16 @@ fmt-api:
 lint-js:
     npm run lint --if-present
 
+# ── pre-commit hooks ─────────────────────────────────────────────────────
+
+# Install the git pre-commit hook (one-time, run after cloning).
+install-hooks:
+    cd api && uv run pre-commit install
+
+# Run all hooks on every tracked file (handy after editing the config).
+hooks:
+    cd api && uv run pre-commit run --all-files
+
 # OpenTofu fmt + validate (prod env).
 tf-fmt:
     cd infra && tofu fmt -recursive

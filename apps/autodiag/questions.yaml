@@ -68,7 +68,7 @@ questions:
         label: "Il y a des espaces verts, mais ils sont surtout composés d’herbe."
       - score: 3.75
         label: "Il y a des arbres ou arbustes."
-        
+
   - id: espaces-verts-2
     themeId: espaces-verts
     question: "Est ce que la végétation (notamment arbres et arbustes) apporte de l’ombre dans  les zones où travaillent vos équipes (postes, pauses, parkings…) ?"
@@ -81,7 +81,7 @@ questions:
         label: "Plusieurs zones de travail  sont ombragées."
       - score: 5
         label: "La majorité des zones de travail sont ombragées."
-        
+
   - id: batiments-1
     themeId: batiments
     question: "Aujourd’hui, comment empêchez-vous la chaleur de rentrer dans votre bâtiment ?"
