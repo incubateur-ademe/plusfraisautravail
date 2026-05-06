@@ -24,7 +24,6 @@ interface MountOptions {
   apiBaseUrl: string;
   preventionUrl?: string;
   leversUrl?: string;
-  initialDepartment?: string;
 }
 
 declare global {
@@ -52,7 +51,6 @@ function mount(options: MountOptions): void {
         apiBaseUrl={options.apiBaseUrl}
         preventionUrl={options.preventionUrl}
         leversUrl={options.leversUrl}
-        initialDepartment={options.initialDepartment}
       />
     </StrictMode>,
   );
