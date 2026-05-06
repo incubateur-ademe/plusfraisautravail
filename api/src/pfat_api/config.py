@@ -11,6 +11,17 @@ class Settings(BaseSettings):
 
     vigilance_app_id: str = Field(..., description="Météo-France API application ID for Vigilance.")
 
+    rte_client_id: str | None = Field(
+        default=None, description="RTE Data API OAuth client_id for Ecowatt."
+    )
+    rte_client_secret: str | None = Field(
+        default=None, description="RTE Data API OAuth client_secret for Ecowatt."
+    )
+    rte_use_sandbox: bool = Field(
+        default=False,
+        description="Use the RTE sandbox endpoint (canned data, no rate limit) instead of prod.",
+    )
+
     cors_origins: list[str] = Field(
         default_factory=lambda: [
             "http://localhost:5173",

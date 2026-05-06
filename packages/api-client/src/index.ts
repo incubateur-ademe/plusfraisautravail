@@ -20,6 +20,23 @@ export interface MeteoSnapshot {
   source: string;
 }
 
+export type ElectricityLevel = 'vert' | 'orange' | 'rouge';
+
+export interface ElectricityDayForecast {
+  date: string;
+  level: ElectricityLevel;
+  code: number;
+  message: string | null;
+}
+
+export interface ElectricitySnapshot {
+  days: ElectricityDayForecast[];
+  currently_strained: boolean;
+  upcoming_strain: boolean;
+  fetched_at: string;
+  source: string;
+}
+
 export interface SourceMeta {
   name: string;
   last_refresh: string | null;
@@ -42,6 +59,10 @@ export class ApiClient {
 
   async getMeteoAlerts(): Promise<MeteoSnapshot> {
     return this.request<MeteoSnapshot>('/alerts/meteo');
+  }
+
+  async getElectricityAlerts(): Promise<ElectricitySnapshot> {
+    return this.request<ElectricitySnapshot>('/alerts/electricity');
   }
 
   async getSources(): Promise<SourceMeta[]> {
