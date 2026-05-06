@@ -3,7 +3,7 @@ output "autodiag_bucket" {
 }
 
 output "autodiag_url" {
-  value = "https://${module.autodiag_site.website_domain}"
+  value = "https://${module.autodiag_site.website_endpoint}"
 }
 
 output "alert_widget_bucket" {
@@ -11,7 +11,7 @@ output "alert_widget_bucket" {
 }
 
 output "alert_widget_url" {
-  value = "https://${module.alert_widget_site.website_domain}"
+  value = "https://${module.alert_widget_site.website_endpoint}"
 }
 
 output "api_registry" {

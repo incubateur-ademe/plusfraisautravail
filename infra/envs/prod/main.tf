@@ -20,8 +20,11 @@ locals {
         "http://localhost:5173",
         "http://localhost:4173",
         "https://plusfraisautravail.beta.gouv.fr",
-        "https://${module.alert_widget_site.website_domain}",
-        "https://${module.autodiag_site.website_domain}",
+        # website_endpoint is "<bucket>.s3-website.<region>.scw.cloud" (with bucket).
+        # website_domain is the region-only suffix — using it here would give an
+        # origin that matches every bucket in the region, which is wrong.
+        "https://${module.alert_widget_site.website_endpoint}",
+        "https://${module.autodiag_site.website_endpoint}",
       ],
       var.extra_cors_origins,
     ))
