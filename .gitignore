@@ -5,6 +5,7 @@ node_modules/
 dist/
 dist-ssr/
 **/test-embed/autodiag-embed.js
+**/test-embed/alert-widget-embed.js
 **/*.tsbuildinfo
 **/.vite/
 

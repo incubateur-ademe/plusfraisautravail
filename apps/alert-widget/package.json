@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build && BUILD_TARGET=embed vite build",
     "build:embed": "tsc -b && BUILD_TARGET=embed vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "preview:embed": "npm run build:embed && cp dist/alert-widget-embed.js test-embed/ && npx serve test-embed -p 4173"
   },
   "dependencies": {
     "@codegouvfr/react-dsfr": "^1.31.1",
