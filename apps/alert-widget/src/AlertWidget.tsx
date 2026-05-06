@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Alert } from '@codegouvfr/react-dsfr/Alert';
+import { Tooltip } from '@codegouvfr/react-dsfr/Tooltip';
 import {
   ApiClient,
+  type ElectricityDayForecast,
   type ElectricityLevel,
   type ElectricitySnapshot,
   type MeteoSnapshot,
@@ -11,6 +13,9 @@ import {
 
 const DEFAULT_PREVENTION_URL = 'https://plusfraisautravail.beta.gouv.fr/reglementation/';
 const DEFAULT_LEVERS_URL = 'https://plusfraisautravail.beta.gouv.fr/agir/';
+
+const VIGILANCE_METEO_URL = 'https://vigilance.meteofrance.fr/fr';
+const VIGILANCE_ECOWATT_URL = 'https://www.monecowatt.fr';
 
 const SUPPORTED_PHENOMENON_IDS = new Set(['3', '6']);
 
@@ -75,6 +80,13 @@ const ELECTRICITY_STYLE: Record<ElectricityLevel, { background: string; color: s
   rouge: SEVERITY_STYLE.rouge,
 };
 
+const SEVERITY_LABEL: Record<Severity, string> = {
+  vert: 'Vert',
+  jaune: 'Jaune',
+  orange: 'Orange',
+  rouge: 'Rouge',
+};
+
 const DATE_FORMATTER = new Intl.DateTimeFormat('fr-FR', {
   weekday: 'long',
   day: 'numeric',
@@ -82,6 +94,7 @@ const DATE_FORMATTER = new Intl.DateTimeFormat('fr-FR', {
 });
 
 function formatDay(iso: string): string {
+  // ISO date "YYYY-MM-DD" — interpret as local date so Intl picks the right weekday.
   const [y, m, d] = iso.split('-').map((s) => parseInt(s, 10));
   if (!y || !m || !d) return iso;
   return DATE_FORMATTER.format(new Date(y, m - 1, d));
@@ -91,9 +104,52 @@ function maxSeverity(p: PhenomenonAlert): Severity {
   return SEVERITY_RANK[p.day1] >= SEVERITY_RANK[p.day2] ? p.day1 : p.day2;
 }
 
+interface TagEntry {
+  id: string;
+  label: string;
+  tone: Severity | ElectricityLevel;
+  tooltip: React.ReactNode;
+}
+
 interface PhenomenonGroup {
   key: string;
-  entries: { id: string; label: string; tone: Severity | ElectricityLevel }[];
+  entries: TagEntry[];
+}
+
+function meteoTooltip(phenomenonLabel: string, p: PhenomenonAlert): React.ReactNode {
+  return (
+    <>
+      <strong>{phenomenonLabel}</strong>
+      <br />
+      Aujourd'hui : {SEVERITY_LABEL[p.day1]}
+      <br />
+      Demain : {SEVERITY_LABEL[p.day2]}
+      <br />
+      <a href={VIGILANCE_METEO_URL} target="_blank" rel="noreferrer noopener">
+        Voir sur vigilance.meteofrance.fr
+      </a>
+    </>
+  );
+}
+
+function electricityTooltip(d: ElectricityDayForecast): React.ReactNode {
+  return (
+    <>
+      <strong>Tension électrique</strong>
+      <br />
+      Niveau : {SEVERITY_LABEL[d.level as Severity] ?? d.level}
+      {d.message && (
+        <>
+          <br />
+          {d.message}
+        </>
+      )}
+      <br />
+      <a href={VIGILANCE_ECOWATT_URL} target="_blank" rel="noreferrer noopener">
+        Voir sur monecowatt.fr
+      </a>
+    </>
+  );
 }
 
 function groupMeteoByPhenomenon(snapshot: MeteoSnapshot): PhenomenonGroup[] {
@@ -110,6 +166,7 @@ function groupMeteoByPhenomenon(snapshot: MeteoSnapshot): PhenomenonGroup[] {
         id: dept.code,
         label: dept.name,
         tone: maxSeverity(phenom),
+        tooltip: meteoTooltip(PHENOMENON_COPY[phenom.id]?.label ?? phenom.name, phenom),
       });
     }
   }
@@ -132,6 +189,7 @@ function buildElectricityGroup(snapshot: ElectricitySnapshot): PhenomenonGroup |
       id: d.date,
       label: formatDay(d.date),
       tone: d.level,
+      tooltip: electricityTooltip(d),
     })),
   };
 }
@@ -205,7 +263,11 @@ export function AlertWidget({
                   <strong>{copy.label}</strong> :{' '}
                   {group.entries.map((entry, i) => (
                     <span key={entry.id}>
-                      <Tag label={entry.label} tone={entry.tone} />
+                      <Tag
+                        label={entry.label}
+                        tone={entry.tone}
+                        tooltip={entry.tooltip}
+                      />
                       {i < group.entries.length - 1 && ' '}
                     </span>
                   ))}
@@ -223,22 +285,33 @@ export function AlertWidget({
   );
 }
 
-function Tag({ label, tone }: { label: string; tone: Severity | ElectricityLevel }) {
+function Tag({
+  label,
+  tone,
+  tooltip,
+}: {
+  label: string;
+  tone: Severity | ElectricityLevel;
+  tooltip: React.ReactNode;
+}) {
   const style =
     tone in SEVERITY_STYLE
       ? SEVERITY_STYLE[tone as Severity]
       : ELECTRICITY_STYLE[tone as ElectricityLevel];
   return (
-    <span
-      className="fr-badge fr-badge--sm"
-      style={{
-        backgroundColor: style.background,
-        color: style.color,
-        marginRight: '0.25rem',
-      }}
-      title={`Vigilance ${tone}`}
-    >
-      {label}
-    </span>
+    <Tooltip kind="hover" title={tooltip}>
+      <span
+        className="fr-badge fr-badge--sm"
+        style={{
+          backgroundColor: style.background,
+          color: style.color,
+          marginRight: '0.25rem',
+          cursor: 'help',
+        }}
+        tabIndex={0}
+      >
+        {label}
+      </span>
+    </Tooltip>
   );
 }
