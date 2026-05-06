@@ -46,3 +46,9 @@ variable "api_deploy" {
   description = "Set to true once an image has been pushed to the registry."
   default     = false
 }
+
+variable "extra_cors_origins" {
+  type        = list(string)
+  description = "Extra origins to whitelist on the API in addition to the bucket website domains and the canonical Wagtail host. Use for staging or custom domains."
+  default     = []
+}
