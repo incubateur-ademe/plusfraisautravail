@@ -1,0 +1,67 @@
+name: OpenTofu apply
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "infra/**"
+      - ".github/workflows/terraform-apply.yml"
+  workflow_dispatch:
+
+env:
+  TOFU_VERSION: "1.8.5"
+
+# Don't run two applies in parallel — Tofu's state lock would just block
+# the second one anyway, and serializing makes the deployment history clearer.
+concurrency:
+  group: tofu-apply
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    environment:
+      name: tofu-apply
+      url: ${{ vars.API_URL }}
+    defaults:
+      run:
+        working-directory: infra/envs/prod
+    env:
+      SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+      SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+      SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_DEFAULT_PROJECT_ID }}
+      SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_DEFAULT_ORGANIZATION_ID }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+      TF_VAR_vigilance_app_id: ${{ secrets.VIGILANCE_APP_ID }}
+      TF_VAR_rte_client_id: ${{ secrets.RTE_CLIENT_ID }}
+      TF_VAR_rte_client_secret: ${{ secrets.RTE_CLIENT_SECRET }}
+      # Pin the image to whatever's currently deployed via the lifecycle ignore.
+      # api_deploy must be true here; the bootstrap (api_deploy=false) flow is
+      # a one-time local thing.
+      TF_VAR_api_deploy: "true"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: ${{ env.TOFU_VERSION }}
+          tofu_wrapper: false
+
+      - name: tofu init
+        run: tofu init -input=false
+
+      - name: tofu plan
+        run: |
+          tofu plan -no-color -input=false -out=tfplan | tee plan.txt
+          {
+            echo '## OpenTofu plan'
+            echo
+            echo '```'
+            cat plan.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: tofu apply
+        run: tofu apply -input=false -no-color tfplan

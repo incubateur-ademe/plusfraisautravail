@@ -6,6 +6,7 @@ dist/
 dist-ssr/
 **/test-embed/autodiag-embed.js
 **/*.tsbuildinfo
+**/.vite/
 
 # Logs
 logs/

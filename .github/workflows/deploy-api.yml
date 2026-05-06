@@ -34,6 +34,7 @@ jobs:
   build-push:
     needs: test
     runs-on: ubuntu-latest
+    environment: api
     outputs:
       image: ${{ steps.meta.outputs.image }}
     steps:
@@ -70,6 +71,9 @@ jobs:
   deploy:
     needs: build-push
     runs-on: ubuntu-latest
+    environment:
+      name: api
+      url: ${{ vars.API_URL }}
     steps:
       - name: Trigger Scaleway container redeploy
         env:
@@ -79,6 +83,9 @@ jobs:
           CONTAINER_ID: ${{ vars.SCW_API_CONTAINER_ID }}
           IMAGE: ${{ needs.build-push.outputs.image }}
         run: |
+          # Tofu's `output container_id` is "fr-par/<uuid>"; the Scaleway REST API
+          # expects just the UUID. Strip any leading "<region>/" defensively.
+          CONTAINER_ID="${CONTAINER_ID##*/}"
           curl --fail-with-body -X PATCH \
             "https://api.scaleway.com/containers/v1beta1/regions/$REGION/containers/$CONTAINER_ID" \
             -H "X-Auth-Token: $SCW_SECRET_KEY" \

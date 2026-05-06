@@ -12,6 +12,19 @@ locals {
 
   api_env = {
     RTE_USE_SANDBOX = var.rte_use_sandbox ? "true" : "false"
+    # JSON-encoded list — pydantic-settings parses this as list[str].
+    # Includes the deployed alert-widget bucket origin so the embed can call
+    # the API without a CORS preflight failure.
+    CORS_ORIGINS = jsonencode(concat(
+      [
+        "http://localhost:5173",
+        "http://localhost:4173",
+        "https://plusfraisautravail.beta.gouv.fr",
+        "https://${module.alert_widget_site.website_domain}",
+        "https://${module.autodiag_site.website_domain}",
+      ],
+      var.extra_cors_origins,
+    ))
   }
 }
 

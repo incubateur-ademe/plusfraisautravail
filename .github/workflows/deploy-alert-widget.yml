@@ -20,6 +20,9 @@ env:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: alert-widget
+      url: ${{ vars.SITE_URL }}
     steps:
       - uses: actions/checkout@v4
 

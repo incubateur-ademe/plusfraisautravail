@@ -34,4 +34,11 @@ resource "scaleway_container" "this" {
   deploy                       = var.deploy
   environment_variables        = var.environment_variables
   secret_environment_variables = var.secret_environment_variables
+
+  # Image rollouts are owned by deploy-api.yml (PATCH on the container API),
+  # not by tofu. Without this, every `tofu apply` would try to revert the
+  # running image to whatever bootstrap reference is in terraform.tfvars.
+  lifecycle {
+    ignore_changes = [registry_image]
+  }
 }
