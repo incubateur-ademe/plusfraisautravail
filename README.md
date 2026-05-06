@@ -12,7 +12,7 @@ Monorepo for the [plusfraisautravail.beta.gouv.fr](https://plusfraisautravail.be
 ├── api/                  # FastAPI gateway aggregating alert sources (meteole/Vigilance)
 ├── packages/
 │   └── api-client/       # Shared TS client for the API
-├── infra/                # Terraform (Scaleway: buckets + serverless containers)
+├── infra/                # OpenTofu (Scaleway: buckets + serverless containers)
 ├── scripts/              # Ad-hoc scripts
 ├── sources/              # Raw source material, exploration notebooks
 └── .github/workflows/    # CI + per-app deploy workflows
@@ -22,7 +22,7 @@ Monorepo for the [plusfraisautravail.beta.gouv.fr](https://plusfraisautravail.be
 
 - **Frontends:** npm workspaces, Vite, React 19, TypeScript, [`@codegouvfr/react-dsfr`](https://github.com/codegouvfr/react-dsfr).
 - **API:** Python 3.12, [`uv`](https://docs.astral.sh/uv/), FastAPI, [`meteole`](https://pypi.org/project/meteole/).
-- **Infra:** Terraform → Scaleway (Object Storage website buckets, Serverless Containers, Container Registry). State on Scaleway Object Storage (S3-compatible backend).
+- **Infra:** OpenTofu → Scaleway (Object Storage website buckets, Serverless Containers, Container Registry). State on Scaleway Object Storage (S3-compatible backend).
 - **CI/CD:** GitHub Actions, path-filtered per app.
 
 ## Development
@@ -58,7 +58,7 @@ cd api && uv run pytest && uv run ruff check .
 - **autodiag** — currently GitHub Pages (transitional). Will move to Scaleway bucket once `infra/envs/prod` is applied (see task in `.github/workflows/deploy-autodiag.yml`).
 - **alert-widget** — Scaleway website bucket, deployed by `deploy-alert-widget.yml` on push to `main`.
 - **api** — Built and pushed to Scaleway Container Registry, then the Serverless Container is redeployed by `deploy-api.yml`.
-- **infra** — `terraform plan` runs in CI on PRs touching `infra/**`. `terraform apply` is run manually from a developer's machine.
+- **infra** — `tofu plan` runs in CI on PRs touching `infra/**`. `tofu apply` is run manually from a developer's machine.
 
 ## GitHub secrets / variables required
 
@@ -68,7 +68,7 @@ cd api && uv run pytest && uv run ruff check .
 
 **Variables:**
 - `API_BASE_URL` — public URL of the deployed API (used at frontend build time)
-- `SCW_API_CONTAINER_ID` — Scaleway container ID, output of `terraform apply`
+- `SCW_API_CONTAINER_ID` — Scaleway container ID, output of `tofu apply`
 
 ## Sources / data
 

@@ -1,4 +1,4 @@
-name: Deploy autodiag to GitHub Pages
+name: Deploy autodiag
 
 on:
   push:
@@ -11,49 +11,43 @@ on:
       - ".github/workflows/deploy-autodiag.yml"
   workflow_dispatch:
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: false
+env:
+  BUCKET: pfat-autodiag-prod
+  REGION: fr-par
+  S3_ENDPOINT: https://s3.fr-par.scw.cloud
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: package-lock.json
 
-      - name: Install dependencies
-        run: npm ci
+      - run: npm ci
 
       - name: Build
         run: npm run build --workspace @pfat/autodiag
         env:
-          VITE_BASE_URL: /plusfraisautravail/
+          # Bucket serves at the root, not at a sub-path.
+          VITE_BASE_URL: /
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: apps/autodiag/dist
+      - name: Configure AWS CLI for Scaleway
+        run: |
+          aws configure set aws_access_key_id "$SCW_ACCESS_KEY"
+          aws configure set aws_secret_access_key "$SCW_SECRET_KEY"
+          aws configure set default.region "$REGION"
+        env:
+          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Sync to bucket
+        run: |
+          aws --endpoint-url=$S3_ENDPOINT s3 sync \
+            apps/autodiag/dist/ s3://$BUCKET/ \
+            --delete \
+            --cache-control "public, max-age=300"

@@ -5,6 +5,7 @@ node_modules/
 dist/
 dist-ssr/
 **/test-embed/autodiag-embed.js
+**/*.tsbuildinfo
 
 # Logs
 logs/
@@ -52,3 +53,5 @@ venv/
 # Claude
 .claude/
 .playwright-mcp/
+# Local screenshots from manual smoke-tests
+/*.png

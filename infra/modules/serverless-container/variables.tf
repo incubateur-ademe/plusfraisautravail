@@ -33,8 +33,8 @@ variable "deploy" {
 }
 
 variable "port" {
-  type        = number
-  default     = 8080
+  type    = number
+  default = 8080
 }
 
 variable "cpu_limit" {
@@ -50,18 +50,18 @@ variable "memory_limit" {
 }
 
 variable "min_scale" {
-  type        = number
-  default     = 0
+  type    = number
+  default = 0
 }
 
 variable "max_scale" {
-  type        = number
-  default     = 5
+  type    = number
+  default = 5
 }
 
 variable "timeout_seconds" {
-  type        = number
-  default     = 60
+  type    = number
+  default = 60
 }
 
 variable "environment_variables" {

@@ -14,7 +14,7 @@ resource "scaleway_object_bucket" "this" {
     {
       app         = var.app_name
       environment = var.environment
-      managed_by  = "terraform"
+      managed_by  = "opentofu"
     },
     var.tags,
   )

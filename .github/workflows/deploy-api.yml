@@ -59,6 +59,8 @@ jobs:
         with:
           context: api
           push: true
+          # Scaleway Serverless Containers only run amd64.
+          platforms: linux/amd64
           tags: |
             ${{ steps.meta.outputs.image }}
             ${{ env.REGISTRY }}/${{ env.REGISTRY_NAMESPACE }}/${{ env.IMAGE_NAME }}:latest

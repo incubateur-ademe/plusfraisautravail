@@ -2,35 +2,8 @@
 
 Outstanding work after the monorepo restructuring.
 
-## Bootstrap (one-time, blocking everything else)
-
-- [ ] Create Météo-France Vigilance application ID (if not already done) — store as `VIGILANCE_APP_ID` in:
-  - local `api/.env`
-  - GitHub repo secrets
-  - `infra/envs/prod/terraform.tfvars` (`vigilance_app_id`)
-- [ ] Create Scaleway API key with project + container + object-storage scopes
-- [ ] Add GitHub secrets:
-  - `SCW_ACCESS_KEY`
-  - `SCW_SECRET_KEY`
-  - `SCW_DEFAULT_PROJECT_ID`
-  - `SCW_DEFAULT_ORGANIZATION_ID`
-  - `VIGILANCE_APP_ID`
-- [ ] Create the Terraform state bucket manually (Terraform can't manage its own state):
-  ```bash
-  aws --endpoint-url=https://s3.fr-par.scw.cloud s3 mb s3://pfat-tfstate --region fr-par
-  ```
-
-## First Terraform apply (two-step)
-
-- [ ] `cd infra/envs/prod && cp terraform.tfvars.example terraform.tfvars` and fill it in
-- [ ] `terraform init`
-- [ ] `terraform apply` with `api_deploy = false` — creates buckets + registry namespace, no container yet
-- [ ] First API image push (run `deploy-api.yml` manually via `workflow_dispatch`, or push locally:
-  `docker build -t rg.fr-par.scw.cloud/pfat-prod/api:bootstrap api/ && docker push ...`)
-- [ ] Update `terraform.tfvars`: set `api_image` to the pushed reference, `api_deploy = true`
-- [ ] `terraform apply` again — creates the container
-- [ ] Capture the container ID from `terraform output` and store as GitHub variable `SCW_API_CONTAINER_ID`
-- [ ] Capture the API URL and store as GitHub variable `API_BASE_URL`
+For the deployment bootstrap (one-time) see [`DEPLOY.md`](./DEPLOY.md). The
+items below are ongoing engineering work, not setup.
 
 ## API
 
@@ -50,15 +23,12 @@ Outstanding work after the monorepo restructuring.
 - [ ] Add a small E2E test (Playwright) covering: select dept → see vigilance card
 - [ ] Verify embed bundle works inside the actual host page (plusfraisautravail.beta.gouv.fr or other)
 
-## Autodiag migration (Task #10, deferred)
+## Autodiag migration follow-ups
 
-- [ ] After Scaleway bucket exists: rewrite `.github/workflows/deploy-autodiag.yml` to `aws s3 sync` instead of `actions/upload-pages-artifact` + `deploy-pages` (mirror `deploy-alert-widget.yml`)
-- [ ] Remove `permissions: pages` block and `concurrency: pages` group
-- [ ] Update `VITE_BASE_URL` from `/plusfraisautravail/` to `/`
 - [ ] Update embed URLs in https://plusfraisautravail.beta.gouv.fr (Wagtail) to point at the new bucket
-- [ ] Disable GitHub Pages on the repo
+- [ ] Disable GitHub Pages on the repo once the bucket is live
 
-## Infra / Terraform
+## Infra / OpenTofu
 
 - [ ] Decide on custom domains (out of scope for v1, no CDN/HTTPS on bucket endpoints)
 - [ ] When custom domains needed: switch from `static-site` to `static-site` + Edge Services (or front with Cloudflare)
@@ -67,10 +37,9 @@ Outstanding work after the monorepo restructuring.
 
 ## Repo hygiene
 
-- [ ] First push: ensure `.env`, `terraform.tfvars`, and `node_modules/` are not committed (already in `.gitignore`)
 - [ ] Add a `LICENSE` file (likely AGPL or MIT — beta.gouv.fr convention)
 - [ ] Add a `CONTRIBUTING.md` once external contributors are expected
-- [ ] Consider adding pre-commit hooks (ruff, prettier, terraform fmt)
+- [ ] Consider adding pre-commit hooks (ruff, prettier, `tofu fmt`)
 
 ## Nice-to-haves
 

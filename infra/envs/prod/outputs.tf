@@ -21,3 +21,8 @@ output "api_registry" {
 output "api_url" {
   value = "https://${module.api.domain_name}"
 }
+
+output "container_id" {
+  value       = module.api.container_id
+  description = "Scaleway serverless container ID (set as GitHub variable SCW_API_CONTAINER_ID)."
+}

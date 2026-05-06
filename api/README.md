@@ -41,4 +41,4 @@ docker run -p 8080:8080 --env-file .env pfat-api
 
 ## Deploy
 
-The image is built and pushed by `.github/workflows/deploy-api.yml` to the Scaleway Container Registry, then the Scaleway Serverless Container is updated to the new image. Infra is provisioned by Terraform under `infra/`.
+The image is built and pushed by `.github/workflows/deploy-api.yml` to the Scaleway Container Registry, then the Scaleway Serverless Container is updated to the new image. Infra is provisioned by OpenTofu under `infra/`.

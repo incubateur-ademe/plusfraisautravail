@@ -1,12 +1,12 @@
 # Scaleway Object Storage S3-compatible backend.
-# Bootstrap: create the state bucket manually before the first `terraform init`.
+# Bootstrap: create the state bucket manually before the first `tofu init`.
 #   aws --endpoint-url=https://s3.fr-par.scw.cloud s3 mb s3://pfat-tfstate
 # (use SCW_ACCESS_KEY / SCW_SECRET_KEY as AWS creds)
 terraform {
   backend "s3" {
-    bucket   = "pfat-tfstate"
-    key      = "envs/prod/terraform.tfstate"
-    region   = "fr-par"
+    bucket = "pfat-tfstate"
+    key    = "envs/prod/terraform.tfstate"
+    region = "fr-par"
     endpoints = {
       s3 = "https://s3.fr-par.scw.cloud"
     }

@@ -4,11 +4,11 @@ output "registry_endpoint" {
 }
 
 output "registry_namespace_id" {
-  value       = scaleway_registry_namespace.this.id
+  value = scaleway_registry_namespace.this.id
 }
 
 output "container_id" {
-  value       = scaleway_container.this.id
+  value = scaleway_container.this.id
 }
 
 output "domain_name" {
