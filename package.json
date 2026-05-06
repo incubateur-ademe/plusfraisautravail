@@ -1,0 +1,19 @@
+{
+  "name": "plusfraisautravail",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Monorepo for plusfraisautravail.beta.gouv.fr — API gateway, frontends, scripts.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:autodiag": "npm run dev --workspace @pfat/autodiag",
+    "dev:alert-widget": "npm run dev --workspace @pfat/alert-widget",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
