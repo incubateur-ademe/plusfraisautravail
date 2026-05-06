@@ -129,15 +129,24 @@ just status
 
 Note the `container_id` and `api_url` outputs — you need them for the next step.
 
-### 2.10 Set GitHub secrets and variables
+### 2.10 Set GitHub secrets and environments
+
+Two recipes, both idempotent:
 
 ```bash
-just bootstrap-secrets
+just bootstrap-secrets        # repo-level secrets (used only by terraform-plan.yml on PRs)
+just bootstrap-environments   # creates api / autodiag / alert-widget envs + their secrets
 ```
 
-This **prints** the exact `gh secret set` / `gh variable set` commands. Copy them into your shell, fill in the values (use `container_id` for `SCW_API_CONTAINER_ID`, `api_url` for `API_BASE_URL`), and run them.
+`bootstrap-environments` reads `SCW_*`, `VIGILANCE_APP_ID`, `RTE_*` from your shell and `api_url` / `container_id` / bucket URLs from `tofu output`. It creates each environment with a `branch=main` policy so only main-branch deploys can read those secrets.
 
-You're done. The next push to `main` touching `api/**` will redeploy the container; `apps/autodiag/**` and `apps/alert-widget/**` will sync to their buckets.
+**Why two scopes:** `terraform-plan.yml` runs on PRs from any branch; environment-scoped secrets aren't readable from non-main refs, so its credentials live at repo level. `deploy-*.yml` workflows live in their respective environments — the GitHub UI shows a deployment history per environment with a clickable URL.
+
+You're done. The next push to `main` touching `api/**` will redeploy the container; `apps/autodiag/**` and `apps/alert-widget/**` will sync to their buckets. The deploy progress is visible at:
+
+```
+https://github.com/incubateur-ademe/plusfraisautravail/deployments
+```
 
 ---
 
