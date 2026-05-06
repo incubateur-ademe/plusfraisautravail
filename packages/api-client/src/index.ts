@@ -1,15 +1,21 @@
 export type Severity = 'vert' | 'jaune' | 'orange' | 'rouge';
 
-export interface DepartmentAlert {
-  code: string;
+export interface PhenomenonAlert {
+  id: string;
+  name: string;
   day1: Severity;
   day2: Severity;
 }
 
-export interface HeatwaveSnapshot {
-  phenomenon: string;
-  phenomenon_id: string;
-  departments: DepartmentAlert[];
+export interface DepartmentMeteoAlert {
+  code: string;
+  name: string;
+  phenomena: PhenomenonAlert[];
+}
+
+export interface MeteoSnapshot {
+  active: boolean;
+  departments: DepartmentMeteoAlert[];
   fetched_at: string;
   source: string;
 }
@@ -34,12 +40,8 @@ export class ApiClient {
     this.fetchImpl = options.fetch ?? globalThis.fetch.bind(globalThis);
   }
 
-  async getHeatwave(): Promise<HeatwaveSnapshot> {
-    return this.request<HeatwaveSnapshot>('/alerts/heatwave');
-  }
-
-  async getHeatwaveForDepartment(dept: string): Promise<HeatwaveSnapshot> {
-    return this.request<HeatwaveSnapshot>(`/alerts/heatwave/${encodeURIComponent(dept)}`);
+  async getMeteoAlerts(): Promise<MeteoSnapshot> {
+    return this.request<MeteoSnapshot>('/alerts/meteo');
   }
 
   async getSources(): Promise<SourceMeta[]> {
@@ -67,5 +69,4 @@ export class ApiError extends Error {
   }
 }
 
-export const isVigilanceActive = (severity: Severity): boolean =>
-  severity === 'orange' || severity === 'rouge';
+export const isVigilanceActive = (severity: Severity): boolean => severity !== 'vert';
