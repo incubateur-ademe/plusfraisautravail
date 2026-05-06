@@ -240,11 +240,11 @@ bootstrap-environments:
     create_env_main_only() {
       local env="$1"
       printf '  ensure %s (branch=main)\n' "$env"
-      # PUT is idempotent — creates or updates the env.
-      gh api -X PUT "repos/$REPO/environments/$env" \
-        -f deployment_branch_policy[protected_branches]=false \
-        -f deployment_branch_policy[custom_branch_policies]=true \
-        --silent
+      # PUT is idempotent. Pipe a real JSON body so the booleans get encoded
+      # as booleans (gh api's -f always sends strings, and -F doesn't reach
+      # into nested keys like deployment_branch_policy.protected_branches).
+      printf '%s' '{"deployment_branch_policy":{"protected_branches":false,"custom_branch_policies":true}}' \
+        | gh api -X PUT "repos/$REPO/environments/$env" --input - --silent
       # Wipe any existing branch policies, then add `main` only.
       gh api "repos/$REPO/environments/$env/deployment-branch-policies" \
         --jq '.branch_policies[].id' \
