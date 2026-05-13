@@ -4,7 +4,7 @@
 # (use SCW_ACCESS_KEY / SCW_SECRET_KEY as AWS creds)
 terraform {
   backend "s3" {
-    bucket = "pfat-tfstate"
+    bucket = "pfat-terraform"
     key    = "envs/prod/terraform.tfstate"
     region = "fr-par"
     endpoints = {

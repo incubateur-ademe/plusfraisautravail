@@ -144,11 +144,11 @@ bootstrap-state:
     fi
     echo "About to create the OpenTofu state bucket:"
     echo "  endpoint: https://s3.fr-par.scw.cloud"
-    echo "  bucket:   pfat-tfstate"
+    echo "  bucket:   pfat-terraform"
     echo "  region:   fr-par"
     read -r -p "Proceed? [y/N] " ans
     [[ "$ans" =~ ^[Yy]$ ]] || { echo "Aborted."; exit 1; }
-    aws --endpoint-url=https://s3.fr-par.scw.cloud s3 mb s3://pfat-tfstate --region fr-par
+    aws --endpoint-url=https://s3.fr-par.scw.cloud s3 mb s3://pfat-terraform --region fr-par
 
 # Copy terraform.tfvars.example to terraform.tfvars (if missing) and open it.
 bootstrap-tfvars:
@@ -335,7 +335,7 @@ deploy-api-bootstrap:
       exit 1
     fi
     REGISTRY="rg.fr-par.scw.cloud"
-    NAMESPACE="pfat-prod"
+    NAMESPACE="pfat"
     IMAGE="$REGISTRY/$NAMESPACE/api:bootstrap"
     # Scaleway Serverless Containers only run amd64. `buildx --push` builds
     # cross-arch and uploads in one step (no need to materialize the image

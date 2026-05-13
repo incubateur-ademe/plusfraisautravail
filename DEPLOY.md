@@ -7,9 +7,9 @@ The stack is provisioned with [OpenTofu](https://opentofu.org/) (`infra/envs/pro
 | Resource | Module | Created from |
 |---|---|---|
 | Bucket `pfat-tfstate` | none | manual `aws s3 mb` (state backend) |
-| Bucket `pfat-autodiag-prod` | `static-site` | `module.autodiag_site` |
-| Bucket `pfat-alert-widget-prod` | `static-site` | `module.alert_widget_site` |
-| Container Registry namespace `pfat-prod` | `serverless-container` | `module.api` |
+| Bucket `pfat-autodiag` | `static-site` | `module.autodiag_site` |
+| Bucket `pfat-alert-widget` | `static-site` | `module.alert_widget_site` |
+| Container Registry namespace `pfat` | `serverless-container` | `module.api` |
 | Container namespace `api-prod` | `serverless-container` | `module.api` |
 | Container `api-prod` | `serverless-container` | `module.api` |
 
@@ -104,14 +104,14 @@ This succeeds with `api_deploy=false` because the registry must exist before any
 just deploy-api-bootstrap
 ```
 
-Builds `api/Dockerfile`, logs into `rg.fr-par.scw.cloud` (username `nologin`, password = `$SCW_SECRET_KEY`), pushes `rg.fr-par.scw.cloud/pfat-prod/api:bootstrap`. The recipe prints the exact reference at the end.
+Builds `api/Dockerfile`, logs into `rg.fr-par.scw.cloud` (username `nologin`, password = `$SCW_SECRET_KEY`), pushes `rg.fr-par.scw.cloud/pfat/api:bootstrap`. The recipe prints the exact reference at the end.
 
 ### 2.7 Edit `terraform.tfvars` again
 
 Set:
 
 ```hcl
-api_image  = "rg.fr-par.scw.cloud/pfat-prod/api:bootstrap"
+api_image  = "rg.fr-par.scw.cloud/pfat/api:bootstrap"
 api_deploy = true
 ```
 
@@ -155,8 +155,8 @@ https://github.com/incubateur-ademe/plusfraisautravail/deployments
 | Trigger | What happens |
 |---|---|
 | Push to `main` touching `api/**` | `deploy-api.yml` builds + pushes a new image, then `PATCH`es the container with `redeploy=true`. |
-| Push to `main` touching `apps/autodiag/**` | `deploy-autodiag.yml` builds and `aws s3 sync`s to `pfat-autodiag-prod`. |
-| Push to `main` touching `apps/alert-widget/**` | `deploy-alert-widget.yml` builds and `aws s3 sync`s to `pfat-alert-widget-prod`. |
+| Push to `main` touching `apps/autodiag/**` | `deploy-autodiag.yml` builds and `aws s3 sync`s to `pfat-autodiag`. |
+| Push to `main` touching `apps/alert-widget/**` | `deploy-alert-widget.yml` builds and `aws s3 sync`s to `pfat-alert-widget`. |
 | PR touching `infra/**` | `terraform-plan.yml` posts a plan as a step summary. |
 | Push to `main` touching `infra/**` | `terraform-apply.yml` runs `tofu apply` against prod. The deployment shows up in the `tofu-apply` GitHub Environment. |
 
@@ -180,8 +180,8 @@ To roll out an infrastructure change: edit `infra/envs/prod/**`, open a PR, revi
 
 Both SPAs are built with `VITE_BASE_URL=/` in CI so all asset URLs are root-relative. Buckets serve at the root, e.g.:
 
-- `https://pfat-autodiag-prod.s3-website.fr-par.scw.cloud/`
-- `https://pfat-alert-widget-prod.s3-website.fr-par.scw.cloud/`
+- `https://pfat-autodiag.s3-website.fr-par.scw.cloud/`
+- `https://pfat-alert-widget.s3-website.fr-par.scw.cloud/`
 
 The local dev server keeps the historical sub-path (`/autodiag/`, `/alert-widget/`) - only the deployed bundles use root.
 

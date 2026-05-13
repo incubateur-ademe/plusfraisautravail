@@ -35,21 +35,21 @@ module "autodiag_site" {
   source      = "../../modules/static-site"
   app_name    = "autodiag"
   environment = local.environment
-  bucket_name = "pfat-autodiag-prod"
+  bucket_name = "pfat-autodiag"
 }
 
 module "alert_widget_site" {
   source      = "../../modules/static-site"
   app_name    = "alert-widget"
   environment = local.environment
-  bucket_name = "pfat-alert-widget-prod"
+  bucket_name = "pfat-alert-widget"
 }
 
 module "api" {
   source                       = "../../modules/serverless-container"
   app_name                     = "api"
   environment                  = local.environment
-  registry_namespace           = "pfat-prod"
+  registry_namespace           = "pfat"
   registry_image               = var.api_image
   deploy                       = var.api_deploy
   port                         = 8080

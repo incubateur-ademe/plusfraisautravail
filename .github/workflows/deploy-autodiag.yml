@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
 
 env:
-  BUCKET: pfat-autodiag-prod
+  BUCKET: pfat-autodiag
   REGION: fr-par
   S3_ENDPOINT: https://s3.fr-par.scw.cloud
 

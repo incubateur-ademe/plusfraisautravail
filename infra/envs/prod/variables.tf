@@ -37,7 +37,7 @@ variable "rte_use_sandbox" {
 
 variable "api_image" {
   type        = string
-  description = "Full image reference for the API container (e.g. rg.fr-par.scw.cloud/pfat-prod/api:sha-abc123). Leave empty on first apply."
+  description = "Full image reference for the API container (e.g. rg.fr-par.scw.cloud/pfat/api:sha-abc123). Leave empty on first apply."
   default     = ""
 }
 

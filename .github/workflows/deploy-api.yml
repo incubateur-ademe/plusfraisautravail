@@ -11,7 +11,7 @@ on:
 
 env:
   REGISTRY: rg.fr-par.scw.cloud
-  REGISTRY_NAMESPACE: pfat-prod
+  REGISTRY_NAMESPACE: pfat
   IMAGE_NAME: api
   REGION: fr-par
 
