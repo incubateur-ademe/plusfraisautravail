@@ -175,3 +175,34 @@ def test_upstream_error_wraps_meteole_exception(monkeypatch: pytest.MonkeyPatch)
     monkeypatch.setattr(mf, "Vigilance", boom)
     with pytest.raises(mf.UpstreamError):
         mf._fetch_snapshot_sync()
+
+
+def test_meteole_phenomenon_id_keyerror_is_treated_as_all_vert(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # meteole.get_phenomenon() raises KeyError('phenomenon_id') when no phenomenon
+    # is active anywhere in France. That is a "calm" state, not an upstream failure.
+    class _ExplodingVigilance:
+        def __init__(self, application_id: str) -> None:  # noqa: ARG002
+            pass
+
+        def get_phenomenon(self) -> tuple[None, None]:
+            raise KeyError("phenomenon_id")
+
+    monkeypatch.setattr(mf, "Vigilance", _ExplodingVigilance)
+    snapshot = mf._fetch_snapshot_sync()
+    assert snapshot.active is False
+    assert snapshot.departments == []
+
+
+def test_other_keyerror_still_raises_upstream_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    class _Vigilance:
+        def __init__(self, application_id: str) -> None:  # noqa: ARG002
+            pass
+
+        def get_phenomenon(self) -> tuple[None, None]:
+            raise KeyError("something_else")
+
+    monkeypatch.setattr(mf, "Vigilance", _Vigilance)
+    with pytest.raises(mf.UpstreamError):
+        mf._fetch_snapshot_sync()

@@ -44,6 +44,19 @@ def _fetch_snapshot_sync() -> MeteoSnapshot:
     try:
         vigi = Vigilance(application_id=settings.vigilance_app_id)
         _, df_timelaps = vigi.get_phenomenon()
+    except KeyError as exc:
+        # meteole.get_phenomenon() crashes with KeyError('phenomenon_id') when the
+        # API returns no active national phenomena (i.e. all of France is vert).
+        # The per-department timelaps data is still present and means "all vert",
+        # so surface that as an empty, healthy snapshot instead of an upstream error.
+        if exc.args and exc.args[0] == "phenomenon_id":
+            return MeteoSnapshot(active=False, departments=[], fetched_at=datetime.now(UTC))
+        logger.exception("Météo-France Vigilance upstream call failed")
+        raise UpstreamError(
+            "Could not fetch data from Météo-France Vigilance. "
+            "This usually means VIGILANCE_APP_ID is missing, malformed, "
+            "or the application is not subscribed to the 'Données Vigilance' product."
+        ) from exc
     except Exception as exc:
         logger.exception("Météo-France Vigilance upstream call failed")
         raise UpstreamError(
