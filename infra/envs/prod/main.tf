@@ -53,7 +53,7 @@ module "api" {
   registry_image               = var.api_image
   deploy                       = var.api_deploy
   port                         = 8080
-  min_scale                    = 0
+  min_scale                    = var.api_min_scale
   max_scale                    = 5
   environment_variables        = local.api_env
   secret_environment_variables = local.api_secret_env

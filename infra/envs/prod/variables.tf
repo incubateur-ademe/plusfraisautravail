@@ -52,3 +52,9 @@ variable "extra_cors_origins" {
   description = "Extra origins to whitelist on the API in addition to the bucket website domains and the canonical Wagtail host. Use for staging or custom domains."
   default     = []
 }
+
+variable "api_min_scale" {
+  type        = number
+  description = "Minimum number of always-warm API container instances. Set to 1 to eliminate cold-starts (the embed widget is triggered on every page load of the main site, so cold-start latency is user-visible)."
+  default     = 1
+}
