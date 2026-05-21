@@ -5,8 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Alert widget embed - auto mount</title>
   <link rel="stylesheet" href="https://unpkg.com/@gouvfr/dsfr@1.14.2/dist/dsfr/dsfr.min.css" />
+  <style>
+    .demo-links { padding: 1rem; background: #f5f5fe; border-bottom: 1px solid #ddd; }
+    .demo-links a { margin-right: 1rem; }
+  </style>
 </head>
 <body>
+  <div class="demo-links">
+    Démo :
+    <a href="?demo=heatwave-rouge">Vigilance rouge</a>
+    <a href="?demo=heatwave-orange">Vigilance orange</a>
+    <a href="?demo=quiet">Pas de vigilance</a>
+    <a href="./auto-mount.html">Données réelles (API)</a>
+  </div>
+
   <header role="banner" class="fr-header">
     <div class="fr-header__body">
       <div class="fr-container">
@@ -31,10 +43,18 @@
     </div>
   </main>
 
-  <script src="/alert-widget-embed.js"
-    data-auto
-    data-api-base-url="https://apiprodff018daa-api-prod.functions.fnc.fr-par.scw.cloud"
-    data-prevention-url="https://plusfraisautravail.beta.gouv.fr/reglementation/"
-  ></script>
+  <script>
+    // Picks up ?demo=<scenario> from the URL and injects it as data-demo on the embed script.
+    (function () {
+      var s = document.createElement('script');
+      s.src = '/alert-widget-embed.js';
+      s.setAttribute('data-auto', '');
+      s.setAttribute('data-api-base-url', 'https://apiprodedce25f6-api-prod.functions.fnc.fr-par.scw.cloud');
+      s.setAttribute('data-prevention-url', 'https://plusfraisautravail.beta.gouv.fr/reglementation/');
+      var demo = new URLSearchParams(location.search).get('demo');
+      if (demo !== null) s.setAttribute('data-demo', demo);
+      document.body.appendChild(s);
+    })();
+  </script>
 </body>
 </html>

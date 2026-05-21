@@ -1,8 +1,10 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { startReactDsfr } from '@codegouvfr/react-dsfr/spa';
+import type { ApiClient } from '@pfat/api-client';
 
 import { AlertWidget } from './AlertWidget';
+import { buildFakeClient, type ScenarioName } from './demo';
 
 const DSFR_CDN_URL = 'https://unpkg.com/@gouvfr/dsfr@1.14.2/dist/dsfr/dsfr.min.css';
 const AUTO_CONTAINER_ID = 'pfat-alert-widget';
@@ -25,6 +27,8 @@ interface MountOptions {
   apiBaseUrl: string;
   preventionUrl?: string;
   leversUrl?: string;
+  /** Render canned fixtures instead of hitting the API. Useful for demos and screenshots. */
+  demo?: ScenarioName;
 }
 
 declare global {
@@ -34,6 +38,29 @@ declare global {
       autoMount: (options: Omit<MountOptions, 'target'>) => void;
     };
   }
+}
+
+const KNOWN_SCENARIOS = new Set<ScenarioName>([
+  'heatwave',
+  'heatwave-orange',
+  'heatwave-rouge',
+  'quiet',
+]);
+
+function isScenarioName(value: string): value is ScenarioName {
+  return (KNOWN_SCENARIOS as Set<string>).has(value);
+}
+
+function parseDemoAttr(value: string | undefined): ScenarioName | undefined {
+  if (value === undefined) return undefined;
+  // `data-demo` with no value (empty string) → default to heatwave.
+  if (value === '') return 'heatwave';
+  if (isScenarioName(value)) return value;
+  // eslint-disable-next-line no-console
+  console.warn(
+    `PfatAlertWidget: unknown demo scenario "${value}", falling back to "heatwave"`,
+  );
+  return 'heatwave';
 }
 
 let dsfrStarted = false;
@@ -82,12 +109,14 @@ function mount(options: MountOptions): void {
     dsfrStarted = true;
   }
   const el = resolveTarget(options.target);
+  const client: ApiClient | undefined = options.demo ? buildFakeClient(options.demo) : undefined;
   createRoot(el).render(
     <StrictMode>
       <AlertWidget
         apiBaseUrl={options.apiBaseUrl}
         preventionUrl={options.preventionUrl}
         leversUrl={options.leversUrl}
+        client={client}
       />
     </StrictMode>,
   );
@@ -115,5 +144,6 @@ if (currentScript?.dataset.auto !== undefined) {
     apiBaseUrl,
     preventionUrl: currentScript.dataset.preventionUrl,
     leversUrl: currentScript.dataset.leversUrl,
+    demo: parseDemoAttr(currentScript.dataset.demo),
   });
 }

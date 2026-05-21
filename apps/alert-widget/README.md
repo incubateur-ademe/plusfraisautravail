@@ -58,3 +58,34 @@ Or, if you prefer to call it from JS:
   });
 </script>
 ```
+
+### Demo mode
+
+Bypass the API and render canned fixtures for screenshots, talks, or staging:
+
+```html
+<!-- via script tag -->
+<script
+  src="https://.../alert-widget-embed.js"
+  data-auto
+  data-api-base-url="https://api.plusfraisautravail.beta.gouv.fr"
+  data-demo="heatwave-rouge"
+></script>
+```
+
+```js
+// or via the JS API
+PfatAlertWidget.autoMount({
+  apiBaseUrl: '...',
+  demo: 'heatwave-orange',
+});
+```
+
+Available scenarios:
+
+| Scenario | What it renders |
+|---|---|
+| `heatwave-rouge` | 4 départements en vigilance rouge + 10 en orange |
+| `heatwave-orange` | 14 départements en vigilance orange |
+| `heatwave` | Mixed scenario (one dépt rouge, rest orange) - default if `data-demo` has no value |
+| `quiet` | Aucune vigilance (widget reste invisible) |
