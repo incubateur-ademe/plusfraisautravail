@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alert widget embed - auto mount</title>
+  <link rel="stylesheet" href="https://unpkg.com/@gouvfr/dsfr@1.14.2/dist/dsfr/dsfr.min.css" />
+</head>
+<body>
+  <header role="banner" class="fr-header">
+    <div class="fr-header__body">
+      <div class="fr-container">
+        <p class="fr-logo">République<br>Française</p>
+      </div>
+    </div>
+  </header>
+
+  <div class="fr-notice fr-notice--info">
+    <div class="fr-container">
+      <div class="fr-notice__body">
+        <p class="fr-notice__title">Site en construction</p>
+        <p class="fr-notice__desc">Ce site est en construction par l'ADEME et l'INRS, en partenariat avec l'ANACT et le groupe VYV</p>
+      </div>
+    </div>
+  </div>
+
+  <main>
+    <div class="fr-container" style="padding-top: 2rem;">
+      <h1 class="fr-h1">Page parente</h1>
+      <p class="fr-text--lead">Le widget canicule doit s'insérer entre le bandeau « Site en construction » et ce contenu.</p>
+    </div>
+  </main>
+
+  <script src="/alert-widget-embed.js"
+    data-auto
+    data-api-base-url="https://apiprodff018daa-api-prod.functions.fnc.fr-par.scw.cloud"
+    data-prevention-url="https://plusfraisautravail.beta.gouv.fr/reglementation/"
+  ></script>
+</body>
+</html>
