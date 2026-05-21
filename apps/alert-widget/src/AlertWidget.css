@@ -1,0 +1,12 @@
+/*
+ * Scoped styling for the canicule Notice (bandeau d'information importante).
+ * The DSFR Notice ships with weather-orange/weather-red severities matching the
+ * Météo-France Vigilance palette, so no color overrides are needed.
+ *
+ * The title gets the fr-icon-sun-fill class to swap the default rain icon
+ * for a sun, which fits the canicule context.
+ */
+
+.canicule-notice__more {
+  font-style: italic;
+}
