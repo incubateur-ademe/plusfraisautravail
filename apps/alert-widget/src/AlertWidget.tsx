@@ -9,7 +9,7 @@ import {
 
 import './AlertWidget.css';
 
-const DEFAULT_PREVENTION_URL = 'https://plusfraisautravail.beta.gouv.fr/reglementation/';
+const DEFAULT_PREVENTION_URL = 'https://plusfraisautravail.beta.gouv.fr/risques/vigilances/';
 
 const CANICULE_PHENOMENON_ID = '6';
 const MAX_DEPARTMENTS_SHOWN = 10;

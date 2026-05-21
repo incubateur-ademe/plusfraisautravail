@@ -44,7 +44,7 @@ The widget will insert itself right after the existing `fr-notice` that follows 
   src="https://.../alert-widget-embed.js"
   data-auto
   data-api-base-url="https://api.plusfraisautravail.beta.gouv.fr"
-  data-prevention-url="https://plusfraisautravail.beta.gouv.fr/reglementation/"
+  data-prevention-url="https://plusfraisautravail.beta.gouv.fr/risques/vigilances/"
 ></script>
 ```
 
