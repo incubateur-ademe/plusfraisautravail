@@ -137,7 +137,9 @@ export function AlertWidget({
       title={title}
       description={description}
       link={{
-        linkProps: { href: preventionUrl },
+        // DSFR's Notice defaults to target="_blank"; override so the link
+        // opens in the same tab.
+        linkProps: { href: preventionUrl, target: '_self', rel: '' },
         text: 'Voir les mesures de prévention',
       }}
       isClosable={false}
