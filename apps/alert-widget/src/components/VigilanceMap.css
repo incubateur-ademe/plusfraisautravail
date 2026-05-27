@@ -5,17 +5,8 @@
  */
 
 .pfat-map-card {
-  background: var(--background-default-grey);
-  border-radius: 0.75rem;
-  padding: 1.5rem 2rem 2rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   max-width: 920px;
   margin: 0 auto;
-}
-
-.pfat-map-card__subtitle {
-  color: var(--text-mention-grey);
-  margin-top: 0;
 }
 
 .pfat-map-wrapper {

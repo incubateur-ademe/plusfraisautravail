@@ -28,7 +28,9 @@ export default defineConfig(
         server: {
           proxy: {
             '/api': {
-              target: 'http://localhost:8080',
+              target:
+                process.env.VITE_API_PROXY_TARGET ??
+                'https://apiprodedce25f6-api-prod.functions.fnc.fr-par.scw.cloud',
               changeOrigin: true,
               rewrite: (path) => path.replace(/^\/api/, ''),
             },

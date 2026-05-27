@@ -20,8 +20,8 @@ export interface VigilanceMapProps {
    * When undefined, all phenomena contribute to each département's tone.
    */
   phenomenaIds?: ReadonlyArray<string>;
-  title?: string;
-  subtitle?: string;
+  /** Accessible label for the SVG. */
+  ariaLabel?: string;
 }
 
 type ToneByCode = ReadonlyMap<string, Severity>;
@@ -51,8 +51,7 @@ function buildToneMap(
 export function VigilanceMap({
   meteo,
   phenomenaIds,
-  title = 'Vigilance canicule en France',
-  subtitle = 'Niveau de vigilance par département — Source : Météo-France',
+  ariaLabel = 'Vigilance canicule en France',
 }: VigilanceMapProps) {
   const tones = useMemo(() => buildToneMap(meteo, phenomenaIds), [meteo, phenomenaIds]);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -78,14 +77,11 @@ export function VigilanceMap({
 
   return (
     <div className="pfat-map-card">
-      <h2 className="fr-h5 fr-mb-1w">{title}</h2>
-      <p className="fr-text--sm pfat-map-card__subtitle">{subtitle}</p>
-
       <div className="pfat-map-wrapper" ref={wrapperRef}>
         <svg
           viewBox={VIEW_BOX}
           role="img"
-          aria-label={title}
+          aria-label={ariaLabel}
           className="pfat-map-svg"
         >
           {DEPARTMENT_PATHS.map((p) => {

@@ -17,14 +17,12 @@ export interface MapPageProps {
   client?: ApiClient;
   /** Which phenomena to colour the map by. Defaults to 'canicule'. */
   phenomena?: PhenomenaFilter;
-  scenarioBadge?: string;
 }
 
 export function MapPage({
   apiBaseUrl,
   client: clientProp,
   phenomena = 'canicule',
-  scenarioBadge,
 }: MapPageProps) {
   const client = useMemo(
     () => clientProp ?? new ApiClient({ baseUrl: apiBaseUrl }),
@@ -61,18 +59,5 @@ export function MapPage({
     return <p>Chargement…</p>;
   }
 
-  const phenomenaIds = PHENOMENA_OPTIONS[phenomena];
-  const subtitle =
-    phenomena === 'canicule'
-      ? 'Niveau de vigilance canicule par département — Source : Météo-France'
-      : 'Niveau de vigilance par département — Source : Météo-France';
-
-  return (
-    <>
-      <VigilanceMap meteo={meteo} phenomenaIds={phenomenaIds} subtitle={subtitle} />
-      {scenarioBadge && (
-        <p className="fr-mt-2w fr-text--sm pfat-map-scenario-badge">{scenarioBadge}</p>
-      )}
-    </>
-  );
+  return <VigilanceMap meteo={meteo} phenomenaIds={PHENOMENA_OPTIONS[phenomena]} />;
 }

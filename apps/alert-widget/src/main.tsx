@@ -22,45 +22,42 @@ const basename = import.meta.env.BASE_URL.replace(/\/$/, '') || undefined;
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter basename={basename}>
-      <nav className="fr-container fr-mt-4w" aria-label="Navigation">
-        <ul className="fr-tags-group">
-          <li>
-            <Link className="fr-tag" to="/">
-              Alerte
-            </Link>
-          </li>
-          <li>
-            <Link className="fr-tag" to="/map">
-              Carte
-            </Link>
-          </li>
-        </ul>
-      </nav>
-      <main className="fr-container fr-py-4w">
-        <Routes>
-          <Route
-            path="/"
-            element={
-              <HomePage
-                apiBaseUrl={apiBaseUrl}
-                client={fakeClient}
-                scenarioBadge={scenarioBadge}
-              />
-            }
-          />
-          <Route
-            path="/map"
-            element={
-              <MapPage
-                apiBaseUrl={apiBaseUrl}
-                client={fakeClient}
-                phenomena="canicule"
-                scenarioBadge={scenarioBadge}
-              />
-            }
-          />
-        </Routes>
-      </main>
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <>
+              <nav className="fr-container fr-mt-4w" aria-label="Navigation">
+                <ul className="fr-tags-group">
+                  <li>
+                    <Link className="fr-tag" to="/">
+                      Alerte
+                    </Link>
+                  </li>
+                  <li>
+                    <Link className="fr-tag" to="/map">
+                      Carte
+                    </Link>
+                  </li>
+                </ul>
+              </nav>
+              <main className="fr-container fr-py-4w">
+                <HomePage
+                  apiBaseUrl={apiBaseUrl}
+                  client={fakeClient}
+                  scenarioBadge={scenarioBadge}
+                />
+              </main>
+            </>
+          }
+        />
+        <Route
+          path="/map"
+          element={
+            <MapPage apiBaseUrl={apiBaseUrl} client={fakeClient} phenomena="canicule" />
+          }
+        />
+      </Routes>
     </BrowserRouter>
   </StrictMode>,
 );
