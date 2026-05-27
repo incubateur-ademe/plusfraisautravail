@@ -1,8 +1,14 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-const isEmbed = process.env.BUILD_TARGET === 'embed';
+const buildTarget = process.env.BUILD_TARGET;
+const isEmbed = buildTarget === 'embed' || buildTarget === 'embed-map';
 const base = process.env.VITE_BASE_URL ?? '/alert-widget/';
+
+const embedEntry =
+  buildTarget === 'embed-map'
+    ? { input: 'src/mount-map.tsx', name: 'alert-widget-map.js' }
+    : { input: 'src/embed.tsx', name: 'alert-widget-embed.js' };
 
 export default defineConfig(
   isEmbed
@@ -13,11 +19,14 @@ export default defineConfig(
           outDir: 'dist',
           emptyOutDir: false,
           rollupOptions: {
-            input: 'src/embed.tsx',
+            // Single IIFE per invocation. BUILD_TARGET=embed produces the
+            // bootstrap; BUILD_TARGET=embed-map produces the on-demand map
+            // bundle that the bootstrap injects when data-route="/map".
+            input: embedEntry.input,
             output: {
               format: 'iife',
               inlineDynamicImports: true,
-              entryFileNames: 'alert-widget-embed.js',
+              entryFileNames: embedEntry.name,
             },
           },
         },

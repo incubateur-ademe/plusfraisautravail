@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ApiClient, type MeteoSnapshot } from '@pfat/api-client';
 
 import { VigilanceMap } from '../components/VigilanceMap';
+import '../components/VigilanceMap.css';
 
 const CANICULE_PHENOMENON_ID = '6';
 const PHENOMENA_OPTIONS = {

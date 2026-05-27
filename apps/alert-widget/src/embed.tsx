@@ -31,12 +31,21 @@ interface MountOptions {
   demo?: ScenarioName;
 }
 
+interface MountMapOptions {
+  target?: string | HTMLElement;
+  apiBaseUrl: string;
+  /** Comma-separated phenomenon IDs ("6"), or the keyword "canicule" / "all". */
+  phenomena?: string;
+  demo?: ScenarioName;
+}
+
 declare global {
   interface Window {
     PfatAlertWidget?: {
       mount: (options: MountOptions) => void;
       autoMount: (options: Omit<MountOptions, 'target'>) => void;
     };
+    PfatVigilanceMap?: { mount: (options: MountMapOptions) => void };
   }
 }
 
@@ -132,6 +141,36 @@ function autoMount(options: Omit<MountOptions, 'target'>): void {
 
 window.PfatAlertWidget = { mount, autoMount };
 
+function deriveMapBundleUrl(scriptEl: HTMLScriptElement): string {
+  // Map bundle ships alongside the embed bundle. We swap the filename so the
+  // host can serve both from the same CDN path.
+  const src = scriptEl.src;
+  return src.replace(/alert-widget-embed\.js(?:\?.*)?$/, 'alert-widget-map.js');
+}
+
+function loadMapBundle(scriptEl: HTMLScriptElement): Promise<void> {
+  if (window.PfatVigilanceMap) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = deriveMapBundleUrl(scriptEl);
+    s.async = true;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error(`Failed to load ${s.src}`));
+    document.head.appendChild(s);
+  });
+}
+
+async function autoMountMap(
+  scriptEl: HTMLScriptElement,
+  options: MountMapOptions,
+): Promise<void> {
+  await loadMapBundle(scriptEl);
+  if (!window.PfatVigilanceMap) {
+    throw new Error('PfatVigilanceMap bundle loaded but did not expose its API');
+  }
+  window.PfatVigilanceMap.mount(options);
+}
+
 // Bootstrap from the script tag itself when it carries data-* attributes,
 // so consumers can drop a single <script> tag without an inline setup block.
 const currentScript = document.currentScript as HTMLScriptElement | null;
@@ -140,10 +179,31 @@ if (currentScript?.dataset.auto !== undefined) {
   if (!apiBaseUrl) {
     throw new Error('PfatAlertWidget: data-api-base-url is required when using data-auto');
   }
-  autoMount({
-    apiBaseUrl,
-    preventionUrl: currentScript.dataset.preventionUrl,
-    leversUrl: currentScript.dataset.leversUrl,
-    demo: parseDemoAttr(currentScript.dataset.demo),
-  });
+
+  const route = currentScript.dataset.route ?? '/';
+  if (route === '/map') {
+    const target = currentScript.dataset.target;
+    const mountWhenReady = () =>
+      autoMountMap(currentScript, {
+        target,
+        apiBaseUrl,
+        phenomena: currentScript.dataset.phenomena,
+        demo: parseDemoAttr(currentScript.dataset.demo),
+      }).catch((err: unknown) => {
+        // eslint-disable-next-line no-console
+        console.error('PfatVigilanceMap: failed to mount', err);
+      });
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', mountWhenReady, { once: true });
+    } else {
+      mountWhenReady();
+    }
+  } else {
+    autoMount({
+      apiBaseUrl,
+      preventionUrl: currentScript.dataset.preventionUrl,
+      leversUrl: currentScript.dataset.leversUrl,
+      demo: parseDemoAttr(currentScript.dataset.demo),
+    });
+  }
 }

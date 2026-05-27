@@ -2,7 +2,6 @@ import { useMemo, useRef, useState } from 'react';
 import type { DepartmentMeteoAlert, MeteoSnapshot, Severity } from '@pfat/api-client';
 
 import { DEPARTMENT_PATHS, DROM_LABELS, VIEW_BOX } from '../data/franceGeo';
-import './VigilanceMap.css';
 
 const SEVERITY_RANK: Record<Severity, number> = { vert: 0, jaune: 1, orange: 2, rouge: 3 };
 
