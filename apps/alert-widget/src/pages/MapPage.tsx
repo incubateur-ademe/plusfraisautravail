@@ -57,7 +57,7 @@ export function MapPage({
     );
   }
   if (!meteo) {
-    return <p>Chargement…</p>;
+    return null;
   }
 
   return <VigilanceMap meteo={meteo} phenomenaIds={PHENOMENA_OPTIONS[phenomena]} />;

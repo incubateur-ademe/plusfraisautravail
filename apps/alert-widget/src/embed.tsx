@@ -182,7 +182,17 @@ if (currentScript?.dataset.auto !== undefined) {
 
   const route = currentScript.dataset.route ?? '/';
   if (route === '/map') {
-    const target = currentScript.dataset.target;
+    // Capture mount target synchronously while `document.currentScript` is
+    // still valid: if the author didn't supply data-target, insert a
+    // placeholder right next to the <script> tag so the map renders in place
+    // (the map bundle loads async, by which point currentScript is gone).
+    let target: string | HTMLElement | undefined = currentScript.dataset.target;
+    if (target === undefined && currentScript.parentNode) {
+      const placeholder = document.createElement('div');
+      placeholder.className = 'pfat-vigilance-map-host';
+      currentScript.parentNode.insertBefore(placeholder, currentScript);
+      target = placeholder;
+    }
     const mountWhenReady = () =>
       autoMountMap(currentScript, {
         target,

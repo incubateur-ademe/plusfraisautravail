@@ -67,7 +67,7 @@ function MapMount({ apiBaseUrl, phenomenaIds, demo }: MapMountProps) {
   }, [client]);
 
   if (error) return <p role="alert">Carte indisponible : {error}</p>;
-  if (!meteo) return <p>Chargement de la carte…</p>;
+  if (!meteo) return null;
   return <VigilanceMap meteo={meteo} phenomenaIds={phenomenaIds} />;
 }
 

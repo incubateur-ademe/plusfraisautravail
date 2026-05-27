@@ -98,7 +98,7 @@ export function AlertWidget({
     };
   }, [client]);
 
-  if (loading) return <p>Chargement...</p>;
+  if (loading) return null;
   if (meteoError) {
     return (
       <Notice severity="alert" title="Erreur" description={meteoError} isClosable={false} />
