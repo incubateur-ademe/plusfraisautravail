@@ -1,0 +1,171 @@
+/**
+ * Build-time helper: fetches metropolitan + DROM-TOM GeoJSON from
+ * france-geojson.gregoiredavid.fr, projects each département into the V1 mockup
+ * layout (métropole on the left, DROM-TOM right column with breathing room),
+ * and writes the result to src/data/franceGeo.ts so the React bundle ships
+ * pre-projected SVG paths instead of GeoJSON + a runtime projector.
+ *
+ * Run once, or any time the layout changes:
+ *
+ *   node scripts/generate-france-geo.mjs
+ */
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const OUT = path.resolve(__dirname, '../src/data/franceGeo.ts');
+
+const REGIONS = [
+  { code: '971', name: 'Guadeloupe', url: 'regions/guadeloupe/departements-guadeloupe.geojson' },
+  { code: '972', name: 'Martinique', url: 'regions/martinique/departements-martinique.geojson' },
+  { code: '973', name: 'Guyane', url: 'regions/guyane/departements-guyane.geojson' },
+  { code: '974', name: 'La Réunion', url: 'regions/la-reunion/departements-la-reunion.geojson' },
+  { code: '976', name: 'Mayotte', url: 'regions/mayotte/departements-mayotte.geojson' },
+];
+const METRO_URL = 'departements.geojson';
+
+const BASE = 'https://france-geojson.gregoiredavid.fr/repo/';
+
+async function fetchJson(rel) {
+  const res = await fetch(BASE + rel);
+  if (!res.ok) throw new Error(`fetch ${rel} → ${res.status}`);
+  return res.json();
+}
+
+function project(coord, bounds, box) {
+  const [lon, lat] = coord;
+  const [[minLon, minLat], [maxLon, maxLat]] = bounds;
+  // Apply a cosine adjustment for the mid-latitude so 1° of longitude doesn't
+  // look as wide as 1° of latitude (it isn't, at ~46°N). Without this, France
+  // ends up squashed horizontally on screen.
+  const midLat = (minLat + maxLat) / 2;
+  const lonScale = Math.cos((midLat * Math.PI) / 180);
+  const adjustedLonSpan = (maxLon - minLon) * lonScale;
+  const latSpan = maxLat - minLat;
+  // Fit-to-box, preserving aspect ratio so the country / island isn't stretched.
+  const scale = Math.min(box.w / adjustedLonSpan, box.h / latSpan);
+  const offsetX = box.x + (box.w - adjustedLonSpan * scale) / 2;
+  const offsetY = box.y + (box.h - latSpan * scale) / 2;
+  const x = (lon - minLon) * lonScale * scale + offsetX;
+  const y = box.y + box.h - ((lat - minLat) * scale + (offsetY - box.y));
+  return [x, y];
+}
+
+function ringToPath(ring, bounds, box) {
+  return (
+    ring
+      .map((c, i) => {
+        const [x, y] = project(c, bounds, box);
+        return `${i === 0 ? 'M' : 'L'}${x.toFixed(2)},${y.toFixed(2)}`;
+      })
+      .join(' ') + ' Z'
+  );
+}
+
+function geometryToPath(geom, bounds, box) {
+  if (geom.type === 'Polygon') {
+    return geom.coordinates.map((r) => ringToPath(r, bounds, box)).join(' ');
+  }
+  if (geom.type === 'MultiPolygon') {
+    return geom.coordinates.flat().map((r) => ringToPath(r, bounds, box)).join(' ');
+  }
+  return '';
+}
+
+function computeBounds(features) {
+  let minLon = Infinity, minLat = Infinity, maxLon = -Infinity, maxLat = -Infinity;
+  for (const f of features) {
+    const polys =
+      f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates;
+    for (const p of polys) {
+      for (const ring of p) {
+        for (const [lon, lat] of ring) {
+          if (lon < minLon) minLon = lon;
+          if (lat < minLat) minLat = lat;
+          if (lon > maxLon) maxLon = lon;
+          if (lat > maxLat) maxLat = lat;
+        }
+      }
+    }
+  }
+  return [
+    [minLon, minLat],
+    [maxLon, maxLat],
+  ];
+}
+
+function buildPaths(features, box) {
+  const bounds = computeBounds(features);
+  return features.map((f) => ({
+    code: f.properties.code,
+    name: f.properties.nom,
+    d: geometryToPath(f.geometry, bounds, box),
+  }));
+}
+
+// V1 layout: métropole 20-580 x 20-580, DROM-TOM right column with ~30px gaps.
+const METRO_BOX = { x: 20, y: 20, w: 560, h: 560 };
+const DROM_BOXES = [
+  { code: '971', box: { x: 620, y: 30, w: 140, h: 90 } },
+  { code: '972', box: { x: 620, y: 150, w: 140, h: 90 } },
+  { code: '973', box: { x: 620, y: 270, w: 140, h: 115 } },
+  { code: '974', box: { x: 620, y: 415, w: 140, h: 75 } },
+  { code: '976', box: { x: 620, y: 520, w: 140, h: 75 } },
+];
+
+async function main() {
+  console.log('Fetching métropole…');
+  const metro = await fetchJson(METRO_URL);
+  console.log('Fetching DROM-TOM…');
+  const drom = {};
+  for (const r of REGIONS) drom[r.code] = await fetchJson(r.url);
+
+  const metroPaths = buildPaths(metro.features, METRO_BOX);
+  const dromPaths = DROM_BOXES.flatMap((b) => buildPaths(drom[b.code].features, b.box));
+  const allPaths = [...metroPaths, ...dromPaths];
+
+  const dromLabels = DROM_BOXES.map((b) => {
+    const region = REGIONS.find((r) => r.code === b.code);
+    return {
+      code: b.code,
+      name: region.name,
+      cx: b.box.x + b.box.w / 2,
+      labelY: b.box.y - 6,
+    };
+  });
+
+  const out =
+    `/**
+ * Auto-generated by scripts/generate-france-geo.mjs — do not edit by hand.
+ * Re-run that script if the layout (viewBox, DROM-TOM placement) changes.
+ */
+export interface DepartmentPath {
+  /** INSEE département code, e.g. "13", "2A", "971". */
+  code: string;
+  name: string;
+  /** Pre-projected SVG path data, in the coordinate system declared by VIEW_BOX. */
+  d: string;
+}
+
+export interface DromLabel {
+  code: string;
+  name: string;
+  cx: number;
+  labelY: number;
+}
+
+export const VIEW_BOX = '0 0 780 600' as const;
+
+export const DEPARTMENT_PATHS: ReadonlyArray<DepartmentPath> = ${JSON.stringify(allPaths, null, 2)};
+
+export const DROM_LABELS: ReadonlyArray<DromLabel> = ${JSON.stringify(dromLabels, null, 2)};
+`;
+  fs.writeFileSync(OUT, out);
+  console.log(`Wrote ${OUT} (${allPaths.length} paths)`);
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

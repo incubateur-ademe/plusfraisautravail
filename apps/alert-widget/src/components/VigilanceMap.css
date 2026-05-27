@@ -1,0 +1,111 @@
+/*
+ * Vigilance map - V1 (editorial) styling.
+ * Palette uses the DSFR Vigilance weather tokens so the map stays consistent
+ * with the Notice banner used elsewhere in the alert-widget.
+ */
+
+.pfat-map-card {
+  background: var(--background-default-grey);
+  border-radius: 0.75rem;
+  padding: 1.5rem 2rem 2rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+.pfat-map-card__subtitle {
+  color: var(--text-mention-grey);
+  margin-top: 0;
+}
+
+.pfat-map-wrapper {
+  position: relative;
+}
+
+.pfat-map-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.pfat-map-dept {
+  stroke: var(--text-title-grey);
+  stroke-width: 0.5;
+  transition: filter 120ms ease, stroke-width 120ms ease;
+  cursor: pointer;
+}
+
+.pfat-map-dept:hover,
+.pfat-map-dept:focus-visible {
+  stroke-width: 0.9;
+  outline: none;
+  filter: brightness(1.04);
+}
+
+.pfat-map-dept--vert {
+  fill: var(--weather-green-main-525, #3eaa3e);
+}
+.pfat-map-dept--jaune {
+  fill: var(--weather-yellow-main-525, #fff100);
+}
+.pfat-map-dept--orange {
+  fill: var(--weather-orange-main-525, #ff9100);
+}
+.pfat-map-dept--rouge {
+  fill: var(--weather-red-main-525, #cc0000);
+}
+
+.pfat-map-drom-label {
+  font-size: 11px;
+  fill: var(--text-mention-grey);
+  font-weight: 600;
+}
+
+.pfat-map-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: var(--text-title-grey);
+  color: var(--background-default-grey);
+  padding: 0.35rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  transform: translate(-50%, -130%);
+  white-space: nowrap;
+}
+
+.pfat-map-legend {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 1.5rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.9rem;
+}
+
+.pfat-map-legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.pfat-map-legend__swatch {
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 3px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.pfat-map-legend__swatch--vert {
+  background: var(--weather-green-main-525, #3eaa3e);
+}
+.pfat-map-legend__swatch--jaune {
+  background: var(--weather-yellow-main-525, #fff100);
+}
+.pfat-map-legend__swatch--orange {
+  background: var(--weather-orange-main-525, #ff9100);
+}
+.pfat-map-legend__swatch--rouge {
+  background: var(--weather-red-main-525, #cc0000);
+}
