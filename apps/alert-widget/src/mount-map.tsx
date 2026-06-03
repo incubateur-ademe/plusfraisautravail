@@ -29,7 +29,11 @@ interface MountMapOptions {
   target?: string | HTMLElement;
   /** API base URL the map calls for vigilance data. */
   apiBaseUrl: string;
-  /** Comma-separated phenomenon IDs (e.g. "6" for canicule). Omit for all. */
+  /**
+   * Which vigilance phenomena colour the map. Accepts "canicule", "all", or
+   * comma-separated Météo-France phenomenon IDs ("6,3"). Defaults to canicule
+   * only when omitted.
+   */
   phenomena?: string;
   /** Use canned fixtures instead of calling the API. */
   demo?: ScenarioName;
@@ -72,12 +76,15 @@ function MapMount({ apiBaseUrl, phenomenaIds, demo }: MapMountProps) {
 }
 
 function parsePhenomena(value: string | undefined): ReadonlyArray<string> | undefined {
-  if (!value) return undefined;
+  // This is a canicule widget: default to canicule-only so the map never paints
+  // unrelated vigilances (vent, avalanches, ...). Consumers opt out explicitly
+  // with data-phenomena="all".
+  if (!value) return [CANICULE_PHENOMENON_ID];
   if (value === 'all') return undefined;
   if (value === 'canicule') return [CANICULE_PHENOMENON_ID];
   // Allow raw comma-separated IDs for flexibility ("6,3").
   const ids = value.split(',').map((s) => s.trim()).filter(Boolean);
-  return ids.length > 0 ? ids : undefined;
+  return ids.length > 0 ? ids : [CANICULE_PHENOMENON_ID];
 }
 
 function resolveTarget(target: MountMapOptions['target']): HTMLElement {
