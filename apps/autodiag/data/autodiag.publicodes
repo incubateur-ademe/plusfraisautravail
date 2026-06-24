@@ -1,0 +1,29 @@
+# Auto-diagnostic "Plus frais au travail"
+#
+# Ce modèle évalue l'adaptation d'un site de travail aux vagues de chaleur
+# à travers 4 leviers d'action : sols, eaux pluviales, espaces verts, bâtiments.
+#
+# Chaque levier contient plusieurs questions. Le score de chaque thème est la
+# moyenne des scores des questions qui le composent (note sur 5).
+# Le score global est la moyenne des 4 thèmes.
+
+autodiag:
+  titre: Auto-diagnostic chaleur
+  description: >
+    Évaluez l'adaptation de votre site de travail aux vagues de chaleur
+    à travers 4 leviers d'action.
+  icônes: 🌡️
+
+autodiag . score global:
+  formule: moyenne(autodiag . thèmes . * . score)
+  unité: sans-unité
+  plafond: 5
+  description: Score global d'adaptation du site face à la chaleur
+
+autodiag . thèmes:
+  formule:
+    somme:
+      - sol
+      - eaux pluviales
+      - espaces verts
+      - bâtiments

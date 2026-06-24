@@ -1,0 +1,59 @@
+# Sols 🌱
+#
+# Ce thème couvre la perméabilité des sols et les actions de
+# désimperméabilisation sur le site de travail.
+
+autodiag . thèmes . sol:
+  icônes: 🌱
+  titre: Sols
+  description: >
+    La désimperméabilisation des sols permet de réduire les îlots de chaleur
+    urbains en favorisant l'infiltration de l'eau de pluie et en permettant
+    la végétalisation.
+  solutionPageId: 80
+
+autodiag . thèmes . sol . score:
+  formule: moyenne(autodiag . thèmes . sol . questions . * . score)
+  unité: sans-unité
+  plafond: 5
+
+# Question sol-1
+autodiag . thèmes . sol . questions . sol-1:
+  question: Autour de vos bâtiments, les sols sont-ils plutôt bétonnés ou perméables ?
+  formule:
+    une possibilité:
+      - "'La plupart des surfaces sont bétonnées ou goudronnées (cour, parking…).'"
+      - "'Il y a à la fois des surfaces bétonnées/goudronnées et des zones perméables (espaces verts, béton poreux…).'"
+      - "'La majorité des sols sont perméables, et l’eau de pluie peut s’infiltrer.'"
+
+autodiag . thèmes . sol . questions . sol-1 . score:
+  formule:
+    variations:
+      - si: autodiag . thèmes . sol . questions . sol-1 = "'La plupart des surfaces sont bétonnées ou goudronnées (cour, parking…).'"
+        alors: 0
+      - si: autodiag . thèmes . sol . questions . sol-1 = "'Il y a à la fois des surfaces bétonnées/goudronnées et des zones perméables (espaces verts, béton poreux…).'"
+        alors: 2.5
+      - si: autodiag . thèmes . sol . questions . sol-1 = "'La majorité des sols sont perméables, et l’eau de pluie peut s’infiltrer.'"
+        alors: 5
+
+# Question sol-2
+autodiag . thèmes . sol . questions . sol-2:
+  question: Avez-vous déjà agi pour rendre certains sols plus perméables ?
+  formule:
+    une possibilité:
+      - "'Non, rien n’a été fait pour le moment.'"
+      - "'Oui, on y réfléchit ou on a commencé à se renseigner (étude de faisabilité programmée ou en cours, ADOPTA, GRAIE...).'"
+      - "'Oui, des actions sont prévues (travaux programmés ou en cours…).'"
+      - "'Oui, des aménagements ont déjà été réalisés.'"
+
+autodiag . thèmes . sol . questions . sol-2 . score:
+  formule:
+    variations:
+      - si: autodiag . thèmes . sol . questions . sol-2 = "'Non, rien n’a été fait pour le moment.'"
+        alors: 0
+      - si: autodiag . thèmes . sol . questions . sol-2 = "'Oui, on y réfléchit ou on a commencé à se renseigner (étude de faisabilité programmée ou en cours, ADOPTA, GRAIE...).'"
+        alors: 1.25
+      - si: autodiag . thèmes . sol . questions . sol-2 = "'Oui, des actions sont prévues (travaux programmés ou en cours…).'"
+        alors: 2.5
+      - si: autodiag . thèmes . sol . questions . sol-2 = "'Oui, des aménagements ont déjà été réalisés.'"
+        alors: 5
