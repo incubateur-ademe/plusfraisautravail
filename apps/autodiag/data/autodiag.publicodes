@@ -17,6 +17,12 @@ autodiag:
   icônes: 🌡️
 
 # Le point de départ
+autodiag . contexte:
+  formule: oui
+
+autodiag . contexte . questions:
+  formule: oui
+
 autodiag . contexte . questions . q1:
   question: Votre organisation est-elle propriétaire de ses bâtiments de travail ?
   formule:
