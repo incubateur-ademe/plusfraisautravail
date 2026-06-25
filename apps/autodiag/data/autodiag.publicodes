@@ -14,16 +14,19 @@ autodiag:
     à travers 4 leviers d'action.
   icônes: 🌡️
 
+autodiag . thèmes:
+  # Règle parente pour les 4 thèmes — leur existence est nécessaire
+  # pour que les sous-règles enfants (sol, eaux pluviales, etc.)
+  # puissent être définies.
+  formule: oui
+
 autodiag . score global:
-  formule: moyenne(autodiag . thèmes . * . score)
+  formule:
+    moyenne:
+      - autodiag . thèmes . sol . score
+      - autodiag . thèmes . eaux pluviales . score
+      - autodiag . thèmes . espaces verts . score
+      - autodiag . thèmes . bâtiments . score
   unité: sans-unité
   plafond: 5
   description: Score global d'adaptation du site face à la chaleur
-
-autodiag . thèmes:
-  formule:
-    somme:
-      - sol
-      - eaux pluviales
-      - espaces verts
-      - bâtiments

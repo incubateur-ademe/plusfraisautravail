@@ -171,8 +171,7 @@ function getScoreMaps(): ScoreMap {
         for (const v of variations) {
           if (v.si && v.alors !== undefined) {
             // Extract the option value from the condition string
-            // e.g. `autodiag . thèmes . sol . questions . sol-1 = "'Some text'"`
-            const match = v.si.match(/= '(.+)'$/)
+            const match = v.si.match(/= "?'(.+)'"\s*$/)
             if (match) {
               qMaps[match[1]] = v.alors
             }
@@ -203,7 +202,8 @@ function buildQuestions(): Question[] {
     // Get the possibilities (option values)
     const possibilities = engine.getPossibilitiesFor(ruleName as `autodiag . ${string}`)
     const options: Option[] = (possibilities ?? []).map((p) => {
-      const val = String(p)
+      // p is an evaluated Possibility node with nodeValue containing the string
+      const val = String((p as { nodeValue?: unknown }).nodeValue ?? p)
       // Remove surrounding quotes from the value
       const cleanVal = val.replace(/^'|'$/g, '')
       const score = SCORE_MAPS[qId]?.[cleanVal] ?? 0
@@ -258,7 +258,7 @@ export function computeScores(answers: Answers): ThemeScore[] {
     const option = question.options.find((o) => o.score === scoreValue)
     if (!option) continue
 
-    situation[ruleName] = option.value
+    situation[ruleName] = `'${option.value}'`
   }
 
   // Clone engine and set situation
