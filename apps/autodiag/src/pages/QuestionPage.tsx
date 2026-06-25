@@ -67,6 +67,15 @@ export function QuestionPage() {
     }
   }
 
+  function handleBack() {
+    const currentIndex = QUESTIONS.findIndex((q) => q.id === question!.id);
+    if (currentIndex > 0) {
+      navigate(`/${QUESTIONS[currentIndex - 1].id}`);
+    } else {
+      navigate('/');
+    }
+  }
+
   return (
     <div ref={containerRef} className="autodiag-question-page">
       <ProgressHeader question={question} bloc={bloc} />
@@ -103,6 +112,14 @@ export function QuestionPage() {
               onClick={handleDontKnow}
             >
               {c.button_dont_know}
+            </Button>
+            <Button
+              priority="tertiary no outline"
+              iconId="fr-icon-arrow-left-line"
+              iconPosition="left"
+              onClick={handleBack}
+            >
+              {c.button_back}
             </Button>
           </div>
         </div>
