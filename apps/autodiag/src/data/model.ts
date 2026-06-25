@@ -152,7 +152,7 @@ const QUESTION_GRAPH: Record<string, Array<{ optionValue: string; nextId: string
   'desimpermeabilisation.q1': [
     { optionValue: "La plupart des surfaces sont bétonnées ou goudronnées (cour, parking...)", nextId: 'desimpermeabilisation.q2' },
     { optionValue: "Il y a à la fois des surfaces bétonnées/goudronnées et des zones perméables (espaces verts, béton poreux...)", nextId: 'desimpermeabilisation.q2' },
-    { optionValue: "La majorité des sols sont perméables, et l'eau de pluie peut s'infiltrer", nextId: 'eaux-pluviales.q1' },
+    { optionValue: "La majorité des sols sont perméables, et l''eau de pluie peut s''infiltrer", nextId: 'eaux-pluviales.q1' },
   ],
   'desimpermeabilisation.q2': [
     { optionValue: "Non, rien n'a été fait pour le moment", nextId: 'eaux-pluviales.q1' },
@@ -389,7 +389,18 @@ export const FIRST_QUESTION_ID = 'contexte.q1'
 export function getNextQuestionId(questionId: string, selectedLabel: string): string | null {
   const q = getQuestionById(questionId)
   if (!q) return null
-  const option = q.options.find((o) => o.label === selectedLabel)
+  // Normalize double single-quotes (YAML escaping artifact) for matching
+  const normalized = selectedLabel.replace(/''/g, "'")
+  // Try exact match first
+  let option = q.options.find((o) => o.label === selectedLabel)
+  if (!option) {
+    // Fallback: match after normalizing both sides
+    option = q.options.find((o) => o.label === normalized)
+  }
+  if (!option) {
+    // Ultimate fallback: normalize the option labels too
+    option = q.options.find((o) => o.label.replace(/''/g, "'") === normalized)
+  }
   return option?.suivant ?? null
 }
 
