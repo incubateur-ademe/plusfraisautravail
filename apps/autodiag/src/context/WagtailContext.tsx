@@ -25,9 +25,11 @@ export function WagtailProvider({ children }: { children: React.ReactNode }) {
     const toFetch: { themeId: string; pageId: number }[] = [];
 
     for (const theme of themes) {
-      if (!fetchedIds.current.has(theme.solutionPageId)) {
-        toFetch.push({ themeId: theme.id, pageId: theme.solutionPageId });
-        fetchedIds.current.add(theme.solutionPageId);
+      const pageId = theme.solutionPageId
+      if (pageId === undefined) continue
+      if (!fetchedIds.current.has(pageId)) {
+        toFetch.push({ themeId: theme.id, pageId });
+        fetchedIds.current.add(pageId);
       }
     }
 

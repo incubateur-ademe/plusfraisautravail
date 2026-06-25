@@ -1,17 +1,16 @@
 import { fr } from '@codegouvfr/react-dsfr';
 import { Badge } from '@codegouvfr/react-dsfr/Badge';
-import { Button } from '@codegouvfr/react-dsfr/Button';
 import type { ThemeScore } from '../data/questions';
-import { useWagtail } from '../context/WagtailContext';
-import { CONTENU, getSeverityLabel } from '../data/contenu';
+import { CONTENU } from '../data/contenu';
 
 type BadgeSeverity = 'error' | 'warning' | 'info' | 'new' | 'success';
 
-function getSeverity(score: number): BadgeSeverity {
-  if (score <= 1) return 'error';
-  if (score <= 2) return 'warning';
-  if (score <= 3) return 'info';
-  if (score <= 4) return 'new';
+function getSeverity(score: number, maxScore: number): BadgeSeverity {
+  const ratio = maxScore > 0 ? score / maxScore : 0;
+  if (ratio <= 0.2) return 'error';
+  if (ratio <= 0.4) return 'warning';
+  if (ratio <= 0.6) return 'info';
+  if (ratio <= 0.8) return 'new';
   return 'success';
 }
 
@@ -21,18 +20,12 @@ interface RecommendationCardProps {
 }
 
 export function RecommendationCard({ score, rank }: RecommendationCardProps) {
-  const { pages, loading } = useWagtail();
-  const severity = getSeverity(score.score);
+  const severity = getSeverity(score.score, score.maxScore);
   const displayScore = Math.round(score.score * 10) / 10;
-  const page = pages[score.themeId];
   const c = CONTENU.card;
 
-  const title = page?.title || null;
-  const description = page?.searchDescription || score.description;
-  const solutionUrl = page?.htmlUrl || null;
-
   return (
-    <div className={fr.cx('fr-card', 'fr-card--no-arrow')} aria-label={`Priorité ${rank} : ${score.themeLabel}`}>
+    <div className={fr.cx('fr-card', 'fr-card--no-arrow')} aria-label={`Priorité ${rank} : ${score.blocLabel}`}>
       <div className={fr.cx('fr-card__body')}>
         <div className={fr.cx('fr-card__content')}>
           <div className={fr.cx('fr-grid-row', 'fr-grid-row--middle', 'fr-mb-1w')} style={{ gap: '0.75rem', flexWrap: 'wrap' }}>
@@ -40,35 +33,18 @@ export function RecommendationCard({ score, rank }: RecommendationCardProps) {
               #{rank}
             </p>
             <span>
-              {score.themeIcon} <strong>{score.themeLabel}</strong>
+              {score.blocIcon} <strong>{score.blocLabel}</strong>
             </span>
             <Badge severity={severity} small>
-              {getSeverityLabel(score.score)}
+              {c.severity_labels.find((l: { max_score?: number }) => l.max_score === undefined || displayScore <= l.max_score)?.label ?? ''}
             </Badge>
             <span className={fr.cx('fr-ml-auto', 'fr-text--sm', 'fr-hint-text')}>
               <span className={fr.cx('fr-sr-only')}>Score : </span>
-              {displayScore}{c.score_suffix}
+              {displayScore}/{score.maxScore}
             </span>
           </div>
 
-          {title && <p className={fr.cx('fr-text--bold', 'fr-mb-1v')}>{title}</p>}
-          <p className={fr.cx('fr-mb-2w')}>{description}</p>
-
-          {loading && !solutionUrl ? (
-            <Button size="small" priority="secondary" disabled>
-              {c.button_loading}
-            </Button>
-          ) : solutionUrl ? (
-            <Button
-              linkProps={{ href: solutionUrl, target: '_blank', rel: 'noopener noreferrer' }}
-              size="small"
-              priority="secondary"
-              iconId="fr-icon-external-link-line"
-              iconPosition="right"
-            >
-              {c.button_solutions}
-            </Button>
-          ) : null}
+          <p className={fr.cx('fr-mb-2w')}>{score.description}</p>
         </div>
       </div>
     </div>

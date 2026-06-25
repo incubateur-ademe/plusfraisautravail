@@ -1,21 +1,23 @@
 /**
- * Publicodes model loader.
+ * Publicodes model loader — v2 (Construction)
  *
- * Imports all .publicodes files (as raw YAML strings), parses them,
- * and exposes the Publicodes Engine and typed helper functions.
+ * Nouvelle structure : 5 blocs (contexte, désimperméabilisation, eaux pluviales,
+ * îlots de rafraîchissement, bâtiments) + organisation du travail.
+ * Navigation conditionnelle : chaque option a un champ "suivant" qui détermine
+ * la question suivante (ou null pour terminer le questionnaire).
+ * Scores : 0-100 par question, somme par bloc (max 200-400).
  */
+
 import Engine from 'publicodes'
 import { load as parseYaml } from 'js-yaml'
 
-// Import .publicodes files as raw strings via the publicodes Vite plugin
+// Import des fichiers .publicodes
 import autodiagRules from '../../data/autodiag.publicodes'
-import solRules from '../../data/sol.publicodes'
+import desimpermeabilisationRules from '../../data/desimpermeabilisation.publicodes'
 import eauxPluvialesRules from '../../data/eaux-pluviales.publicodes'
-import espacesVertsRules from '../../data/espaces-verts.publicodes'
+import ilotsRules from '../../data/ilots-de-rafraichissement.publicodes'
 import batimentsRules from '../../data/batiments.publicodes'
 
-// Merge all rules into a single YAML document by concatenation
-// (Publicodes supports multi-document YAML, but we need a single merged object)
 function mergeRules(...yamlStrings: string[]): Record<string, unknown> {
   const merged: Record<string, unknown> = {}
   for (const yamlStr of yamlStrings) {
@@ -29,263 +31,422 @@ function mergeRules(...yamlStrings: string[]): Record<string, unknown> {
 
 const allRules = mergeRules(
   autodiagRules,
-  solRules,
+  desimpermeabilisationRules,
   eauxPluvialesRules,
-  espacesVertsRules,
+  ilotsRules,
   batimentsRules,
 )
 
-// Create the Publicodes engine
-export const engine = new Engine<`autodiag . ${string}`>(allRules as never)
+export const engine = new Engine(allRules as never)
 
-// ── Theme score type ───────────────────────────────────────
+// ── Types ──────────────────────────────────────────────────
 
 export interface ThemeScore {
-  themeId: string;
-  themeLabel: string;
-  themeIcon: string;
-  score: number;
-  description: string;
-}
-
-// ── Theme definitions ──────────────────────────────────────
-
-export interface ThemeDef {
-  id: string
-  label: string
-  icon: string
-  solutionPageId: number
+  blocId: string
+  blocLabel: string
+  blocIcon: string
+  score: number
+  maxScore: number
   description: string
 }
-
-export const THEMES: ThemeDef[] = [
-  {
-    id: 'sol',
-    label: 'Sols',
-    icon: '🌱',
-    solutionPageId: 80,
-    description:
-      "La désimperméabilisation des sols permet de réduire les îlots de chaleur urbains en favorisant l'infiltration de l'eau de pluie et en permettant la végétalisation.",
-  },
-  {
-    id: 'eaux pluviales',
-    label: 'Eaux pluviales',
-    icon: '💧',
-    solutionPageId: 81,
-    description:
-      'La valorisation des eaux pluviales contribue au rafraîchissement naturel du site en alimentant le sol et la végétation. De plus elle contribue à réduire les inondations par ruissellement.',
-  },
-  {
-    id: 'espaces verts',
-    label: 'Espaces verts',
-    icon: '🌳',
-    solutionPageId: 82,
-    description:
-      "Les espaces verts, notamment les arbres réduisent la température ambiante par évapotranspiration et grâce à leur ombrage, essentiels pour le confort des salariés. Alimentés en eau grâce à une gestion des eaux pluviales adaptée et plantés dans un sol perméable, les espaces verts permettent de créer des îlots de rafraîchissement. Ils accueillent également la biodiversité et stockent du carbone.",
-  },
-  {
-    id: 'bâtiments',
-    label: 'Bâtiments',
-    icon: '🏢',
-    solutionPageId: 77,
-    description:
-      "L'adaptation des bâtiments (isolation, protections solaires, systèmes de rafraîchissement) est cruciale pour maintenir des conditions de travail acceptables lors des vagues de chaleur. Les 2 enjeux sont d'empêcher au maximum la chaleur d'entrer dans le bâtiment puis de pouvoir le rafraîchir avec des solutions efficaces.",
-  },
-]
-
-// ── Question definitions ───────────────────────────────────
 
 export interface Option {
   label: string
   score: number
   /** The string value used in Publicodes (the option text) */
   value: string
+  /** Next question ID (null = terminal question / fin du questionnaire) */
+  suivant: string | null
 }
 
 export interface Question {
   id: string
-  themeId: string
+  blocId: string
+  blocLabel: string
+  blocIcon: string
   question: string
   options: Option[]
-  nextRoute: string | null
+  /** Previous question in linear history (set at runtime via FormContext) */
   prevRoute: string | null
 }
 
-/**
- * Question IDs in the order they appear in the auto-diagnostic.
- */
-const QUESTION_ORDER: string[] = [
-  'sol-1',
-  'sol-2',
-  'eaux-pluviales-1',
-  'eaux-pluviales-2',
-  'eaux-pluviales-3',
-  'espaces-verts-1',
-  'espaces-verts-2',
-  'batiments-1',
-  'batiments-2',
-  'batiments-3',
-  'batiments-4',
-]
+// ── Bloc definitions ───────────────────────────────────────
 
-/**
- * Mapping from question ID to its theme ID.
- */
-const THEME_FOR_QUESTION: Record<string, string> = {
-  'sol-1': 'sol',
-  'sol-2': 'sol',
-  'eaux-pluviales-1': 'eaux pluviales',
-  'eaux-pluviales-2': 'eaux pluviales',
-  'eaux-pluviales-3': 'eaux pluviales',
-  'espaces-verts-1': 'espaces verts',
-  'espaces-verts-2': 'espaces verts',
-  'batiments-1': 'bâtiments',
-  'batiments-2': 'bâtiments',
-  'batiments-3': 'bâtiments',
-  'batiments-4': 'bâtiments',
+export interface BlocDef {
+  id: string
+  label: string
+  icon: string
+  description: string
+  maxScore: number
+  solutionPageId?: number
 }
 
+export const BLOCS: BlocDef[] = [
+  {
+    id: 'contexte',
+    label: 'Contexte',
+    icon: '📋',
+    description: 'Questions préalables sur votre organisation.',
+    maxScore: 0,
+  },
+  {
+    id: 'désimperméabilisation des sols',
+    label: 'Désimperméabilisation des sols',
+    icon: '🌱',
+    description:
+      "Désimperméabiliser les sols, c'est passer du bitume à des revêtements de sols perméables et créer les meilleures conditions possibles pour accueillir vos plantations.",
+    maxScore: 200,
+  },
+  {
+    id: 'eaux pluviales',
+    label: 'Eaux pluviales',
+    icon: '💧',
+    description:
+      "Infiltrer l'eau de pluie dans le sol permet d'éviter le ruissellement et d'amener de l'humidité dans le sol, condition indispensable à la survie de vos plantations.",
+    maxScore: 300,
+  },
+  {
+    id: 'îlots de rafraîchissement',
+    label: 'Îlots de rafraîchissement',
+    icon: '🌳',
+    description:
+      "La végétation (arbres, arbustes...) peut apporter de l'ombre et contribuer à rafraîchir les zones de travail.",
+    maxScore: 200,
+  },
+  {
+    id: 'bâtiments',
+    label: 'Bâtiments',
+    icon: '🏢',
+    description:
+      "Préserver la fraîcheur dans le bâtiment, c'est à la fois limiter l'entrée de la chaleur et rafraîchir l'air de façon sobre et vertueuse.",
+    maxScore: 400,
+  },
+]
+
+/** @deprecated Use BLOCS instead */
+export const THEMES = BLOCS
+
+export const BLOC_BY_ID: Record<string, BlocDef> = {}
+for (const b of BLOCS) {
+  BLOC_BY_ID[b.id] = b
+}
+
+// ── Question definitions ───────────────────────────────────
+
 /**
- * Score mapping for each question.
- * Maps questionId -> option value -> score.
- * Extracted from the Publicodes rules.
+ * Définition du graphe de navigation : chaque entrée = { id, suivant par option }.
+ * "suivant": null = terminal (fin du questionnaire).
+ * Le point de départ est "contexte.q1".
  */
-type ScoreMap = Record<string, Record<string, number>>
+const QUESTION_GRAPH: Record<string, Array<{ optionValue: string; nextId: string | null }>> = {
+  'contexte.q1': [
+    { optionValue: 'Oui', nextId: 'desimpermeabilisation.q1' },
+    { optionValue: 'Non', nextId: 'contexte.q2' },
+  ],
+  'contexte.q2': [
+    { optionValue: "Oui, à l'intérieur et à l'extérieur", nextId: 'desimpermeabilisation.q1' },
+    { optionValue: "Oui, uniquement à l'intérieur", nextId: 'batiments.q1' },
+    { optionValue: "Oui, uniquement à l'extérieur", nextId: 'desimpermeabilisation.q1' },
+    { optionValue: 'Non', nextId: 'resultats' },
+  ],
+  'desimpermeabilisation.q1': [
+    { optionValue: "La plupart des surfaces sont bétonnées ou goudronnées (cour, parking...)", nextId: 'desimpermeabilisation.q2' },
+    { optionValue: "Il y a à la fois des surfaces bétonnées/goudronnées et des zones perméables (espaces verts, béton poreux...)", nextId: 'desimpermeabilisation.q2' },
+    { optionValue: "La majorité des sols sont perméables, et l'eau de pluie peut s'infiltrer", nextId: 'eaux-pluviales.q1' },
+  ],
+  'desimpermeabilisation.q2': [
+    { optionValue: "Non, rien n'a été fait pour le moment", nextId: 'eaux-pluviales.q1' },
+    { optionValue: "Oui, on y réfléchit ou on a commencé à se renseigner (étude de faisabilité programmée ou en cours, ADOPTA, GRAIE...)", nextId: 'eaux-pluviales.q1' },
+    { optionValue: "Oui, des actions sont prévues (travaux programmés ou en cours...)", nextId: 'eaux-pluviales.q1' },
+    { optionValue: "Oui, des aménagements ont déjà été réalisés", nextId: 'eaux-pluviales.q1' },
+  ],
+  'eaux-pluviales.q1': [
+    { optionValue: "Elle est principalement évacuée vers le réseau d'assainissement (canalisations, égouts...)", nextId: 'eaux-pluviales.q2' },
+    { optionValue: "Une partie est évacuée dans le réseau d'assainissement, une autre s'infiltre sur place", nextId: 'eaux-pluviales.q2' },
+    { optionValue: "Elle s'infiltre majoritairement sur place (espaces verts, chaussées perméables...)", nextId: 'eaux-pluviales.q2' },
+  ],
+  'eaux-pluviales.q2': [
+    { optionValue: "Non, rien n'a été fait pour le moment", nextId: 'eaux-pluviales.q3' },
+    { optionValue: "Oui, on y réfléchit ou on a commencé à se renseigner (agence de l'eau, ADOPTA, GRAIE...)", nextId: 'eaux-pluviales.q3' },
+    { optionValue: "Oui, des actions sont prévues (travaux de végétalisation interceptant les ruissellements prévus ou en cours...)", nextId: 'eaux-pluviales.q3' },
+    { optionValue: "Oui, des aménagements ont déjà été réalisés (travaux de végétalisation interceptant les ruissellements déjà réalisés...)", nextId: 'eaux-pluviales.q3' },
+  ],
+  'eaux-pluviales.q3': [
+    { optionValue: 'Non', nextId: 'ilots-rafraichissement.q1' },
+    { optionValue: 'Oui, en partie', nextId: 'ilots-rafraichissement.q1' },
+    { optionValue: 'Oui, de manière régulière', nextId: 'ilots-rafraichissement.q1' },
+  ],
+  'ilots-rafraichissement.q1': [
+    { optionValue: "Il n'y a pas d'espaces verts", nextId: 'ilots-rafraichissement.q2' },
+    { optionValue: "Il y a des espaces verts, mais ils sont surtout composés d'herbe", nextId: 'ilots-rafraichissement.q2' },
+    { optionValue: 'Il y a des arbres ou arbustes', nextId: 'ilots-rafraichissement.q2' },
+  ],
+  'ilots-rafraichissement.q2': [
+    { optionValue: "Aucune zone de travail n'est ombragée", nextId: 'batiments.q1' },
+    { optionValue: 'Quelques zones de travail sont ombragées', nextId: 'batiments.q1' },
+    { optionValue: 'Plusieurs zones de travail sont ombragées', nextId: 'batiments.q1' },
+    { optionValue: 'La majorité des zones de travail sont ombragées', nextId: 'batiments.q1' },
+  ],
+  'batiments.q1': [
+    { optionValue: "Rien n'a été engagé pour le moment", nextId: 'batiments.q2' },
+    { optionValue: "Des premières réflexions sont en cours (recherche d'infos, échanges avec des acteurs publics ou privés)", nextId: 'batiments.q2' },
+    { optionValue: 'Un audit thermique a été réalisé (ou est en cours)', nextId: 'batiments.q2' },
+    { optionValue: "Des travaux/aménagements sont programmés (ex : protections solaires, isolation...)", nextId: 'batiments.q2' },
+    { optionValue: "Des travaux/aménagements sont déjà en place (ex : protections solaires, isolation...)", nextId: 'batiments.q2' },
+    { optionValue: "Plusieurs types d'aménagements sont en place pour limiter la chaleur (protections solaires, isolation...), incluant des solutions fondées sur la nature (toiture et/ou murs végétalisés...)", nextId: 'batiments.q2' },
+  ],
+  'batiments.q2': [
+    { optionValue: "Rien n'a été engagé pour le moment", nextId: 'resultats' },
+    { optionValue: "Le sujet est en cours d'exploration (recherche d'informations, échanges...) auprès d'un centre de ressources public (ADEME, CSTB...) ou d'un prestataire privé (bureau d'études, entreprise...) et sensibilisation des équipes", nextId: 'resultats' },
+    { optionValue: 'Des travaux pour rafraîchir mes ambiances de travail sont programmés', nextId: 'batiments.q2bis' },
+    { optionValue: 'Des travaux pour rafraîchir mes ambiances de travail sont déjà en place', nextId: 'batiments.q2ter' },
+  ],
+  'batiments.q2bis': [
+    { optionValue: 'Ventilation naturelle', nextId: 'resultats' },
+    { optionValue: "Brasseurs d'air", nextId: 'resultats' },
+    { optionValue: "Système de rafraîchissement actif (rafraîchissement adiabatique, réseau de froid, PAC air/eau performante, géocooling...)", nextId: 'resultats' },
+    { optionValue: 'Système de climatisation conventionnelle', nextId: 'resultats' },
+  ],
+  'batiments.q2ter': [
+    { optionValue: 'Ventilation naturelle', nextId: null },
+    { optionValue: "Brasseurs d'air", nextId: null },
+    { optionValue: "Système de rafraîchissement actif (rafraîchissement adiabatique, réseau de froid, PAC air/eau performante, géocooling...)", nextId: null },
+    { optionValue: 'Système de climatisation conventionnelle', nextId: null },
+  ],
+}
 
-function getScoreMaps(): ScoreMap {
-  const maps: ScoreMap = {}
+const BLOC_FOR_QUESTION: Record<string, string> = {
+  'contexte.q1': 'contexte',
+  'contexte.q2': 'contexte',
+  'desimpermeabilisation.q1': 'désimperméabilisation des sols',
+  'desimpermeabilisation.q2': 'désimperméabilisation des sols',
+  'eaux-pluviales.q1': 'eaux pluviales',
+  'eaux-pluviales.q2': 'eaux pluviales',
+  'eaux-pluviales.q3': 'eaux pluviales',
+  'ilots-rafraichissement.q1': 'îlots de rafraîchissement',
+  'ilots-rafraichissement.q2': 'îlots de rafraîchissement',
+  'batiments.q1': 'bâtiments',
+  'batiments.q2': 'bâtiments',
+  'batiments.q2bis': 'bâtiments',
+  'batiments.q2ter': 'bâtiments',
+}
 
-  for (const qId of QUESTION_ORDER) {
-    // The score rule lives at: autodiag . thèmes . <theme> . questions . <qId> . score
-    // We can evaluate it with the Engine or extract the variations manually.
-    // For extraction, we get the rule's parsed definition.
-    const scoreRuleName = `autodiag . thèmes . ${THEME_FOR_QUESTION[qId]} . questions . ${qId} . score`
-    try {
-      const rule = engine.getRule(scoreRuleName as `autodiag . ${string}`)
-      // Navigate to the variations to extract score mappings
-      // The rule's rawNode contains the formula with variations
-      const rawNode = (rule as unknown as { rawNode?: { formule?: { variations?: Array<{ si?: string; alors?: number }> } } }).rawNode
-      const variations = rawNode?.formule?.variations
-      if (variations) {
-        const qMaps: Record<string, number> = {}
-        for (const v of variations) {
-          if (v.si && v.alors !== undefined) {
-            // Extract the option value from the condition string
-            const match = v.si.match(/= "?'(.+)'"\s*$/)
-            if (match) {
-              qMaps[match[1]] = v.alors
-            }
+const SHORT_ID_FOR_QUESTION: Record<string, string> = {
+  'contexte.q1': 'q1',
+  'contexte.q2': 'q2',
+  'desimpermeabilisation.q1': 'q1',
+  'desimpermeabilisation.q2': 'q2',
+  'eaux-pluviales.q1': 'q1',
+  'eaux-pluviales.q2': 'q2',
+  'eaux-pluviales.q3': 'q3',
+  'ilots-rafraichissement.q1': 'q1',
+  'ilots-rafraichissement.q2': 'q2',
+  'batiments.q1': 'q1',
+  'batiments.q2': 'q2',
+  'batiments.q2bis': 'q2bis',
+  'batiments.q2ter': 'q2ter',
+}
+
+const QUESTION_ORDER: string[] = [
+  'contexte.q1',
+  'contexte.q2',
+  'desimpermeabilisation.q1',
+  'desimpermeabilisation.q2',
+  'eaux-pluviales.q1',
+  'eaux-pluviales.q2',
+  'eaux-pluviales.q3',
+  'ilots-rafraichissement.q1',
+  'ilots-rafraichissement.q2',
+  'batiments.q1',
+  'batiments.q2',
+  'batiments.q2bis',
+  'batiments.q2ter',
+]
+
+type OptionDef = { score: number; suivant: string | null }
+
+function extractOptionDefs(): Record<string, Record<string, OptionDef>> {
+  const map: Record<string, Record<string, OptionDef>> = {}
+
+  for (const [qId, edges] of Object.entries(QUESTION_GRAPH)) {
+    const optionMap: Record<string, OptionDef> = {}
+    const blocId = BLOC_FOR_QUESTION[qId]
+    if (!blocId) continue
+
+    const shortId = SHORT_ID_FOR_QUESTION[qId]
+    if (!shortId) continue
+    const scoreRuleName = `autodiag . ${blocId} . questions . ${shortId} . score`
+
+    for (const edge of edges) {
+      const score = getScoreForValue(scoreRuleName, edge.optionValue)
+      optionMap[edge.optionValue] = { score, suivant: edge.nextId }
+    }
+    map[qId] = optionMap
+  }
+
+  return map
+}
+
+function getScoreForValue(scoreRuleName: string, optionValue: string): number {
+  try {
+    const rule = engine.getRule(scoreRuleName as never)
+    const rawNode = (rule as unknown as { rawNode?: { formule?: { variations?: Array<{ si?: string; alors?: number }> } } }).rawNode
+    const variations = rawNode?.formule?.variations
+    if (variations) {
+      for (const v of variations) {
+        if (v.si) {
+          const match = v.si.match(/= "?'(.+)'"/)
+          if (match && match[1] === optionValue) {
+            return v.alors ?? 0
           }
         }
-        maps[qId] = qMaps
       }
+    }
+  } catch {
+    // fallback
+  }
+  return 0
+}
+
+const OPTION_DEFS = extractOptionDefs()
+
+function buildQuestions(): Question[] {
+  const questions: Question[] = []
+
+  for (const qId of QUESTION_ORDER) {
+    const blocId = BLOC_FOR_QUESTION[qId]
+    if (!blocId) {
+      console.warn(`No bloc for question ${qId}`)
+      continue
+    }
+    const bloc = BLOC_BY_ID[blocId]
+    if (!bloc) {
+      console.warn(`No bloc definition for ${blocId}`)
+      continue
+    }
+
+    const shortId = SHORT_ID_FOR_QUESTION[qId]
+    if (!shortId) {
+      console.warn(`No short ID mapping for ${qId}`)
+      continue
+    }
+    const ruleName = `autodiag . ${blocId} . questions . ${shortId}`
+
+    let questionText = qId
+    try {
+      const rule = engine.getRule(ruleName as never)
+      const rawNode = (rule as unknown as { rawNode?: { question?: string } }).rawNode
+      questionText = rawNode?.question ?? qId
     } catch {
       // fallback
     }
-  }
 
-  return maps
-}
+    let possibilities: unknown[] = []
+    try {
+      const p = engine.getPossibilitiesFor(ruleName as never)
+      possibilities = p ?? []
+    } catch {
+      // fallback
+    }
 
-const SCORE_MAPS = getScoreMaps()
-
-function buildQuestions(): Question[] {
-  return QUESTION_ORDER.map((qId, i) => {
-    const themeId = THEME_FOR_QUESTION[qId]
-    const ruleName = `autodiag . thèmes . ${themeId} . questions . ${qId}`
-
-    // Get the question text from the rule
-    const rule = engine.getRule(ruleName as `autodiag . ${string}`)
-    const metadatas = (rule as unknown as { rawNode?: { question?: string; formule?: unknown } }).rawNode
-    const questionText = metadatas?.question ?? qId
-
-    // Get the possibilities (option values)
-    const possibilities = engine.getPossibilitiesFor(ruleName as `autodiag . ${string}`)
-    const options: Option[] = (possibilities ?? []).map((p) => {
-      // p is an evaluated Possibility node with nodeValue containing the string
+    const options: Option[] = possibilities.map((p) => {
       const val = String((p as { nodeValue?: unknown }).nodeValue ?? p)
-      // Remove surrounding quotes from the value
       const cleanVal = val.replace(/^'|'$/g, '')
-      const score = SCORE_MAPS[qId]?.[cleanVal] ?? 0
+      const def = OPTION_DEFS[qId]?.[cleanVal]
       return {
         label: cleanVal,
-        score,
+        score: def?.score ?? 0,
         value: val,
+        suivant: def?.suivant ?? null,
       }
     })
 
-    return {
+    questions.push({
       id: qId,
-      themeId,
+      blocId,
+      blocLabel: bloc.label,
+      blocIcon: bloc.icon,
       question: questionText,
       options,
-      nextRoute: i < QUESTION_ORDER.length - 1 ? `/${QUESTION_ORDER[i + 1]}` : '/resultats',
-      prevRoute: i > 0 ? `/${QUESTION_ORDER[i - 1]}` : null,
-    }
-  })
+      prevRoute: null,
+    })
+  }
+
+  return questions
 }
 
-/**
- * Build the questions the first time they are loaded.
- */
 export const QUESTIONS: Question[] = buildQuestions()
 export const QUESTION_IDS = QUESTIONS.map((q) => q.id)
+
+// ── Helpers ────────────────────────────────────────────────
+
+export function getQuestionById(id: string): Question | undefined {
+  return QUESTIONS.find((q) => q.id === id)
+}
+
+export const FIRST_QUESTION_ID = 'contexte.q1'
+
+export function getNextQuestionId(questionId: string, selectedLabel: string): string | null {
+  const q = getQuestionById(questionId)
+  if (!q) return null
+  const option = q.options.find((o) => o.label === selectedLabel)
+  return option?.suivant ?? null
+}
 
 // ── Scoring ────────────────────────────────────────────────
 
 export type Answers = Record<string, number>
 
-/**
- * Compute scores for all themes using the Publicodes engine.
- *
- * Takes the user's answers (questionId -> selected option value string)
- * and sets them as the engine situation, then evaluates each theme score.
- */
 export function computeScores(answers: Answers): ThemeScore[] {
-  // Build the engine situation from answers
-  // Publicodes expects: { "autodiag . thèmes . <theme> . questions . <qId>": "'<option value>'" }
   const situation: Record<string, unknown> = {}
   for (const [qId, scoreValue] of Object.entries(answers)) {
-    if (scoreValue < 0) continue // "Je ne sais pas" — skip
-    const themeId = THEME_FOR_QUESTION[qId]
-    if (!themeId) continue
-
-    const ruleName = `autodiag . thèmes . ${themeId} . questions . ${qId}`
-    // Find the option label for this score
-    const question = QUESTIONS.find((q) => q.id === qId)
+    if (scoreValue < 0) continue
+    const question = getQuestionById(qId)
     if (!question) continue
-
     const option = question.options.find((o) => o.score === scoreValue)
     if (!option) continue
-
+    const shortId = SHORT_ID_FOR_QUESTION[qId]
+    if (!shortId) continue
+    const ruleName = `autodiag . ${question.blocId} . questions . ${shortId}`
     situation[ruleName] = `'${option.value}'`
   }
 
-  // Clone engine and set situation
   const localEngine = engine.shallowCopy()
   localEngine.setSituation(situation as never)
 
-  // Evaluate each theme's score
-  return THEMES.map((theme) => {
-    const scoreRule = `autodiag . thèmes . ${theme.id} . score`
+  return BLOCS.map((bloc) => {
+    if (bloc.maxScore === 0) {
+      return {
+        blocId: bloc.id,
+        blocLabel: bloc.label,
+        blocIcon: bloc.icon,
+        score: 0,
+        maxScore: 0,
+        description: bloc.description,
+      }
+    }
+
+    const scoreRule = `autodiag . ${bloc.id} . score`
     try {
       const result = localEngine.evaluate(scoreRule)
       const rawScore = (result as unknown as { nodeValue?: number }).nodeValue ?? 0
       const score = typeof rawScore === 'number' && !Number.isNaN(rawScore) ? rawScore : 0
       return {
-        themeId: theme.id,
-        themeLabel: theme.label,
-        themeIcon: theme.icon,
+        blocId: bloc.id,
+        blocLabel: bloc.label,
+        blocIcon: bloc.icon,
         score,
-        description: theme.description,
+        maxScore: bloc.maxScore,
+        description: bloc.description,
       }
     } catch {
       return {
-        themeId: theme.id,
-        themeLabel: theme.label,
-        themeIcon: theme.icon,
+        blocId: bloc.id,
+        blocLabel: bloc.label,
+        blocIcon: bloc.icon,
         score: 0,
-        description: theme.description,
+        maxScore: bloc.maxScore,
+        description: bloc.description,
       }
     }
   })

@@ -1,32 +1,40 @@
-# Auto-diagnostic "Plus frais au travail"
+# Auto-diagnostic "Construction — Plus frais au travail"
 #
 # Ce modèle évalue l'adaptation d'un site de travail aux vagues de chaleur
-# à travers 4 leviers d'action : sols, eaux pluviales, espaces verts, bâtiments.
+# à travers 5 blocs : contexte, désimperméabilisation des sols, eaux pluviales,
+# îlots de rafraîchissement, bâtiments, organisation du travail (non finalisé).
 #
-# Chaque levier contient plusieurs questions. Le score de chaque thème est la
-# moyenne des scores des questions qui le composent (note sur 5).
-# Le score global est la moyenne des 4 thèmes.
+# Chaque bloc contient plusieurs questions. Le score de chaque bloc est la
+# somme des scores de ses questions (sur une base 0-200 pour les blocs
+# principaux). Le score global est la somme normalisée de tous les blocs.
 
 autodiag:
   titre: Auto-diagnostic chaleur
   description: >
-    Évaluez l'adaptation de votre site de travail aux vagues de chaleur
-    à travers 4 leviers d'action.
+    Auto-évaluation permettant d'identifier des leviers de rafraîchissement
+    d'un site (sols, eaux pluviales, végétalisation, bâtiments, organisation
+    du travail).
   icônes: 🌡️
 
-autodiag . thèmes:
-  # Règle parente pour les 4 thèmes — leur existence est nécessaire
-  # pour que les sous-règles enfants (sol, eaux pluviales, etc.)
-  # puissent être définies.
-  formule: oui
-
-autodiag . score global:
+# Le point de départ
+autodiag . contexte . questions . q1:
+  question: Votre organisation est-elle propriétaire de ses bâtiments de travail ?
   formule:
-    moyenne:
-      - autodiag . thèmes . sol . score
-      - autodiag . thèmes . eaux pluviales . score
-      - autodiag . thèmes . espaces verts . score
-      - autodiag . thèmes . bâtiments . score
-  unité: sans-unité
-  plafond: 5
-  description: Score global d'adaptation du site face à la chaleur
+    une possibilité:
+      - "'Oui'"
+      - "'Non'"
+
+autodiag . contexte . questions . q1 . score:
+  formule: 0  # question de contexte, pas de score
+
+autodiag . contexte . questions . q2:
+  question: Pouvez-vous réaliser des travaux sur ces bâtiments ?
+  formule:
+    une possibilité:
+      - "'Oui, à l''intérieur et à l''extérieur'"
+      - "'Oui, uniquement à l''intérieur'"
+      - "'Oui, uniquement à l''extérieur'"
+      - "'Non'"
+
+autodiag . contexte . questions . q2 . score:
+  formule: 0  # question de contexte, pas de score

@@ -4,11 +4,11 @@ import type { Option } from '../data/questions';
 interface QuestionCardProps {
   questionId: string;
   options: Option[];
-  selectedScore: number | undefined;
-  onSelect: (score: number) => void;
+  selectedLabel: string | undefined;
+  onSelect: (score: number, label: string) => void;
 }
 
-export function QuestionCard({ questionId, options, selectedScore, onSelect }: QuestionCardProps) {
+export function QuestionCard({ questionId, options, selectedLabel, onSelect }: QuestionCardProps) {
   return (
     <RadioButtons
       name={questionId}
@@ -17,8 +17,8 @@ export function QuestionCard({ questionId, options, selectedScore, onSelect }: Q
         label: option.label,
         value: String(option.score),
         nativeInputProps: {
-          checked: selectedScore === option.score,
-          onChange: () => onSelect(option.score),
+          checked: selectedLabel === option.label,
+          onChange: () => onSelect(option.score, option.label),
         },
       }))}
     />

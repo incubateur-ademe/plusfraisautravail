@@ -5,19 +5,17 @@ import { Button } from '@codegouvfr/react-dsfr/Button';
 import { ProgressHeader } from '../components/ProgressHeader';
 import { QuestionCard } from '../components/QuestionCard';
 import { useFormContext } from '../context/FormContext';
-import { useWagtail } from '../context/WagtailContext';
-import { QUESTIONS, THEMES } from '../data/questions';
+import { QUESTIONS, getNextQuestionId, BLOC_BY_ID } from '../data/questions';
 import { CONTENU } from '../data/contenu';
 
 export function QuestionPage() {
   const { questionId } = useParams<{ questionId: string }>();
   const navigate = useNavigate();
-  const { answers, setAnswer } = useFormContext();
-  const { prefetchSolutionPages } = useWagtail();
+  const { setAnswer, answerLabels } = useFormContext();
   const containerRef = useRef<HTMLDivElement>(null);
 
   const question = QUESTIONS.find((q) => q.id === questionId);
-  const theme = THEMES.find((t) => t.id === question?.themeId);
+  const bloc = question ? BLOC_BY_ID[question.blocId] : undefined;
 
   useEffect(() => {
     if (!question) {
@@ -39,36 +37,39 @@ export function QuestionPage() {
 
   if (!question) return null;
 
-  const rawAnswer = answers[question.id];
-  const selectedScore = rawAnswer !== undefined && rawAnswer >= 0 ? rawAnswer : undefined;
-  const hasSelection = selectedScore !== undefined;
+  const selectedLabel = answerLabels[question.id];
+  const hasSelection = selectedLabel !== undefined;
   const c = CONTENU.navigation;
 
-  function triggerPrefetch() {
-    if (question!.id === QUESTIONS[0].id) {
-      prefetchSolutionPages(THEMES);
-    }
-  }
-
-  function handleSelect(score: number) {
-    setAnswer(question!.id, score);
-    triggerPrefetch();
+  function handleSelect(score: number, label: string) {
+    setAnswer(question!.id, score, label);
   }
 
   function handleNext() {
-    triggerPrefetch();
-    navigate(question!.nextRoute ?? '/resultats');
+    if (!selectedLabel) return;
+    const nextId = getNextQuestionId(question!.id, selectedLabel);
+    if (nextId === 'resultats' || nextId === null) {
+      navigate('/resultats');
+    } else {
+      navigate(`/${nextId}`);
+    }
   }
 
   function handleDontKnow() {
-    setAnswer(question!.id, -1);
-    triggerPrefetch();
-    navigate(question!.nextRoute ?? '/resultats');
+    setAnswer(question!.id, -1, '');
+    // "Je ne sais pas" skip à la question suivante dans l'ordre linéaire par défaut
+    const currentIndex = QUESTIONS.findIndex((q) => q.id === question!.id);
+    const nextInOrder = currentIndex < QUESTIONS.length - 1 ? QUESTIONS[currentIndex + 1].id : null;
+    if (nextInOrder) {
+      navigate(`/${nextInOrder}`);
+    } else {
+      navigate('/resultats');
+    }
   }
 
   return (
     <div ref={containerRef} className="autodiag-question-page">
-      <ProgressHeader question={question} theme={theme} />
+      <ProgressHeader question={question} bloc={bloc} />
 
       <div className={`${fr.cx('fr-container', 'fr-py-4w')} autodiag-question-body`}>
         <div className={fr.cx('fr-grid-row', 'fr-grid-row--center')}>
@@ -78,7 +79,7 @@ export function QuestionPage() {
             <QuestionCard
               questionId={question.id}
               options={question.options}
-              selectedScore={selectedScore}
+              selectedLabel={selectedLabel}
               onSelect={handleSelect}
             />
           </div>
