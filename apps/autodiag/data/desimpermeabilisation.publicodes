@@ -8,6 +8,7 @@
 autodiag . désimperméabilisation des sols:
   icônes: 🌱
   titre: Désimperméabilisation des sols
+  applicable si: autodiag . contexte . blocs extérieurs applicables
   description: >
     Désimperméabiliser les sols, c'est passer du bitume à des revêtements
     de sols perméables et créer les meilleures conditions possibles pour
@@ -38,18 +39,20 @@ autodiag . désimperméabilisation des sols . questions . q1 . score:
   formule:
     variations:
       - si: |-
-          autodiag . désimperméabilisation des sols . questions . q1 = "'La plupart des surfaces sont bétonnées ou goudronnées (cour, parking...)'"
+          autodiag . désimperméabilisation des sols . questions . q1 = 'La plupart des surfaces sont bétonnées ou goudronnées (cour, parking...)'
         alors: 0
       - si: |-
-          autodiag . désimperméabilisation des sols . questions . q1 = "'Il y a à la fois des surfaces bétonnées/goudronnées et des zones perméables (espaces verts, béton poreux...)'"
+          autodiag . désimperméabilisation des sols . questions . q1 = 'Il y a à la fois des surfaces bétonnées/goudronnées et des zones perméables (espaces verts, béton poreux...)'
         alors: 50
       - si: |-
-          autodiag . désimperméabilisation des sols . questions . q1 = "'La majorité des sols sont perméables, et l''eau de pluie peut s''infiltrer'"
+          autodiag . désimperméabilisation des sols . questions . q1 = 'La majorité des sols sont perméables, et l''eau de pluie peut s''infiltrer'
         alors: 100
+      - sinon: 0
 
-# Question q2
+# Question q2 — sautée si les sols sont déjà majoritairement perméables
 autodiag . désimperméabilisation des sols . questions . q2:
   question: Avez-vous déjà agi pour rendre certains sols plus perméables ?
+  non applicable si: autodiag . désimperméabilisation des sols . questions . q1 = 'La majorité des sols sont perméables, et l''eau de pluie peut s''infiltrer'
   formule:
     une possibilité:
       - "'Non, rien n''a été fait pour le moment'"
@@ -61,14 +64,15 @@ autodiag . désimperméabilisation des sols . questions . q2 . score:
   formule:
     variations:
       - si: |-
-          autodiag . désimperméabilisation des sols . questions . q2 = "'Non, rien n''a été fait pour le moment'"
+          autodiag . désimperméabilisation des sols . questions . q2 = 'Non, rien n''a été fait pour le moment'
         alors: 0
       - si: |-
-          autodiag . désimperméabilisation des sols . questions . q2 = "'Oui, on y réfléchit ou on a commencé à se renseigner (étude de faisabilité programmée ou en cours, ADOPTA, GRAIE...)'"
+          autodiag . désimperméabilisation des sols . questions . q2 = 'Oui, on y réfléchit ou on a commencé à se renseigner (étude de faisabilité programmée ou en cours, ADOPTA, GRAIE...)'
         alors: 25
       - si: |-
-          autodiag . désimperméabilisation des sols . questions . q2 = "'Oui, des actions sont prévues (travaux programmés ou en cours...)'"
+          autodiag . désimperméabilisation des sols . questions . q2 = 'Oui, des actions sont prévues (travaux programmés ou en cours...)'
         alors: 50
       - si: |-
-          autodiag . désimperméabilisation des sols . questions . q2 = "'Oui, des aménagements ont déjà été réalisés'"
+          autodiag . désimperméabilisation des sols . questions . q2 = 'Oui, des aménagements ont déjà été réalisés'
         alors: 100
+      - sinon: 0

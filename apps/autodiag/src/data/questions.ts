@@ -13,6 +13,7 @@ export {
   FIRST_QUESTION_ID,
   getQuestionById,
   getNextQuestionId,
+  isQuestionApplicable,
   computeScores,
 } from './model'
 
@@ -22,5 +23,6 @@ export type {
   BlocDef,
   BlocDef as Theme,
   Answers,
+  AnswerLabels,
   ThemeScore,
 } from './model'

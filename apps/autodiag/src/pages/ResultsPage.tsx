@@ -10,7 +10,7 @@ import { CONTENU } from '../data/contenu';
 
 export function ResultsPage() {
   const navigate = useNavigate();
-  const { answers, isComplete, resetAnswers } = useFormContext();
+  const { answerLabels, isComplete, resetAnswers } = useFormContext();
   const c = CONTENU.results;
 
   useEffect(() => {
@@ -21,7 +21,7 @@ export function ResultsPage() {
 
   if (!isComplete) return null;
 
-  const scores = computeScores(answers);
+  const scores = computeScores(answerLabels);
   // Filter out contexte (maxScore = 0) for display
   const displayScores = scores.filter((s) => s.maxScore > 0);
   const sortedScores = [...displayScores].sort((a, b) => {

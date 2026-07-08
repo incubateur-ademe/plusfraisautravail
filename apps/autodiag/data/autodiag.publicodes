@@ -35,6 +35,7 @@ autodiag . contexte . questions . q1 . score:
 
 autodiag . contexte . questions . q2:
   question: Pouvez-vous réaliser des travaux sur ces bâtiments ?
+  applicable si: autodiag . contexte . questions . q1 = 'Non'
   formule:
     une possibilité:
       - "'Oui, à l''intérieur et à l''extérieur'"
@@ -44,3 +45,34 @@ autodiag . contexte . questions . q2:
 
 autodiag . contexte . questions . q2 . score:
   formule: 0  # question de contexte, pas de score
+
+# ── Applicabilité des blocs (dérivée de l'arbre de décision, cf. questions.pdf) ──
+#
+# Ces règles pilotent l'enchaînement des questions : le front demande la
+# première question non répondue dont la règle est applicable (même principe
+# que Nos Gestes Climat : ordre fixe + « non applicable si »).
+
+autodiag . contexte . blocs extérieurs applicables:
+  titre: Les blocs « espaces extérieurs » sont-ils pertinents ?
+  description: >
+    Désimperméabilisation, eaux pluviales et îlots de rafraîchissement ne sont
+    proposés que si l'organisation est propriétaire ou peut réaliser des
+    travaux à l'extérieur.
+  formule:
+    une de ces conditions:
+      - autodiag . contexte . questions . q1 = 'Oui'
+      - autodiag . contexte . questions . q2 = 'Oui, à l''intérieur et à l''extérieur'
+      - autodiag . contexte . questions . q2 = 'Oui, uniquement à l''extérieur'
+
+autodiag . contexte . bloc bâtiments applicable:
+  titre: Le bloc « bâtiments » est-il pertinent ?
+  description: >
+    Le bloc bâtiments est proposé sauf si aucuns travaux ne sont possibles
+    (q2 = Non). NOTE (questions.pdf) : il reste proposé pour « Oui, uniquement
+    à l'extérieur », comme dans le parcours historique — à trancher.
+  formule:
+    une de ces conditions:
+      - autodiag . contexte . questions . q1 = 'Oui'
+      - autodiag . contexte . questions . q2 = 'Oui, à l''intérieur et à l''extérieur'
+      - autodiag . contexte . questions . q2 = 'Oui, uniquement à l''intérieur'
+      - autodiag . contexte . questions . q2 = 'Oui, uniquement à l''extérieur'

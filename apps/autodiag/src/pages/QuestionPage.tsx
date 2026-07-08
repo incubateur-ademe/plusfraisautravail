@@ -11,7 +11,7 @@ import { CONTENU } from '../data/contenu';
 export function QuestionPage() {
   const { questionId } = useParams<{ questionId: string }>();
   const navigate = useNavigate();
-  const { setAnswer, answerLabels } = useFormContext();
+  const { setAnswer, answerLabels, markCompleted } = useFormContext();
   const containerRef = useRef<HTMLDivElement>(null);
 
   const question = QUESTIONS.find((q) => q.id === questionId);
@@ -41,14 +41,18 @@ export function QuestionPage() {
   const hasSelection = selectedLabel !== undefined;
   const c = CONTENU.navigation;
 
+  const dontKnowLabel = c.button_dont_know;
+
   function handleSelect(score: number, label: string) {
     setAnswer(question!.id, score, label);
   }
 
-  function handleNext() {
-    if (!selectedLabel) return;
-    const nextId = getNextQuestionId(question!.id, selectedLabel);
-    if (nextId === 'resultats' || nextId === null) {
+  function goToNext(labels: Record<string, string>) {
+    // Prochaine question applicable selon le moteur Publicodes
+    // (ordre fixe + « non applicable si », cf. model.ts).
+    const nextId = getNextQuestionId(question!.id, labels);
+    if (nextId === null) {
+      markCompleted();
       navigate('/resultats');
     } else {
       navigate(`/${nextId}`);
@@ -56,24 +60,23 @@ export function QuestionPage() {
   }
 
   function handleDontKnow() {
-    setAnswer(question!.id, -1, '');
-    // "Je ne sais pas" skip à la question suivante dans l'ordre linéaire par défaut
-    const currentIndex = QUESTIONS.findIndex((q) => q.id === question!.id);
-    const nextInOrder = currentIndex < QUESTIONS.length - 1 ? QUESTIONS[currentIndex + 1].id : null;
-    if (nextInOrder) {
-      navigate(`/${nextInOrder}`);
-    } else {
-      navigate('/resultats');
-    }
+    // Enregistre la réponse et passe directement à la question suivante.
+    // setAnswer est asynchrone : on passe la réponse explicitement (le label
+    // « Je ne sais pas » est ignoré par la situation Publicodes, mais il doit
+    // écraser une éventuelle réponse précédente).
+    setAnswer(question!.id, -1, dontKnowLabel);
+    goToNext({ ...answerLabels, [question!.id]: dontKnowLabel });
+  }
+
+  function handleNext() {
+    if (!selectedLabel) return;
+    goToNext(answerLabels);
   }
 
   function handleBack() {
-    const currentIndex = QUESTIONS.findIndex((q) => q.id === question!.id);
-    if (currentIndex > 0) {
-      navigate(`/${QUESTIONS[currentIndex - 1].id}`);
-    } else {
-      navigate('/');
-    }
+    // L'historique navigateur suit exactement le chemin parcouru (navigation
+    // conditionnelle incluse), contrairement à l'ordre linéaire des questions.
+    navigate(-1);
   }
 
   return (
@@ -91,6 +94,10 @@ export function QuestionPage() {
               selectedLabel={selectedLabel}
               onSelect={handleSelect}
             />
+
+            <Button priority="tertiary" onClick={handleDontKnow}>
+              {dontKnowLabel}
+            </Button>
           </div>
         </div>
       </div>
@@ -106,12 +113,6 @@ export function QuestionPage() {
               disabled={!hasSelection}
             >
               {c.button_next}
-            </Button>
-            <Button
-              priority="tertiary no outline"
-              onClick={handleDontKnow}
-            >
-              {c.button_dont_know}
             </Button>
             <Button
               priority="tertiary no outline"

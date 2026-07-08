@@ -9,6 +9,7 @@
 autodiag . eaux pluviales:
   icônes: 💧
   titre: Eaux pluviales
+  applicable si: autodiag . contexte . blocs extérieurs applicables
   description: >
     Infiltrer l'eau de pluie dans le sol, et notamment dans les espaces
     verts, permet d'éviter le ruissellement des eaux pluviales et
@@ -41,14 +42,15 @@ autodiag . eaux pluviales . questions . q1 . score:
   formule:
     variations:
       - si: |-
-          autodiag . eaux pluviales . questions . q1 = "'Elle est principalement évacuée vers le réseau d''assainissement (canalisations, égouts...)'"
+          autodiag . eaux pluviales . questions . q1 = 'Elle est principalement évacuée vers le réseau d''assainissement (canalisations, égouts...)'
         alors: 0
       - si: |-
-          autodiag . eaux pluviales . questions . q1 = "'Une partie est évacuée dans le réseau d''assainissement, une autre s''infiltre sur place'"
+          autodiag . eaux pluviales . questions . q1 = 'Une partie est évacuée dans le réseau d''assainissement, une autre s''infiltre sur place'
         alors: 50
       - si: |-
-          autodiag . eaux pluviales . questions . q1 = "'Elle s''infiltre majoritairement sur place (espaces verts, chaussées perméables...)'"
+          autodiag . eaux pluviales . questions . q1 = 'Elle s''infiltre majoritairement sur place (espaces verts, chaussées perméables...)'
         alors: 100
+      - sinon: 0
 
 # Question q2
 autodiag . eaux pluviales . questions . q2:
@@ -64,17 +66,18 @@ autodiag . eaux pluviales . questions . q2 . score:
   formule:
     variations:
       - si: |-
-          autodiag . eaux pluviales . questions . q2 = "'Non, rien n''a été fait pour le moment'"
+          autodiag . eaux pluviales . questions . q2 = 'Non, rien n''a été fait pour le moment'
         alors: 0
       - si: |-
-          autodiag . eaux pluviales . questions . q2 = "'Oui, on y réfléchit ou on a commencé à se renseigner (agence de l''eau, ADOPTA, GRAIE...)'"
+          autodiag . eaux pluviales . questions . q2 = 'Oui, on y réfléchit ou on a commencé à se renseigner (agence de l''eau, ADOPTA, GRAIE...)'
         alors: 25
       - si: |-
-          autodiag . eaux pluviales . questions . q2 = "'Oui, des actions sont prévues (travaux de végétalisation interceptant les ruissellements prévus ou en cours...)'"
+          autodiag . eaux pluviales . questions . q2 = 'Oui, des actions sont prévues (travaux de végétalisation interceptant les ruissellements prévus ou en cours...)'
         alors: 50
       - si: |-
-          autodiag . eaux pluviales . questions . q2 = "'Oui, des aménagements ont déjà été réalisés (travaux de végétalisation interceptant les ruissellements déjà réalisés...)'"
+          autodiag . eaux pluviales . questions . q2 = 'Oui, des aménagements ont déjà été réalisés (travaux de végétalisation interceptant les ruissellements déjà réalisés...)'
         alors: 100
+      - sinon: 0
 
 # Question q3 (pas de score dans le document source)
 autodiag . eaux pluviales . questions . q3:
