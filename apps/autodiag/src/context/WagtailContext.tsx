@@ -76,6 +76,7 @@ export function WagtailProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useWagtail(): WagtailContextValue {
   const ctx = useContext(WagtailContext);
   if (!ctx) throw new Error('useWagtail must be used inside WagtailProvider');

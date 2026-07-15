@@ -1,8 +1,8 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 const BASE = '/autodiag/';
 
-async function selectAndWait(page: any, nth: number) {
+async function selectAndWait(page: Page, nth: number) {
   const label = page.locator('.fr-radio-group').nth(nth);
   await label.click();
   await page.waitForTimeout(200);

@@ -89,6 +89,7 @@ export function FormProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useFormContext(): FormContextValue {
   const ctx = useContext(FormContext);
   if (!ctx) throw new Error('useFormContext must be used inside FormProvider');
