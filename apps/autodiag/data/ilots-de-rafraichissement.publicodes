@@ -1,0 +1,76 @@
+# Îlots de rafraîchissement 🌳
+#
+# La végétation (arbres, arbustes...) peut apporter de l'ombre et
+# contribuer à rafraîchir les zones de travail, notamment en extérieur
+# et sur les parkings.
+
+autodiag . îlots de rafraîchissement:
+  icônes: 🌳
+  titre: Îlots de rafraîchissement
+  applicable si: autodiag . contexte . blocs extérieurs applicables
+  description: >
+    La végétation (arbres, arbustes...) peut apporter de l'ombre et
+    contribuer à rafraîchir les zones de travail, notamment en extérieur
+    et sur les parkings.
+
+autodiag . îlots de rafraîchissement . score:
+  formule:
+    somme:
+      - autodiag . îlots de rafraîchissement . questions . q1 . score
+      - autodiag . îlots de rafraîchissement . questions . q2 . score
+  unité: sans-unité
+  plafond: 200
+
+autodiag . îlots de rafraîchissement . questions:
+  formule: oui
+
+# Question q1
+autodiag . îlots de rafraîchissement . questions . q1:
+  question: Autour de vos bâtiments, avez-vous des espaces végétalisés ?
+  formule:
+    une possibilité:
+      - "'Il n''y a pas d''espaces verts'"
+      - "'Il y a des espaces verts, mais ils sont surtout composés d''herbe'"
+      - "'Il y a des arbres ou arbustes'"
+
+autodiag . îlots de rafraîchissement . questions . q1 . score:
+  formule:
+    variations:
+      - si: |-
+          autodiag . îlots de rafraîchissement . questions . q1 = 'Il n''y a pas d''espaces verts'
+        alors: 0
+      - si: |-
+          autodiag . îlots de rafraîchissement . questions . q1 = 'Il y a des espaces verts, mais ils sont surtout composés d''herbe'
+        alors: 25
+      - si: |-
+          autodiag . îlots de rafraîchissement . questions . q1 = 'Il y a des arbres ou arbustes'
+        alors: 75
+      - sinon: 0
+
+# Question q2 — sautée s'il n'y a pas d'espaces verts
+autodiag . îlots de rafraîchissement . questions . q2:
+  question: Est-ce que la végétation (notamment arbres et arbustes) apporte de l'ombre dans les zones où travaillent vos équipes (postes, pauses, parkings...) ?
+  non applicable si: autodiag . îlots de rafraîchissement . questions . q1 = 'Il n''y a pas d''espaces verts'
+  formule:
+    une possibilité:
+      - "'Aucune zone de travail n''est ombragée'"
+      - "'Quelques zones de travail sont ombragées'"
+      - "'Plusieurs zones de travail sont ombragées'"
+      - "'La majorité des zones de travail sont ombragées'"
+
+autodiag . îlots de rafraîchissement . questions . q2 . score:
+  formule:
+    variations:
+      - si: |-
+          autodiag . îlots de rafraîchissement . questions . q2 = 'Aucune zone de travail n''est ombragée'
+        alors: 0
+      - si: |-
+          autodiag . îlots de rafraîchissement . questions . q2 = 'Quelques zones de travail sont ombragées'
+        alors: 25
+      - si: |-
+          autodiag . îlots de rafraîchissement . questions . q2 = 'Plusieurs zones de travail sont ombragées'
+        alors: 50
+      - si: |-
+          autodiag . îlots de rafraîchissement . questions . q2 = 'La majorité des zones de travail sont ombragées'
+        alors: 100
+      - sinon: 0

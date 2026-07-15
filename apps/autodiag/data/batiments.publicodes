@@ -1,114 +1,145 @@
 # Bâtiments 🏢
 #
-# Ce thème couvre l'adaptation des bâtiments face à la chaleur :
-# prévention des apports de chaleur et systèmes de rafraîchissement.
+# Préserver la fraîcheur dans le bâtiment, c'est à la fois limiter
+# l'entrée de la chaleur et rafraîchir l'air de façon sobre et
+# vertueuse.
 
-autodiag . thèmes . bâtiments:
+autodiag . bâtiments:
   icônes: 🏢
   titre: Bâtiments
+  applicable si: autodiag . contexte . bloc bâtiments applicable
   description: >
-    L'adaptation des bâtiments (isolation, protections solaires, systèmes de
-    rafraîchissement) est cruciale pour maintenir des conditions de travail
-    acceptables lors des vagues de chaleur. Les 2 enjeux sont d'empêcher au
-    maximum la chaleur d'entrer dans le bâtiment puis de pouvoir le rafraîchir
-    avec des solutions efficaces.
-  solutionPageId: 77
+    Préserver la fraîcheur dans le bâtiment, c'est à la fois limiter
+    l'entrée de la chaleur et rafraîchir l'air de façon sobre et
+    vertueuse.
 
-autodiag . thèmes . bâtiments . score:
-  formule: moyenne(autodiag . thèmes . bâtiments . questions . * . score)
+autodiag . bâtiments . score:
+  formule:
+    somme:
+      - autodiag . bâtiments . questions . q1 . score
+      - autodiag . bâtiments . questions . q2 . score
+      - autodiag . bâtiments . questions . q2bis . score
+      - autodiag . bâtiments . questions . q2ter . score
   unité: sans-unité
-  plafond: 5
+  plafond: 400
 
-# Question batiments-1
-autodiag . thèmes . bâtiments . questions . batiments-1:
-  question: Aujourd’hui, comment empêchez-vous la chaleur de rentrer dans votre bâtiment ?
+autodiag . bâtiments . questions:
+  formule: oui
+
+# Question q1
+autodiag . bâtiments . questions . q1:
+  question: Aujourd'hui, comment empêchez-vous la chaleur de rentrer dans votre bâtiment ?
   formule:
     une possibilité:
-      - "'Rien n’a été engagé pour le moment.'"
-      - "'Des premières réflexions sont en cours (recherche d’infos, échanges avec des acteurs public ou privés).'"
-      - "'Un audit thermique a été réalisé (ou est en cours).'"
-      - "'Des travaux/aménagements sont programmés (ex : protections solaires, isolation…).'"
-      - "'Des travaux/aménagements sont déjà en place (ex : protections solaires, isolation…).'"
-      - "'Plusieurs types d’aménagements sont en place pour limiter la chaleur (protections solaires, isolation…), incluant des solutions fondées sur la nature (toiture et/ou murs végétalisés…).'"
+      - "'Rien n''a été engagé pour le moment'"
+      - "'Des premières réflexions sont en cours (recherche d''infos, échanges avec des acteurs publics ou privés)'"
+      - "'Un audit thermique a été réalisé (ou est en cours)'"
+      - "'Des travaux/aménagements sont programmés (ex : protections solaires, isolation...)'"
+      - "'Des travaux/aménagements sont déjà en place (ex : protections solaires, isolation...)'"
+      - "'Plusieurs types d''aménagements sont en place pour limiter la chaleur (protections solaires, isolation...), incluant des solutions fondées sur la nature (toiture et/ou murs végétalisés...)'"
 
-autodiag . thèmes . bâtiments . questions . batiments-1 . score:
+autodiag . bâtiments . questions . q1 . score:
   formule:
     variations:
-      - si: autodiag . thèmes . bâtiments . questions . batiments-1 = "'Rien n’a été engagé pour le moment.'"
+      - si: |-
+          autodiag . bâtiments . questions . q1 = 'Rien n''a été engagé pour le moment'
         alors: 0
-      - si: autodiag . thèmes . bâtiments . questions . batiments-1 = "'Des premières réflexions sont en cours (recherche d’infos, échanges avec des acteurs public ou privés).'"
-        alors: 1
-      - si: autodiag . thèmes . bâtiments . questions . batiments-1 = "'Un audit thermique a été réalisé (ou est en cours).'"
-        alors: 2
-      - si: autodiag . thèmes . bâtiments . questions . batiments-1 = "'Des travaux/aménagements sont programmés (ex : protections solaires, isolation…).'"
-        alors: 3
-      - si: autodiag . thèmes . bâtiments . questions . batiments-1 = "'Des travaux/aménagements sont déjà en place (ex : protections solaires, isolation…).'"
-        alors: 4
-      - si: autodiag . thèmes . bâtiments . questions . batiments-1 = "'Plusieurs types d’aménagements sont en place pour limiter la chaleur (protections solaires, isolation…), incluant des solutions fondées sur la nature (toiture et/ou murs végétalisés…).'"
-        alors: 5
+      - si: |-
+          autodiag . bâtiments . questions . q1 = 'Des premières réflexions sont en cours (recherche d''infos, échanges avec des acteurs publics ou privés)'
+        alors: 10
+      - si: |-
+          autodiag . bâtiments . questions . q1 = 'Un audit thermique a été réalisé (ou est en cours)'
+        alors: 25
+      - si: |-
+          autodiag . bâtiments . questions . q1 = 'Des travaux/aménagements sont programmés (ex : protections solaires, isolation...)'
+        alors: 25
+      - si: |-
+          autodiag . bâtiments . questions . q1 = 'Des travaux/aménagements sont déjà en place (ex : protections solaires, isolation...)'
+        alors: 75
+      - si: |-
+          autodiag . bâtiments . questions . q1 = 'Plusieurs types d''aménagements sont en place pour limiter la chaleur (protections solaires, isolation...), incluant des solutions fondées sur la nature (toiture et/ou murs végétalisés...)'
+        alors: 100
+      - sinon: 0
 
-# Question batiments-2
-autodiag . thèmes . bâtiments . questions . batiments-2:
-  question: Comment rafraîchissez-vous votre ambiance de travail à l’intérieur de votre bâtiment ?
+# Question q2
+autodiag . bâtiments . questions . q2:
+  question: Comment rafraîchissez-vous votre ambiance de travail à l'intérieur de votre bâtiment ?
   formule:
     une possibilité:
-      - "'Rien n’a été engagé pour le moment.'"
-      - "'Le sujet est en cours d’exploration (recherche d’informations, échanges…).'"
-      - "'Des travaux pour rafraîchir mes ambiances de travail sont programmés.'"
-      - "'Des travaux pour rafraîchir mes ambiances de travail sont déjà en place.'"
+      - "'Rien n''a été engagé pour le moment'"
+      - "'Le sujet est en cours d''exploration (recherche d''informations, échanges...) auprès d''un centre de ressources public (ADEME, CSTB...) ou d''un prestataire privé (bureau d''études, entreprise...) et sensibilisation des équipes'"
+      - "'Des travaux pour rafraîchir mes ambiances de travail sont programmés'"
+      - "'Des travaux pour rafraîchir mes ambiances de travail sont déjà en place'"
 
-autodiag . thèmes . bâtiments . questions . batiments-2 . score:
+autodiag . bâtiments . questions . q2 . score:
   formule:
     variations:
-      - si: autodiag . thèmes . bâtiments . questions . batiments-2 = "'Rien n’a été engagé pour le moment.'"
+      - si: |-
+          autodiag . bâtiments . questions . q2 = 'Rien n''a été engagé pour le moment'
         alors: 0
-      - si: autodiag . thèmes . bâtiments . questions . batiments-2 = "'Le sujet est en cours d’exploration (recherche d’informations, échanges…).'"
-        alors: 1.25
-      - si: autodiag . thèmes . bâtiments . questions . batiments-2 = "'Des travaux pour rafraîchir mes ambiances de travail sont programmés.'"
-        alors: 2.5
-      - si: autodiag . thèmes . bâtiments . questions . batiments-2 = "'Des travaux pour rafraîchir mes ambiances de travail sont déjà en place.'"
-        alors: 5
+      - si: |-
+          autodiag . bâtiments . questions . q2 = 'Le sujet est en cours d''exploration (recherche d''informations, échanges...) auprès d''un centre de ressources public (ADEME, CSTB...) ou d''un prestataire privé (bureau d''études, entreprise...) et sensibilisation des équipes'
+        alors: 25
+      - si: |-
+          autodiag . bâtiments . questions . q2 = 'Des travaux pour rafraîchir mes ambiances de travail sont programmés'
+        alors: 50
+      - si: |-
+          autodiag . bâtiments . questions . q2 = 'Des travaux pour rafraîchir mes ambiances de travail sont déjà en place'
+        alors: 100
+      - sinon: 0
 
-# Question batiments-3 (solution prévue)
-autodiag . thèmes . bâtiments . questions . batiments-3:
-  question: Quelle solution prévoyez-vous d’utiliser pour le rafraîchissement ?
+# Question q2bis (solution prévue) — posée uniquement si des travaux sont programmés
+autodiag . bâtiments . questions . q2bis:
+  question: Quelle(s) solution(s) prévoyez-vous d'utiliser ?
+  applicable si: autodiag . bâtiments . questions . q2 = 'Des travaux pour rafraîchir mes ambiances de travail sont programmés'
   formule:
     une possibilité:
       - "'Ventilation naturelle'"
-      - "'Brasseurs d’air'"
-      - "'Système de rafraîchissement actif (rafraîchissement adiabatique, réseau de froid, PAC air/eau performante, géocooling…)'"
+      - "'Brasseurs d''air'"
+      - "'Système de rafraîchissement actif (rafraîchissement adiabatique, réseau de froid, PAC air/eau performante, géocooling...)'"
       - "'Système de climatisation conventionnelle'"
 
-autodiag . thèmes . bâtiments . questions . batiments-3 . score:
+autodiag . bâtiments . questions . q2bis . score:
   formule:
     variations:
-      - si: autodiag . thèmes . bâtiments . questions . batiments-3 = "'Ventilation naturelle'"
-        alors: 1.25
-      - si: autodiag . thèmes . bâtiments . questions . batiments-3 = "'Brasseurs d’air'"
-        alors: 1.25
-      - si: autodiag . thèmes . bâtiments . questions . batiments-3 = "'Système de rafraîchissement actif (rafraîchissement adiabatique, réseau de froid, PAC air/eau performante, géocooling…)'"
-        alors: 2.5
-      - si: autodiag . thèmes . bâtiments . questions . batiments-3 = "'Système de climatisation conventionnelle'"
-        alors: 0.5
+      - si: |-
+          autodiag . bâtiments . questions . q2bis = 'Ventilation naturelle'
+        alors: 25
+      - si: |-
+          autodiag . bâtiments . questions . q2bis = 'Brasseurs d''air'
+        alors: 25
+      - si: |-
+          autodiag . bâtiments . questions . q2bis = 'Système de rafraîchissement actif (rafraîchissement adiabatique, réseau de froid, PAC air/eau performante, géocooling...)'
+        alors: 50
+      - si: |-
+          autodiag . bâtiments . questions . q2bis = 'Système de climatisation conventionnelle'
+        alors: 10
+      - sinon: 0
 
-# Question batiments-4 (solution en place)
-autodiag . thèmes . bâtiments . questions . batiments-4:
-  question: Quelle solution utilisez-vous pour le rafraîchissement ?
+# Question q2ter (solution en place, terminale) — posée uniquement si des travaux sont en place
+autodiag . bâtiments . questions . q2ter:
+  question: Quelle(s) solution(s) utilisez-vous ?
+  applicable si: autodiag . bâtiments . questions . q2 = 'Des travaux pour rafraîchir mes ambiances de travail sont déjà en place'
   formule:
     une possibilité:
       - "'Ventilation naturelle'"
-      - "'Brasseurs d’air'"
-      - "'Système de rafraîchissement actif (rafraîchissement adiabatique, réseau de froid, PAC air/eau performante, géocooling…)'"
+      - "'Brasseurs d''air'"
+      - "'Système de rafraîchissement actif (rafraîchissement adiabatique, réseau de froid, PAC air/eau performante, géocooling...)'"
       - "'Système de climatisation conventionnelle'"
 
-autodiag . thèmes . bâtiments . questions . batiments-4 . score:
+autodiag . bâtiments . questions . q2ter . score:
   formule:
     variations:
-      - si: autodiag . thèmes . bâtiments . questions . batiments-4 = "'Ventilation naturelle'"
-        alors: 1.25
-      - si: autodiag . thèmes . bâtiments . questions . batiments-4 = "'Brasseurs d’air'"
-        alors: 1.25
-      - si: autodiag . thèmes . bâtiments . questions . batiments-4 = "'Système de rafraîchissement actif (rafraîchissement adiabatique, réseau de froid, PAC air/eau performante, géocooling…)'"
-        alors: 2.5
-      - si: autodiag . thèmes . bâtiments . questions . batiments-4 = "'Système de climatisation conventionnelle'"
-        alors: 0.5
+      - si: |-
+          autodiag . bâtiments . questions . q2ter = 'Ventilation naturelle'
+        alors: 25
+      - si: |-
+          autodiag . bâtiments . questions . q2ter = 'Brasseurs d''air'
+        alors: 25
+      - si: |-
+          autodiag . bâtiments . questions . q2ter = 'Système de rafraîchissement actif (rafraîchissement adiabatique, réseau de froid, PAC air/eau performante, géocooling...)'
+        alors: 50
+      - si: |-
+          autodiag . bâtiments . questions . q2ter = 'Système de climatisation conventionnelle'
+        alors: 10
+      - sinon: 0
