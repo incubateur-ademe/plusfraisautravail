@@ -76,3 +76,24 @@ class SourceMeta(BaseModel):
     name: str
     last_refresh: datetime | None
     healthy: bool
+
+
+class ClimadiagTemperatureProjection(BaseModel):
+    min: float | None
+    median: float | None
+    max: float | None
+
+
+class ClimadiagLieu(BaseModel):
+    id: int
+    nom: str
+    code_postal: str
+    type_lieu: str = Field(..., description="'commune' or 'epci'.")
+    seuil_jours_tres_chauds: float | None
+    seuil_nuits_chaudes: float | None
+    jours_tres_chauds_ref: float | None
+    nuits_chaudes_ref: float | None
+    jours_vdc_ref: float | None
+    jours_tres_chauds_prevision: dict[str, ClimadiagTemperatureProjection]
+    nuits_chaudes_prevision: dict[str, ClimadiagTemperatureProjection]
+    jours_vdc_prevision: dict[str, ClimadiagTemperatureProjection] | None

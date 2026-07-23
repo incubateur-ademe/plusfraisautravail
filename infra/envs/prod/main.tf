@@ -8,13 +8,15 @@ locals {
     var.vigilance_app_id == "" ? {} : { VIGILANCE_APP_ID = var.vigilance_app_id },
     var.rte_client_id == "" ? {} : { RTE_CLIENT_ID = var.rte_client_id },
     var.rte_client_secret == "" ? {} : { RTE_CLIENT_SECRET = var.rte_client_secret },
+    var.climadiag_api_token == "" ? {} : { CLIMADIAG_API_TOKEN = var.climadiag_api_token },
   )
 
   api_env = {
-    RTE_USE_SANDBOX = var.rte_use_sandbox ? "true" : "false"
+    RTE_USE_SANDBOX   = var.rte_use_sandbox ? "true" : "false"
+    CLIMADIAG_API_URL = var.climadiag_api_url
     # JSON-encoded list - pydantic-settings parses this as list[str].
-    # Includes the deployed alert-widget bucket origin so the embed can call
-    # the API without a CORS preflight failure.
+    # Includes the deployed alert-widget/climadiag bucket origins so the
+    # embeds can call the API without a CORS preflight failure.
     CORS_ORIGINS = jsonencode(concat(
       [
         "http://localhost:5173",
@@ -25,6 +27,7 @@ locals {
         # origin that matches every bucket in the region, which is wrong.
         "https://${module.alert_widget_site.website_endpoint}",
         "https://${module.autodiag_site.website_endpoint}",
+        "https://${module.climadiag_site.website_endpoint}",
       ],
       var.extra_cors_origins,
     ))
@@ -43,6 +46,13 @@ module "alert_widget_site" {
   app_name    = "alert-widget"
   environment = local.environment
   bucket_name = "pfat-alert-widget"
+}
+
+module "climadiag_site" {
+  source      = "../../modules/static-site"
+  app_name    = "climadiag"
+  environment = local.environment
+  bucket_name = "pfat-climadiag"
 }
 
 module "api" {

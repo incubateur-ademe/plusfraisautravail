@@ -47,6 +47,19 @@ variable "api_deploy" {
   default     = false
 }
 
+variable "climadiag_api_token" {
+  type        = string
+  description = "X-AUTH-TOKEN for the PlusFraîcheMaVille Climadiag commune-search API. Leave empty to disable /climadiag/search (returns 503)."
+  sensitive   = true
+  default     = ""
+}
+
+variable "climadiag_api_url" {
+  type        = string
+  description = "PlusFraîcheMaVille Climadiag commune-search API URL."
+  default     = "https://plusfraichemaville.fr/api/external-search-climadiag-info"
+}
+
 variable "extra_cors_origins" {
   type        = list(string)
   description = "Extra origins to whitelist on the API in addition to the bucket website domains and the canonical Wagtail host. Use for staging or custom domains."

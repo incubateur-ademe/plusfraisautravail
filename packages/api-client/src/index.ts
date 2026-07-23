@@ -43,6 +43,29 @@ export interface SourceMeta {
   healthy: boolean;
 }
 
+export type ClimadiagYear = 2030 | 2050 | 2100;
+
+export interface ClimadiagTemperatureProjection {
+  min: number | null;
+  median: number | null;
+  max: number | null;
+}
+
+export interface ClimadiagLieu {
+  id: number;
+  nom: string;
+  code_postal: string;
+  type_lieu: 'commune' | 'epci';
+  seuil_jours_tres_chauds: number | null;
+  seuil_nuits_chaudes: number | null;
+  jours_tres_chauds_ref: number | null;
+  nuits_chaudes_ref: number | null;
+  jours_vdc_ref: number | null;
+  jours_tres_chauds_prevision: Record<ClimadiagYear, ClimadiagTemperatureProjection>;
+  nuits_chaudes_prevision: Record<ClimadiagYear, ClimadiagTemperatureProjection>;
+  jours_vdc_prevision: Record<ClimadiagYear, ClimadiagTemperatureProjection> | null;
+}
+
 export interface ApiClientOptions {
   baseUrl: string;
   fetch?: typeof fetch;
@@ -67,6 +90,16 @@ export class ApiClient {
 
   async getSources(): Promise<SourceMeta[]> {
     return this.request<SourceMeta[]>('/sources');
+  }
+
+  async searchClimadiag(
+    search: string,
+    options?: { limit?: number; communesOnly?: boolean },
+  ): Promise<ClimadiagLieu[]> {
+    const params = new URLSearchParams({ search });
+    if (options?.limit != null) params.set('limit', String(options.limit));
+    if (options?.communesOnly) params.set('communes_only', 'true');
+    return this.request<ClimadiagLieu[]>(`/climadiag/search?${params}`);
   }
 
   private async request<T>(path: string): Promise<T> {

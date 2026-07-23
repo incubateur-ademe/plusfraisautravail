@@ -1,0 +1,222 @@
+/* Tokens resolved from the DSFR stylesheet (@codegouvfr/react-dsfr), like the original. */
+:root {
+  --cd-blue-france: var(--text-action-high-blue-france);
+  --cd-blue-border: var(--border-default-blue-france);
+  --cd-bg-open-blue: var(--background-open-blue-france);
+  --cd-bg-low-blue-hover: var(--background-open-blue-france-hover);
+  --cd-bg-grey-hover: var(--background-default-grey-hover);
+  --cd-grey: var(--text-mention-grey);
+  --cd-text-grey: var(--text-label-grey);
+  --cd-disabled-grey: var(--text-disabled-grey);
+  --cd-yellow: var(--background-action-low-yellow-moutarde-active);
+  --cd-orange: var(--border-default-orange-terre-battue);
+  --cd-red: var(--border-default-red-marianne);
+}
+
+.cd-root {
+  background: var(--cd-bg-open-blue);
+  color: var(--cd-blue-france);
+  padding: 24px;
+  border-radius: 8px;
+  font-family: Marianne, arial, sans-serif;
+}
+
+/* Tabs */
+.cd-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-top: 24px;
+  margin-bottom: 20px;
+}
+.cd-tab {
+  position: relative;
+  margin: 0 16px 12px 0;
+  border: none;
+  border-radius: 24px;
+  padding: 8px 16px;
+  font-size: 20px;
+  font-family: inherit;
+  color: inherit;
+  background: var(--cd-bg-low-blue-hover);
+  cursor: pointer;
+}
+.cd-tab--active {
+  pointer-events: none;
+  background: var(--cd-blue-france);
+  padding-right: 64px;
+  font-weight: 700;
+  color: #fff;
+}
+.cd-tab-badge {
+  position: absolute;
+  top: -6px;
+  right: 0;
+  width: 48px;
+}
+.cd-tab-badge-temp {
+  position: absolute;
+  top: 10.5px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9.5px;
+}
+.cd-tabs-note {
+  font-size: 16px;
+  color: var(--cd-grey);
+}
+.cd-mf-link {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  background: none;
+}
+
+/* Indicator line card */
+.cd-line-card {
+  margin-bottom: 8px;
+  border-radius: 16px;
+  background: #fff;
+  padding: 8px 20px;
+}
+.cd-line {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 16px;
+}
+.cd-line-info {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+.cd-line-title {
+  margin: 0;
+  max-width: 420px;
+  font-size: 22px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--cd-blue-france);
+}
+.cd-line-seuil {
+  display: block;
+  font-size: 22px;
+  line-height: 1.2;
+  color: var(--cd-text-grey);
+}
+.cd-line-toggle {
+  margin-top: 16px;
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--cd-blue-france);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Value cells */
+.cd-line-jours {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.cd-jour {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 125px;
+  width: 130px;
+  border-radius: 16px;
+  padding-left: 16px;
+  box-sizing: border-box;
+}
+.cd-jour--bg {
+  background: var(--cd-bg-grey-hover);
+}
+.cd-jour-valeur {
+  font-weight: 700;
+}
+.cd-jour-nombre {
+  font-size: 36px;
+}
+.cd-jour-label {
+  font-size: 14px;
+  color: var(--cd-grey);
+}
+.cd-jour-label span {
+  display: block;
+}
+.cd-sep-y {
+  height: 96px;
+  width: 1px;
+  background: #ddd;
+}
+.cd-basse { color: var(--cd-yellow); }
+.cd-mediane { color: var(--cd-orange); }
+.cd-haute { color: var(--cd-red); }
+.cd-grey { color: var(--cd-grey); }
+
+/* Legend */
+.cd-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 32px;
+  color: var(--cd-grey);
+}
+.cd-legend-text {
+  max-width: 400px;
+  font-size: 14px;
+  color: var(--cd-text-grey);
+}
+.cd-legend-text span {
+  display: block;
+  margin-bottom: 16px;
+}
+.cd-legend-colors {
+  display: flex;
+  flex-wrap: wrap;
+  max-width: 520px;
+}
+.cd-legend-color {
+  display: flex;
+  gap: 12px;
+  width: 130px;
+}
+.cd-legend-color p {
+  max-width: 96px;
+  font-size: 10px;
+  line-height: 14px;
+}
+.cd-dot {
+  margin-top: 4px;
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: 50%;
+}
+.cd-dot-ref { background: var(--cd-disabled-grey); }
+.cd-dot-basse { background: var(--cd-yellow); }
+.cd-dot-mediane { background: var(--cd-orange); }
+.cd-dot-haute { background: var(--cd-red); }
+
+/* Footnotes */
+.cd-copyright {
+  text-align: right;
+  font-size: 12px;
+  color: var(--cd-grey);
+}
+.cd-tracc {
+  margin-top: 40px;
+  font-size: 14px;
+  color: var(--cd-grey);
+}
+
+@media (max-width: 768px) {
+  .cd-line-info img { display: none; }
+}

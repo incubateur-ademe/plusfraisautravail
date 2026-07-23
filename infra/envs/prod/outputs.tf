@@ -14,6 +14,14 @@ output "alert_widget_url" {
   value = "https://${module.alert_widget_site.website_endpoint}"
 }
 
+output "climadiag_bucket" {
+  value = module.climadiag_site.bucket_name
+}
+
+output "climadiag_url" {
+  value = "https://${module.climadiag_site.website_endpoint}"
+}
+
 output "api_registry" {
   value = module.api.registry_endpoint
 }

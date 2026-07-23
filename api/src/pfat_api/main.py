@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from pfat_api.config import settings
-from pfat_api.routes import alerts, health
+from pfat_api.routes import alerts, climadiag, health
 
 
 def create_app() -> FastAPI:
@@ -21,6 +21,7 @@ def create_app() -> FastAPI:
 
     app.include_router(health.router)
     app.include_router(alerts.router)
+    app.include_router(climadiag.router)
 
     return app
 
