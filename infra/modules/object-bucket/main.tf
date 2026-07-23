@@ -7,10 +7,6 @@ terraform {
   }
 }
 
-data "scaleway_account_project" "default" {
-  name = "default"
-}
-
 resource "scaleway_object_bucket" "this" {
   name   = var.bucket_name
   region = var.region
@@ -37,12 +33,15 @@ resource "scaleway_iam_application" "this" {
 
 # This grants project-wide Object Storage capability to the application -
 # the object_bucket_policy below is what actually narrows access down to
-# this one bucket.
+# this one bucket. project_id comes from the bucket itself (Scaleway fills
+# it in from the provider's SCW_DEFAULT_PROJECT_ID) rather than looking up a
+# project by name - Scaleway doesn't guarantee a project is literally named
+# "default".
 resource "scaleway_iam_policy" "this" {
   name           = "${var.app_name}-${var.environment}-media"
   application_id = scaleway_iam_application.this.id
   rule {
-    project_ids          = [data.scaleway_account_project.default.id]
+    project_ids          = [scaleway_object_bucket.this.project_id]
     permission_set_names = ["ObjectStorageFullAccess"]
   }
 }
