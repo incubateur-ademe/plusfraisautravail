@@ -32,6 +32,35 @@ locals {
       var.extra_cors_origins,
     ))
   }
+
+  cms_secret_env = {
+    DATABASE_URL          = module.cms_db.database_url
+    DJANGO_SECRET_KEY     = var.django_secret_key
+    AWS_ACCESS_KEY_ID     = module.cms_media.access_key
+    AWS_SECRET_ACCESS_KEY = module.cms_media.secret_key
+  }
+
+  cms_env = {
+    # Can't include module.cms.domain_name here - it's only known after the
+    # container is created, and the container's env vars are set at create
+    # time, so referencing it back would be a dependency cycle. Add the
+    # Scaleway-assigned domain to cms_extra_allowed_hosts once you have it
+    # (from `tofu output cms_url`) and re-apply, same as the api_image /
+    # api_deploy bootstrap two-step.
+    ALLOWED_HOSTS           = jsonencode(var.cms_extra_allowed_hosts)
+    AWS_STORAGE_BUCKET_NAME = module.cms_media.bucket_name
+    AWS_S3_ENDPOINT_URL     = module.cms_media.endpoint
+    AWS_S3_REGION_NAME      = var.region
+    DJANGO_SETTINGS_MODULE  = "sites_conformes.settings"
+  }
+}
+
+# Shared by every serverless-container app (api, cms, ...) - Scaleway
+# registry namespaces hold multiple image repos, no need for one per app.
+resource "scaleway_registry_namespace" "pfat" {
+  name      = "pfat"
+  region    = var.region
+  is_public = false
 }
 
 module "autodiag_site" {
@@ -59,7 +88,6 @@ module "api" {
   source                       = "../../modules/serverless-container"
   app_name                     = "api"
   environment                  = local.environment
-  registry_namespace           = "pfat"
   registry_image               = var.api_image
   deploy                       = var.api_deploy
   port                         = 8080
@@ -67,4 +95,32 @@ module "api" {
   max_scale                    = 5
   environment_variables        = local.api_env
   secret_environment_variables = local.api_secret_env
+}
+
+module "cms_db" {
+  source      = "../../modules/managed-postgres"
+  app_name    = "cms"
+  environment = local.environment
+  node_type   = var.cms_db_node_type
+}
+
+module "cms_media" {
+  source      = "../../modules/object-bucket"
+  app_name    = "cms"
+  environment = local.environment
+  bucket_name = "pfat-cms-media"
+}
+
+module "cms" {
+  source                       = "../../modules/serverless-container"
+  app_name                     = "cms"
+  environment                  = local.environment
+  registry_image               = var.cms_image
+  deploy                       = var.cms_deploy
+  port                         = 8080
+  min_scale                    = var.cms_min_scale
+  max_scale                    = 3
+  private_network_id           = module.cms_db.private_network_id
+  environment_variables        = local.cms_env
+  secret_environment_variables = local.cms_secret_env
 }

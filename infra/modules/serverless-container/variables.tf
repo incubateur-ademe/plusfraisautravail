@@ -15,11 +15,6 @@ variable "region" {
   default     = "fr-par"
 }
 
-variable "registry_namespace" {
-  type        = string
-  description = "Scaleway Container Registry namespace name."
-}
-
 variable "registry_image" {
   type        = string
   description = "Full image reference. Use a placeholder on first apply (deploy = false), then update once the image has been pushed."
@@ -75,4 +70,10 @@ variable "secret_environment_variables" {
   default     = {}
   sensitive   = true
   description = "Secret env vars (e.g. VIGILANCE_APP_ID)."
+}
+
+variable "private_network_id" {
+  type        = string
+  default     = ""
+  description = "Private Network ID to attach the container to (e.g. for a DB reachable only over the private network). Leave empty for public-only containers like api."
 }

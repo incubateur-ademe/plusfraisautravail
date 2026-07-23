@@ -23,7 +23,7 @@ output "climadiag_url" {
 }
 
 output "api_registry" {
-  value = module.api.registry_endpoint
+  value = "${scaleway_registry_namespace.pfat.endpoint}/api"
 }
 
 output "api_url" {
@@ -33,4 +33,25 @@ output "api_url" {
 output "container_id" {
   value       = module.api.container_id
   description = "Scaleway serverless container ID (set as GitHub variable SCW_API_CONTAINER_ID)."
+}
+
+output "cms_registry" {
+  value = "${scaleway_registry_namespace.pfat.endpoint}/cms"
+}
+
+output "cms_url" {
+  value = "https://${module.cms.domain_name}"
+}
+
+output "cms_container_id" {
+  value       = module.cms.container_id
+  description = "Scaleway serverless container ID (set as GitHub variable SCW_CMS_CONTAINER_ID)."
+}
+
+output "cms_db_host" {
+  value = module.cms_db.host
+}
+
+output "cms_media_bucket" {
+  value = module.cms_media.bucket_name
 }

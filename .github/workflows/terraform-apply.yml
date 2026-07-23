@@ -38,10 +38,12 @@ jobs:
       TF_VAR_rte_client_id: ${{ secrets.RTE_CLIENT_ID }}
       TF_VAR_rte_client_secret: ${{ secrets.RTE_CLIENT_SECRET }}
       TF_VAR_climadiag_api_token: ${{ secrets.CLIMADIAG_API_TOKEN }}
+      TF_VAR_django_secret_key: ${{ secrets.DJANGO_SECRET_KEY }}
       # Pin the image to whatever's currently deployed via the lifecycle ignore.
-      # api_deploy must be true here; the bootstrap (api_deploy=false) flow is
-      # a one-time local thing.
+      # api_deploy/cms_deploy must be true here; the bootstrap (*_deploy=false)
+      # flow is a one-time local thing.
       TF_VAR_api_deploy: "true"
+      TF_VAR_cms_deploy: "true"
     steps:
       - uses: actions/checkout@v4
 

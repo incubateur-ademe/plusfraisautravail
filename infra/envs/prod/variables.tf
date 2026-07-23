@@ -75,3 +75,40 @@ variable "api_min_scale" {
   description = "Minimum number of always-warm API container instances. Set to 1 to eliminate cold-starts (the embed widget is triggered on every page load of the main site, so cold-start latency is user-visible)."
   default     = 1
 }
+
+variable "django_secret_key" {
+  type        = string
+  description = "Django SECRET_KEY for the cms app. Generate with: python -c \"import secrets; print(secrets.token_urlsafe(50))\""
+  sensitive   = true
+  default     = ""
+}
+
+variable "cms_image" {
+  type        = string
+  description = "Full image reference for the cms container (e.g. rg.fr-par.scw.cloud/pfat/cms:sha-abc123). Leave empty on first apply."
+  default     = ""
+}
+
+variable "cms_deploy" {
+  type        = bool
+  description = "Set to true once an image has been pushed to the registry."
+  default     = false
+}
+
+variable "cms_min_scale" {
+  type        = number
+  description = "Minimum number of always-warm cms container instances. 0 is fine here (unlike api_min_scale) - a CMS admin backend isn't hit on every page load of the public site, so occasional cold starts are acceptable."
+  default     = 0
+}
+
+variable "cms_db_node_type" {
+  type        = string
+  description = "Scaleway RDB node class for the cms Postgres instance."
+  default     = "DB-DEV-S"
+}
+
+variable "cms_extra_allowed_hosts" {
+  type        = list(string)
+  description = "Hostnames for Django's ALLOWED_HOSTS. The container's own Scaleway domain isn't knowable until after the first apply (it would create a dependency cycle) - set it here from `tofu output cms_url` after the first apply, then re-apply. Also add any custom domain here once one is set up."
+  default     = []
+}
