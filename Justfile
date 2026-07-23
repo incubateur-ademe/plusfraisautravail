@@ -13,18 +13,23 @@ default:
 
 # ── install / bootstrap ──────────────────────────────────────────────────
 
-# Install all JS workspace dependencies + sync API venv.
+# Install all JS workspace dependencies + sync API/CMS venvs.
 install:
     npm install
     cd api && uv sync --extra dev
+    cd apps/cms && uv sync --extra dev
 
 # Just the JS side.
 install-js:
     npm install
 
-# Just the Python side.
+# Just the API's Python side.
 install-api:
     cd api && uv sync --extra dev
+
+# Just the CMS's Python side.
+install-cms:
+    cd apps/cms && uv sync --extra dev
 
 # ── dev servers ──────────────────────────────────────────────────────────
 
@@ -45,6 +50,10 @@ alert-widget:
 # Vite proxies /api/* -> http://localhost:8080 - start `just api` in another terminal.
 climadiag:
     npm run dev --workspace @pfat/climadiag
+
+# Run the CMS locally on :8080 (auto-reload). Requires apps/cms/.env - copy from .env.example.
+cms:
+    cd apps/cms && uv run python manage.py runserver 8080
 
 # Run API + alert-widget together (requires `parallel` from moreutils, or split into two shells).
 dev:
@@ -71,10 +80,14 @@ build-climadiag:
 build-api:
     cd api && docker build -t pfat-api:local .
 
+# Build the CMS container image locally.
+build-cms:
+    cd apps/cms && docker build -t pfat-cms:local .
+
 # ── test / lint ──────────────────────────────────────────────────────────
 
-# Run all checks: JS build + API tests + ruff.
-check: build test-api lint-api
+# Run all checks: JS build + API tests + CMS tests + ruff.
+check: build test-api lint-api test-cms lint-cms
 
 # API tests.
 test-api:
@@ -88,6 +101,19 @@ lint-api:
 fmt-api:
     cd api && uv run ruff check --fix .
     cd api && uv run ruff format .
+
+# CMS tests.
+test-cms:
+    cd apps/cms && uv run pytest
+
+# CMS lint (ruff).
+lint-cms:
+    cd apps/cms && uv run ruff check .
+
+# Auto-fix ruff issues where possible.
+fmt-cms:
+    cd apps/cms && uv run ruff check --fix .
+    cd apps/cms && uv run ruff format .
 
 # JS lint (per-workspace).
 lint-js:
@@ -110,11 +136,16 @@ tf-fmt:
 tf-validate:
     cd infra/envs/prod && tofu init -backend=false && tofu validate
 
-# ── api container ────────────────────────────────────────────────────────
+# ── containers ───────────────────────────────────────────────────────────
 
 # Run the locally built API image (requires .env in api/).
 run-api-container: build-api
     docker run --rm -p 8080:8080 --env-file api/.env pfat-api:local
+
+# Run the locally built CMS image (requires .env in apps/cms/). Different host
+# port than run-api-container so both can run at once.
+run-cms-container: build-cms
+    docker run --rm -p 8081:8080 --env-file apps/cms/.env pfat-cms:local
 
 # ── infra (opentofu) ─────────────────────────────────────────────────────
 
@@ -174,7 +205,7 @@ bootstrap-tfvars:
 # Push repo-level secrets used by terraform-plan.yml (which runs on PRs from
 # any branch and can't read environment-scoped secrets). For the deploy
 # workflows, use `just bootstrap-environments` instead - those secrets live
-# on the api / autodiag / alert-widget GitHub Environments.
+# on the api / cms / autodiag / alert-widget / climadiag GitHub Environments.
 bootstrap-secrets:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -208,14 +239,16 @@ bootstrap-secrets:
     set_secret RTE_CLIENT_ID               "${RTE_CLIENT_ID:-}"
     set_secret RTE_CLIENT_SECRET           "${RTE_CLIENT_SECRET:-}"
     set_secret CLIMADIAG_API_TOKEN         "${CLIMADIAG_API_TOKEN:-}"
+    set_secret DJANGO_SECRET_KEY           "${DJANGO_SECRET_KEY:-}"
 
     echo
     echo "Done. Run \`just bootstrap-environments\` next to push deploy-time secrets."
 
-# Create (or update) the api / autodiag / alert-widget / climadiag GitHub
-# Environments and push the right secrets and variables to each. Reads SCW_*,
-# VIGILANCE_APP_ID, RTE_*, CLIMADIAG_API_TOKEN from your shell and
-# api_url / container_id / *_url from `tofu output`.
+# Create (or update) the api / cms / autodiag / alert-widget / climadiag
+# GitHub Environments and push the right secrets and variables to each. Reads
+# SCW_*, VIGILANCE_APP_ID, RTE_*, CLIMADIAG_API_TOKEN, DJANGO_SECRET_KEY from
+# your shell and api_url / container_id / cms_url / cms_container_id / *_url
+# from `tofu output`.
 # Restricts each environment to the `main` branch so only main-branch deploys
 # can read them. Idempotent.
 bootstrap-environments:
@@ -267,12 +300,14 @@ bootstrap-environments:
     }
 
     echo "Repo: $REPO"
-    read -r -p "Create/update environments api, autodiag, alert-widget, climadiag and push secrets? [y/N] " ans
+    read -r -p "Create/update environments api, cms, autodiag, alert-widget, climadiag and push secrets? [y/N] " ans
     [[ "$ans" =~ ^[Yy]$ ]] || { echo "Aborted."; exit 1; }
 
     # Capture tofu outputs once. Empty strings are OK - set_env_variable skips.
     api_url=""
     container_id=""
+    cms_url=""
+    cms_container_id=""
     autodiag_url=""
     alert_widget_url=""
     climadiag_url=""
@@ -289,6 +324,14 @@ bootstrap-environments:
       echo "  warn   tofu output unavailable - *_URL / SCW_API_CONTAINER_ID will be skipped."
       echo "         Run \`just tf-apply\` (with the container created), then re-run this."
     fi
+    if (cd infra/envs/prod && tofu output -raw cms_url) >/dev/null 2>&1; then
+      cms_url=$(cd infra/envs/prod && tofu output -raw cms_url)
+      cms_container_id=$(cd infra/envs/prod && tofu output -raw cms_container_id)
+      cms_container_id="${cms_container_id##*/}"
+    else
+      echo "  warn   tofu output unavailable - CMS_URL / SCW_CMS_CONTAINER_ID will be skipped."
+      echo "         Run \`just tf-apply\` (with cms_deploy=true), then re-run this."
+    fi
 
     echo
     echo "── api environment ──────────────────────────────────────────"
@@ -301,6 +344,16 @@ bootstrap-environments:
     set_env_secret   api RTE_CLIENT_SECRET      "${RTE_CLIENT_SECRET:-}"
     set_env_variable api SCW_API_CONTAINER_ID   "$container_id"
     set_env_variable api API_URL                "$api_url"
+
+    echo
+    echo "── cms environment ──────────────────────────────────────────"
+    create_env_main_only cms
+    set_env_secret   cms SCW_ACCESS_KEY         "${SCW_ACCESS_KEY:-}"
+    set_env_secret   cms SCW_SECRET_KEY         "${SCW_SECRET_KEY:-}"
+    set_env_secret   cms SCW_DEFAULT_PROJECT_ID "${SCW_DEFAULT_PROJECT_ID:-}"
+    set_env_secret   cms DJANGO_SECRET_KEY      "${DJANGO_SECRET_KEY:-}"
+    set_env_variable cms SCW_CMS_CONTAINER_ID   "$cms_container_id"
+    set_env_variable cms CMS_URL                "$cms_url"
 
     echo
     echo "── autodiag environment ─────────────────────────────────────"
@@ -338,6 +391,7 @@ bootstrap-environments:
     set_env_secret   tofu-apply RTE_CLIENT_ID               "${RTE_CLIENT_ID:-}"
     set_env_secret   tofu-apply RTE_CLIENT_SECRET           "${RTE_CLIENT_SECRET:-}"
     set_env_secret   tofu-apply CLIMADIAG_API_TOKEN         "${CLIMADIAG_API_TOKEN:-}"
+    set_env_secret   tofu-apply DJANGO_SECRET_KEY           "${DJANGO_SECRET_KEY:-}"
     set_env_variable tofu-apply API_URL                     "$api_url"
 
     echo
@@ -376,6 +430,33 @@ deploy-api-bootstrap:
     echo "  api_deploy = true"
     echo "Then run: just tf-apply"
 
+# One-time first image push for the CMS, before the second tf-apply.
+# Requires SCW_SECRET_KEY in env (used as docker registry password).
+deploy-cms-bootstrap:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [[ -z "${SCW_SECRET_KEY:-}" ]]; then
+      echo "ERROR: SCW_SECRET_KEY must be set in the environment."
+      exit 1
+    fi
+    REGISTRY="rg.fr-par.scw.cloud"
+    NAMESPACE="pfat"
+    IMAGE="$REGISTRY/$NAMESPACE/cms:bootstrap"
+    echo "About to:"
+    echo "  1. docker login $REGISTRY (user=nologin, password=\$SCW_SECRET_KEY)"
+    echo "  2. docker buildx build --platform linux/amd64 --push apps/cms/ -t $IMAGE"
+    read -r -p "Proceed? [y/N] " ans
+    [[ "$ans" =~ ^[Yy]$ ]] || { echo "Aborted."; exit 1; }
+    echo "$SCW_SECRET_KEY" | docker login "$REGISTRY" --username nologin --password-stdin
+    docker buildx build --platform linux/amd64 --push -t "$IMAGE" apps/cms/
+    echo
+    echo "Pushed: $IMAGE"
+    echo
+    echo "Now edit infra/envs/prod/terraform.tfvars:"
+    echo "  cms_image  = \"$IMAGE\""
+    echo "  cms_deploy = true"
+    echo "Then run: just tf-apply"
+
 # Trigger the API deploy workflow on GitHub.
 deploy-api:
     #!/usr/bin/env bash
@@ -383,6 +464,15 @@ deploy-api:
     gh workflow run deploy-api.yml
     sleep 2
     URL=$(gh run list --workflow=deploy-api.yml --limit 1 --json url --jq '.[0].url')
+    echo "Triggered: $URL"
+
+# Trigger the CMS deploy workflow on GitHub.
+deploy-cms:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    gh workflow run deploy-cms.yml
+    sleep 2
+    URL=$(gh run list --workflow=deploy-cms.yml --limit 1 --json url --jq '.[0].url')
     echo "Triggered: $URL"
 
 # Trigger the autodiag deploy workflow on GitHub.
@@ -420,7 +510,7 @@ status:
     (cd infra/envs/prod && tofu output) || echo "(tofu output failed - did you run \`just tf-init\` + \`just tf-apply\`?)"
     echo
     echo "── last GitHub Actions runs ───────────────────────────────────"
-    for wf in deploy-api.yml deploy-autodiag.yml deploy-alert-widget.yml deploy-climadiag.yml; do
+    for wf in deploy-api.yml deploy-cms.yml deploy-autodiag.yml deploy-alert-widget.yml deploy-climadiag.yml; do
       printf '%-30s ' "$wf"
       gh run list --workflow="$wf" --limit 1 \
         --json status,conclusion,createdAt,url \
@@ -434,4 +524,5 @@ status:
 clean:
     rm -rf node_modules apps/*/node_modules apps/*/dist packages/*/node_modules
     rm -rf api/.venv api/.pytest_cache api/.ruff_cache
+    rm -rf apps/cms/.venv apps/cms/.pytest_cache apps/cms/.ruff_cache apps/cms/staticfiles
     find . -type d -name __pycache__ -prune -exec rm -rf {} +

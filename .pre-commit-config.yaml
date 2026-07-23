@@ -20,15 +20,15 @@ repos:
       - id: check-added-large-files
         args: ["--maxkb=512"]
 
-  # ── Python (api/) ─────────────────────────────────────────────────
+  # ── Python (api/, apps/cms/) ─────────────────────────────────────
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.7.4
     hooks:
       - id: ruff
         args: ["--fix"]
-        files: ^api/
+        files: ^(api|apps/cms)/
       - id: ruff-format
-        files: ^api/
+        files: ^(api|apps/cms)/
 
   # ── HCL (infra/) ──────────────────────────────────────────────────
   # Uses the local `tofu` binary so it matches what CI runs.

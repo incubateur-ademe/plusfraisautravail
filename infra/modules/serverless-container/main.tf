@@ -7,12 +7,6 @@ terraform {
   }
 }
 
-resource "scaleway_registry_namespace" "this" {
-  name      = var.registry_namespace
-  region    = var.region
-  is_public = false
-}
-
 resource "scaleway_container_namespace" "this" {
   name        = "${var.app_name}-${var.environment}"
   description = "Container namespace for ${var.app_name} (${var.environment})."
@@ -32,6 +26,7 @@ resource "scaleway_container" "this" {
   privacy                      = "public"
   protocol                     = "http1"
   deploy                       = var.deploy
+  private_network_id           = var.private_network_id != "" ? var.private_network_id : null
   environment_variables        = var.environment_variables
   secret_environment_variables = var.secret_environment_variables
 
