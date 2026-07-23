@@ -38,15 +38,17 @@ let dsfrStarted = false;
 
 function resolveTarget(target: MountOptions['target']): HTMLElement {
   if (target === undefined) {
+    // document.currentScript is only valid during the synchronous initial
+    // execution of *this* script - it's already null by the time autoMount()
+    // runs (deferred to DOMContentLoaded, or just async React/module work).
+    // Fall back to appending at the end of body, which visually orphans the
+    // widget below the footer - callers should prefer passing an explicit
+    // target or placeholder element instead of relying on this fallback.
     const existing = document.getElementById(AUTO_CONTAINER_ID);
     if (existing) return existing;
     const container = document.createElement('div');
     container.id = AUTO_CONTAINER_ID;
-    if (document.currentScript?.parentNode) {
-      document.currentScript.parentNode.insertBefore(container, document.currentScript);
-    } else {
-      document.body.appendChild(container);
-    }
+    document.body.appendChild(container);
     return container;
   }
   const el = typeof target === 'string' ? document.querySelector(target) : target;
@@ -88,5 +90,20 @@ if (currentScript?.dataset.auto !== undefined) {
   if (!apiBaseUrl) {
     throw new Error('PfatClimadiag: data-api-base-url is required when using data-auto');
   }
-  autoMount({ apiBaseUrl });
+  // Capture the mount position synchronously - document.currentScript is
+  // only valid right now, not once mount() actually runs (deferred to
+  // DOMContentLoaded, or just async React/module work).
+  let target: HTMLElement | undefined;
+  if (currentScript.parentNode) {
+    const placeholder = document.createElement('div');
+    placeholder.id = AUTO_CONTAINER_ID;
+    currentScript.parentNode.insertBefore(placeholder, currentScript);
+    target = placeholder;
+  }
+  const mountWhenReady = () => mount({ apiBaseUrl, target });
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', mountWhenReady, { once: true });
+  } else {
+    mountWhenReady();
+  }
 }
