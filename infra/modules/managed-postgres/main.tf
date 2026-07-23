@@ -11,13 +11,19 @@ terraform {
   }
 }
 
-# Excludes @ and / - both break DSN parsing in a postgresql:// connection
-# string, and this password is only ever consumed programmatically (never
-# typed by a human), so there's no reason to risk it.
+# Excludes every character that's structurally significant in a
+# postgresql://user:PASSWORD@host:port/db DSN - @ : / # ? (URL structural
+# chars) and [ ] (reserved for IPv6 literals) - since a password containing
+# any of them silently corrupts DSN parsing instead of erroring loudly
+# (confirmed: a stray '#' truncates the DSN mid-string and Django crashes on
+# an unrelated line deep in settings import; '[' raises "Invalid IPv6 URL").
+# Verified character-by-character against urllib.parse.urlparse. This
+# password is only ever consumed programmatically (never typed by a human),
+# so there's no reason to risk any of them.
 resource "random_password" "db" {
   length           = 32
   special          = true
-  override_special = "!#$%&*()-_=+[]{}<>:?"
+  override_special = "!$%&*()-_=+{}<>"
 }
 
 resource "scaleway_vpc_private_network" "this" {
