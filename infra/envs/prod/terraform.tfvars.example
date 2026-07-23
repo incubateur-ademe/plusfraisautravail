@@ -8,8 +8,9 @@ rte_use_sandbox   = false
 
 # PlusFraîcheMaVille Climadiag commune-search API. Leave the token empty to
 # disable /climadiag/search (the API returns 503 instead of crashing).
+# climadiag_api_url defaults to the staging host in variables.tf until PFMV
+# issues a production token - only override it here if you have one.
 climadiag_api_token = ""
-climadiag_api_url   = "https://plusfraichemaville.fr/api/external-search-climadiag-info"
 
 # On first apply, leave api_deploy = false. After pushing an image to the
 # registry, set api_image to the full reference and api_deploy = true.

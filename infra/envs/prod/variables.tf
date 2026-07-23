@@ -57,7 +57,11 @@ variable "climadiag_api_token" {
 variable "climadiag_api_url" {
   type        = string
   description = "PlusFraîcheMaVille Climadiag commune-search API URL."
-  default     = "https://plusfraichemaville.fr/api/external-search-climadiag-info"
+  # TEMPORARY: pointed at staging because the only X-AUTH-TOKEN we have so far
+  # is staging-only (401s against the prod host). Switch back to
+  # https://plusfraichemaville.fr/api/external-search-climadiag-info once PFMV
+  # issues a production token.
+  default = "https://staging.plusfraichemaville.fr/api/external-search-climadiag-info"
 }
 
 variable "extra_cors_origins" {
