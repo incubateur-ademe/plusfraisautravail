@@ -8,6 +8,26 @@ variable "zone" {
   default = "fr-par-1"
 }
 
+# ponytail: only needed so cms's container can reuse the same account key as
+# S3 media credentials (see cms_secret_env in main.tf) - not read by the
+# provider block itself, which still auths via the SCW_ACCESS_KEY/
+# SCW_SECRET_KEY env vars directly. Duplicated here on purpose so the value
+# can be re-injected into a resource; TF_VAR_* env vars populate these the
+# same way they populate every other secret in this file.
+variable "scw_access_key" {
+  type        = string
+  description = "Scaleway access key - reused as the cms container's S3 media credentials until a bucket-scoped IAM key can be created (see infra/modules/object-bucket)."
+  sensitive   = true
+  default     = ""
+}
+
+variable "scw_secret_key" {
+  type        = string
+  description = "Scaleway secret key - reused as the cms container's S3 media credentials until a bucket-scoped IAM key can be created (see infra/modules/object-bucket)."
+  sensitive   = true
+  default     = ""
+}
+
 variable "vigilance_app_id" {
   type        = string
   description = "Météo-France Vigilance API application ID."

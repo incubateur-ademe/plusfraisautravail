@@ -39,6 +39,10 @@ jobs:
       TF_VAR_rte_client_secret: ${{ secrets.RTE_CLIENT_SECRET }}
       TF_VAR_climadiag_api_token: ${{ secrets.CLIMADIAG_API_TOKEN }}
       TF_VAR_django_secret_key: ${{ secrets.DJANGO_SECRET_KEY }}
+      # Reused as cms's S3 media credentials until a bucket-scoped IAM key
+      # exists (see infra/modules/object-bucket).
+      TF_VAR_scw_access_key: ${{ secrets.SCW_ACCESS_KEY }}
+      TF_VAR_scw_secret_key: ${{ secrets.SCW_SECRET_KEY }}
       # Pin the image to whatever's currently deployed via the lifecycle ignore.
       # api_deploy/cms_deploy must be true here; the bootstrap (*_deploy=false)
       # flow is a one-time local thing.

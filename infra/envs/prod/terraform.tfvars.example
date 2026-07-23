@@ -29,3 +29,9 @@ cms_deploy = false
 # created (see DEPLOY.md 2.8) - add it here once you have it from
 # `tofu output cms_url` and re-apply.
 cms_extra_allowed_hosts = []
+
+# scw_access_key / scw_secret_key are NOT set here - export them as
+# TF_VAR_scw_access_key / TF_VAR_scw_secret_key instead (same value as
+# SCW_ACCESS_KEY / SCW_SECRET_KEY, see DEPLOY.md 2.1). Keeping API keys out
+# of tfvars files, even gitignored ones, avoids them ending up in a stray
+# `tofu show`/backup/screen-share.

@@ -65,6 +65,10 @@ set -x SCW_DEFAULT_PROJECT_ID      xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 set -x SCW_DEFAULT_ORGANIZATION_ID xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 set -x AWS_ACCESS_KEY_ID           $SCW_ACCESS_KEY
 set -x AWS_SECRET_ACCESS_KEY       $SCW_SECRET_KEY
+# Also feeds the cms container's S3 media credentials (see DEPLOY.md
+# troubleshooting - object-bucket doesn't create its own IAM key yet).
+set -x TF_VAR_scw_access_key       $SCW_ACCESS_KEY
+set -x TF_VAR_scw_secret_key       $SCW_SECRET_KEY
 ```
 
 **bash / zsh:**
@@ -76,6 +80,8 @@ export SCW_DEFAULT_PROJECT_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 export SCW_DEFAULT_ORGANIZATION_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 export AWS_ACCESS_KEY_ID="$SCW_ACCESS_KEY"
 export AWS_SECRET_ACCESS_KEY="$SCW_SECRET_KEY"
+export TF_VAR_scw_access_key="$SCW_ACCESS_KEY"
+export TF_VAR_scw_secret_key="$SCW_SECRET_KEY"
 ```
 
 ### 2.2 Create the OpenTofu state bucket
@@ -249,7 +255,10 @@ Check Scaleway dashboard -> Containers -> `cms-prod` -> Logs. Most common causes
 `entrypoint.sh` runs `manage.py migrate --noinput` before starting gunicorn on every cold start - check the container logs for migration output/errors. If it's stuck on "Still creating" style output for Postgres, the RDB instance may still be provisioning (can take several minutes on first apply).
 
 **CMS media uploads fail with 403.**
-`pfat-cms-media` is a private bucket - check the `object-bucket` module's IAM policy and API key actually reached the container as `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` (both are `secret_environment_variables`, so they won't show in `tofu output`; check the Scaleway container's env vars in the dashboard instead).
+`pfat-cms-media` is a private bucket. It currently has no bucket policy at all - `cms` authenticates as the same account-wide `SCW_ACCESS_KEY`/`SCW_SECRET_KEY` used everywhere else (via `TF_VAR_scw_access_key`/`TF_VAR_scw_secret_key`, see 2.1), not a bucket-scoped IAM key, so a 403 here means that key itself is wrong/missing, not a scoping issue. Check `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` actually reached the container (both are `secret_environment_variables`, so they won't show in `tofu output` - check the Scaleway container's env vars in the dashboard instead).
+
+**`tofu apply` fails with `insufficient permissions: write application`.**
+The deploying Scaleway API key doesn't have IAM write rights. `object-bucket` used to create a bucket-scoped IAM application/policy/key for `cms`'s S3 media access; that's parked for now (see the `ponytail:` comment in `infra/modules/object-bucket/main.tf`) in favor of reusing the account-wide key, specifically to avoid needing this permission. If you still see this error, you're on an older revision of this module - pull `main`.
 
 **GitHub Actions deploy fails on `aws s3 sync` or registry login.**
 Check `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` repo secrets - all deploy workflows use the same credentials.
