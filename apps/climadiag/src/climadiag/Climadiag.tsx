@@ -148,8 +148,7 @@ export const ClimadiagIndicateurs = ({ climadiagInfo }: { climadiagInfo: Climadi
   const [selectedYear, setSelectedYear] = useState<ClimadiagYear>(2030);
 
   return (
-    <div className="cd-root">
-      <h3 className="cd-city">📍 {climadiagInfo.nom} {climadiagInfo.code_postal}</h3>
+    <>
       <div className="cd-tabs">
         <div>
           {YEARS.map((year) => (
@@ -202,6 +201,6 @@ export const ClimadiagIndicateurs = ({ climadiagInfo }: { climadiagInfo: Climadi
         * Ces projections tiennent compte de la Trajectoire de Réchauffement et d’Adaptation au Changement Climatique
         (TRACC) correspondant à une hausse des températures moyennes en France hexagonale et en Corse de +4°C en 2100.
       </div>
-    </div>
+    </>
   );
 };

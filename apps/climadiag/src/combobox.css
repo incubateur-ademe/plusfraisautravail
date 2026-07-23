@@ -1,0 +1,45 @@
+/* Mimics the DSFR search bar (.fr-search-bar) shell, extended with a listbox
+   popup since the DSFR "Liste déroulante riche (Combobox)" component is
+   Bêta-spec-only with no shipped implementation. */
+.cd-combobox {
+  position: relative;
+}
+
+.cd-combobox-shell {
+  display: flex;
+}
+
+.cd-combobox-shell .fr-input {
+  flex: 1;
+}
+
+.cd-combobox-listbox {
+  position: absolute;
+  z-index: 10;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin: 0.25rem 0 0;
+  padding: 0.5rem 0;
+  list-style: none;
+  background: var(--background-elevated-grey, #fff);
+  box-shadow: 0 2px 6px 0 rgba(0, 0, 18, 0.16);
+  max-height: 16rem;
+  overflow-y: auto;
+}
+
+.cd-combobox-option {
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  color: var(--text-action-high-blue-france);
+}
+
+.cd-combobox-option--active,
+.cd-combobox-option:hover {
+  background: var(--background-open-blue-france-hover, var(--background-default-grey-hover));
+}
+
+.cd-combobox-status {
+  padding: 0.5rem 1rem;
+  color: var(--text-mention-grey);
+}

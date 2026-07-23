@@ -33,6 +33,14 @@ class Settings(BaseSettings):
 
     cache_ttl_seconds: int = Field(default=3600, description="TTL for upstream-data cache.")
 
+    climadiag_api_url: str = Field(
+        default="https://staging.plusfraichemaville.fr/api/external-search-climadiag-info",
+        description="PlusFraîcheMaVille Climadiag commune-search API URL.",
+    )
+    climadiag_api_token: str | None = Field(
+        default=None, description="X-AUTH-TOKEN for the PFMV Climadiag API."
+    )
+
 
 def _load_settings() -> Settings:
     try:
