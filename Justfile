@@ -41,6 +41,11 @@ autodiag:
 alert-widget:
     npm run dev --workspace @pfat/alert-widget
 
+# Run the climadiag SPA on :5173 (http://localhost:5173/climadiag/).
+# Vite proxies /api/* -> http://localhost:8080 - start `just api` in another terminal.
+climadiag:
+    npm run dev --workspace @pfat/climadiag
+
 # Run API + alert-widget together (requires `parallel` from moreutils, or split into two shells).
 dev:
     @echo "Run in two terminals:"
@@ -58,6 +63,9 @@ build-autodiag:
 
 build-alert-widget:
     npm run build --workspace @pfat/alert-widget
+
+build-climadiag:
+    npm run build --workspace @pfat/climadiag
 
 # Build the API container image locally.
 build-api:
@@ -199,13 +207,15 @@ bootstrap-secrets:
     set_secret VIGILANCE_APP_ID            "${VIGILANCE_APP_ID:-}"
     set_secret RTE_CLIENT_ID               "${RTE_CLIENT_ID:-}"
     set_secret RTE_CLIENT_SECRET           "${RTE_CLIENT_SECRET:-}"
+    set_secret CLIMADIAG_API_TOKEN         "${CLIMADIAG_API_TOKEN:-}"
 
     echo
     echo "Done. Run \`just bootstrap-environments\` next to push deploy-time secrets."
 
-# Create (or update) the api / autodiag / alert-widget GitHub Environments
-# and push the right secrets and variables to each. Reads SCW_*, VIGILANCE_APP_ID,
-# RTE_* from your shell and api_url / container_id / *_url from `tofu output`.
+# Create (or update) the api / autodiag / alert-widget / climadiag GitHub
+# Environments and push the right secrets and variables to each. Reads SCW_*,
+# VIGILANCE_APP_ID, RTE_*, CLIMADIAG_API_TOKEN from your shell and
+# api_url / container_id / *_url from `tofu output`.
 # Restricts each environment to the `main` branch so only main-branch deploys
 # can read them. Idempotent.
 bootstrap-environments:
@@ -257,7 +267,7 @@ bootstrap-environments:
     }
 
     echo "Repo: $REPO"
-    read -r -p "Create/update environments api, autodiag, alert-widget and push secrets? [y/N] " ans
+    read -r -p "Create/update environments api, autodiag, alert-widget, climadiag and push secrets? [y/N] " ans
     [[ "$ans" =~ ^[Yy]$ ]] || { echo "Aborted."; exit 1; }
 
     # Capture tofu outputs once. Empty strings are OK - set_env_variable skips.
@@ -265,6 +275,7 @@ bootstrap-environments:
     container_id=""
     autodiag_url=""
     alert_widget_url=""
+    climadiag_url=""
     if (cd infra/envs/prod && tofu output -raw api_url) >/dev/null 2>&1; then
       api_url=$(cd infra/envs/prod && tofu output -raw api_url)
       # Scaleway REST API expects the bare UUID, not the "fr-par/<uuid>" form
@@ -273,6 +284,7 @@ bootstrap-environments:
       container_id="${container_id##*/}"
       autodiag_url=$(cd infra/envs/prod && tofu output -raw autodiag_url)
       alert_widget_url=$(cd infra/envs/prod && tofu output -raw alert_widget_url)
+      climadiag_url=$(cd infra/envs/prod && tofu output -raw climadiag_url)
     else
       echo "  warn   tofu output unavailable - *_URL / SCW_API_CONTAINER_ID will be skipped."
       echo "         Run \`just tf-apply\` (with the container created), then re-run this."
@@ -306,6 +318,14 @@ bootstrap-environments:
     set_env_variable alert-widget SITE_URL       "$alert_widget_url"
 
     echo
+    echo "── climadiag environment ────────────────────────────────────"
+    create_env_main_only climadiag
+    set_env_secret   climadiag SCW_ACCESS_KEY "${SCW_ACCESS_KEY:-}"
+    set_env_secret   climadiag SCW_SECRET_KEY "${SCW_SECRET_KEY:-}"
+    set_env_variable climadiag API_BASE_URL   "$api_url"
+    set_env_variable climadiag SITE_URL       "$climadiag_url"
+
+    echo
     echo "── tofu-apply environment ───────────────────────────────────"
     # Used by terraform-apply.yml. Needs the full set of Scaleway creds
     # plus the TF_VAR_* secrets that drive the runtime configuration.
@@ -317,6 +337,7 @@ bootstrap-environments:
     set_env_secret   tofu-apply VIGILANCE_APP_ID            "${VIGILANCE_APP_ID:-}"
     set_env_secret   tofu-apply RTE_CLIENT_ID               "${RTE_CLIENT_ID:-}"
     set_env_secret   tofu-apply RTE_CLIENT_SECRET           "${RTE_CLIENT_SECRET:-}"
+    set_env_secret   tofu-apply CLIMADIAG_API_TOKEN         "${CLIMADIAG_API_TOKEN:-}"
     set_env_variable tofu-apply API_URL                     "$api_url"
 
     echo
@@ -382,6 +403,15 @@ deploy-alert-widget:
     URL=$(gh run list --workflow=deploy-alert-widget.yml --limit 1 --json url --jq '.[0].url')
     echo "Triggered: $URL"
 
+# Trigger the climadiag deploy workflow on GitHub.
+deploy-climadiag:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    gh workflow run deploy-climadiag.yml
+    sleep 2
+    URL=$(gh run list --workflow=deploy-climadiag.yml --limit 1 --json url --jq '.[0].url')
+    echo "Triggered: $URL"
+
 # Show tofu outputs + last-deploy timestamps for each workflow.
 status:
     #!/usr/bin/env bash
@@ -390,7 +420,7 @@ status:
     (cd infra/envs/prod && tofu output) || echo "(tofu output failed - did you run \`just tf-init\` + \`just tf-apply\`?)"
     echo
     echo "── last GitHub Actions runs ───────────────────────────────────"
-    for wf in deploy-api.yml deploy-autodiag.yml deploy-alert-widget.yml; do
+    for wf in deploy-api.yml deploy-autodiag.yml deploy-alert-widget.yml deploy-climadiag.yml; do
       printf '%-30s ' "$wf"
       gh run list --workflow="$wf" --limit 1 \
         --json status,conclusion,createdAt,url \

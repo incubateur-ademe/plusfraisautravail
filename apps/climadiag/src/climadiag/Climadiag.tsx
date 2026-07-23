@@ -5,7 +5,19 @@ import { climadiagIndicateursData, climadiagColorLegend } from './data';
 import type { Climadiag, ClimadiagTemperatureJour, ClimadiagTypeJour, ClimadiagYear } from './types';
 import './climadiag.css';
 
-const img = (file: string) => `${import.meta.env.BASE_URL}images/climadiag/${file}`;
+// Static imports (not `${BASE_URL}/images/...` strings) so the embed build,
+// which serves the bundle from an arbitrary host path, still resolves them.
+import climadiagJourTresChaud from './images/climadiag-jour-tres-chaud.svg';
+import climadiagNuitsChaudes from './images/climadiag-nuits-chaudes.svg';
+import climadiagJourVdc from './images/climadiag-jour-vdc.svg';
+import climadiagMeteoFranceLogo from './images/climadiag-meteo-france.png';
+import meteoFranceLogo from './images/meteo-france.svg';
+
+const PICTOS: Record<string, string> = {
+  'climadiag-jour-tres-chaud': climadiagJourTresChaud,
+  'climadiag-nuits-chaudes': climadiagNuitsChaudes,
+  'climadiag-jour-vdc': climadiagJourVdc,
+};
 
 const YEARS: ClimadiagYear[] = [2030, 2050, 2100];
 
@@ -120,7 +132,7 @@ const IndicateursLine = ({
     <div className="cd-line-card">
       <div className="cd-line">
         <div className="cd-line-info">
-          <img src={img(`${picto}.svg`)} width={100} height={100} alt="" />
+          <img src={PICTOS[picto]} width={100} height={100} alt="" />
           <div>
             <h4 className="cd-line-title">{title}</h4>
             {seuil != null && <span className="cd-line-seuil">({'>'}{seuil}°C)</span>}
@@ -164,8 +176,8 @@ export const ClimadiagIndicateurs = ({ climadiagInfo }: { climadiagInfo: Climadi
           rel="noreferrer"
           href="https://climadiag-commune.meteofrance.com/"
         >
-          <img src={img('climadiag-meteo-france.png')} width={136} height={48} alt="Logo Météo France Climadiag" />
-          <img src={img('meteo-france.svg')} width={48} height={48} alt="Logo Météo France" />
+          <img src={climadiagMeteoFranceLogo} width={136} height={48} alt="Logo Météo France Climadiag" />
+          <img src={meteoFranceLogo} width={48} height={48} alt="Logo Météo France" />
         </a>
       </div>
       <IndicateursLine

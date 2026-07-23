@@ -9,6 +9,7 @@ The stack is provisioned with [OpenTofu](https://opentofu.org/) (`infra/envs/pro
 | Bucket `pfat-tfstate` | none | manual `aws s3 mb` (state backend) |
 | Bucket `pfat-autodiag` | `static-site` | `module.autodiag_site` |
 | Bucket `pfat-alert-widget` | `static-site` | `module.alert_widget_site` |
+| Bucket `pfat-climadiag` | `static-site` | `module.climadiag_site` |
 | Container Registry namespace `pfat` | `serverless-container` | `module.api` |
 | Container namespace `api-prod` | `serverless-container` | `module.api` |
 | Container `api-prod` | `serverless-container` | `module.api` |
@@ -20,6 +21,7 @@ CI/CD lives under `.github/workflows/`:
 - `deploy-api.yml` - Docker build, push to registry, `PATCH redeploy=true`.
 - `deploy-autodiag.yml` - Vite build, `aws s3 sync` to the bucket.
 - `deploy-alert-widget.yml` - Vite build, `aws s3 sync` to the bucket.
+- `deploy-climadiag.yml` - Vite build (SPA + embed), `aws s3 sync` to the bucket.
 
 ---
 
@@ -30,6 +32,7 @@ Install once on your workstation:
 - Scaleway account with a project, plus an API key (Access key + Secret key) scoped for project, container, registry and object-storage.
 - Météo-France [Vigilance API](https://portail-api.meteofrance.fr/) application ID.
 - (optional) RTE Ecowatt OAuth2 client ID & secret. Without these the `/alerts/electricity` endpoint returns 503; everything else still works.
+- (optional) PlusFraîcheMaVille Climadiag `X-AUTH-TOKEN`. Without it `/climadiag/search` returns 503; everything else still works.
 - [GitHub CLI](https://cli.github.com/) (`gh auth login`).
 - [AWS CLI v2](https://docs.aws.amazon.com/cli/) - used as a Scaleway S3 client.
 - [OpenTofu](https://opentofu.org/) 1.8+ (`tofu` CLI).
@@ -82,7 +85,7 @@ just bootstrap-state
 just bootstrap-tfvars
 ```
 
-Set at least `vigilance_app_id`. Set `rte_client_id` / `rte_client_secret` if you have them; leave empty to disable `/alerts/electricity`. Leave `api_image=""` and `api_deploy=false` for now.
+Set at least `vigilance_app_id`. Set `rte_client_id` / `rte_client_secret` if you have them; leave empty to disable `/alerts/electricity`. Set `climadiag_api_token` if you have it; leave empty to disable `/climadiag/search`. Leave `api_image=""` and `api_deploy=false` for now.
 
 ### 2.4 Initialize OpenTofu
 
@@ -157,6 +160,7 @@ https://github.com/incubateur-ademe/plusfraisautravail/deployments
 | Push to `main` touching `api/**` | `deploy-api.yml` builds + pushes a new image, then `PATCH`es the container with `redeploy=true`. |
 | Push to `main` touching `apps/autodiag/**` | `deploy-autodiag.yml` builds and `aws s3 sync`s to `pfat-autodiag`. |
 | Push to `main` touching `apps/alert-widget/**` | `deploy-alert-widget.yml` builds and `aws s3 sync`s to `pfat-alert-widget`. |
+| Push to `main` touching `apps/climadiag/**` | `deploy-climadiag.yml` builds (SPA + embed) and `aws s3 sync`s to `pfat-climadiag`. |
 | PR touching `infra/**` | `terraform-plan.yml` posts a plan as a step summary. |
 | Push to `main` touching `infra/**` | `terraform-apply.yml` runs `tofu apply` against prod. The deployment shows up in the `tofu-apply` GitHub Environment. |
 
@@ -168,6 +172,7 @@ Manual triggers from your machine:
 just deploy-api
 just deploy-autodiag
 just deploy-alert-widget
+just deploy-climadiag
 just tf-apply          # local apply, still works as an escape hatch
 just status            # current outputs + last-run timestamps
 ```
@@ -178,12 +183,25 @@ To roll out an infrastructure change: edit `infra/envs/prod/**`, open a PR, revi
 
 ## 4. Frontend bucket layout
 
-Both SPAs are built with `VITE_BASE_URL=/` in CI so all asset URLs are root-relative. Buckets serve at the root, e.g.:
+All SPAs are built with `VITE_BASE_URL=/` in CI so all asset URLs are root-relative. Buckets serve at the root, e.g.:
 
 - `https://pfat-autodiag.s3-website.fr-par.scw.cloud/`
 - `https://pfat-alert-widget.s3-website.fr-par.scw.cloud/`
+- `https://pfat-climadiag.s3-website.fr-par.scw.cloud/`
 
-The local dev server keeps the historical sub-path (`/autodiag/`, `/alert-widget/`) - only the deployed bundles use root.
+The local dev server keeps the historical sub-path (`/autodiag/`, `/alert-widget/`, `/climadiag/`) - only the deployed bundles use root.
+
+`deploy-climadiag.yml` builds both the standalone SPA (`index.html` + assets) **and** the single-file embed (`climadiag-embed.js`) into the same `dist/`, so both land in the bucket. To embed just the blue search widget on another page, drop:
+
+```html
+<script
+  src="https://pfat-climadiag.s3-website.fr-par.scw.cloud/climadiag-embed.js"
+  data-auto
+  data-api-base-url="https://<api-prod-url>"
+></script>
+```
+
+The script self-mounts right where it's placed in the DOM and injects the DSFR CSS from a CDN - no other markup or stylesheet needed on the host page.
 
 ---
 
@@ -197,6 +215,9 @@ The container is up but the app crashed at boot. Check Scaleway dashboard -> Con
 
 **API returns 503 on `/alerts/electricity`.**
 RTE creds are missing or wrong. Set `rte_client_id` / `rte_client_secret` in `terraform.tfvars` and re-apply, or set the corresponding GitHub secrets and re-run `terraform-plan.yml` for visibility (the actual variable injection happens at `tofu apply` time, locally).
+
+**API returns 503 on `/climadiag/search`.**
+`climadiag_api_token` is missing. Set it in `terraform.tfvars` and re-apply, or set the `CLIMADIAG_API_TOKEN` GitHub secret (repo-level and on the `tofu-apply` environment) and re-run the apply.
 
 **GitHub Actions deploy fails on `aws s3 sync` or registry login.**
 Check `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` repo secrets - both deploy workflows use the same credentials.

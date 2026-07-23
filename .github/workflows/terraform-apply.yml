@@ -37,6 +37,7 @@ jobs:
       TF_VAR_vigilance_app_id: ${{ secrets.VIGILANCE_APP_ID }}
       TF_VAR_rte_client_id: ${{ secrets.RTE_CLIENT_ID }}
       TF_VAR_rte_client_secret: ${{ secrets.RTE_CLIENT_SECRET }}
+      TF_VAR_climadiag_api_token: ${{ secrets.CLIMADIAG_API_TOKEN }}
       # Pin the image to whatever's currently deployed via the lifecycle ignore.
       # api_deploy must be true here; the bootstrap (api_deploy=false) flow is
       # a one-time local thing.
