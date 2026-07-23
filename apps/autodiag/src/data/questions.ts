@@ -1,23 +1,28 @@
 /**
- * Publicodes-based questions and scoring engine.
+ * Publicodes-based questions and scoring engine — v2 (Construction).
  *
- * This replaces the previous YAML-based data with a Publicodes model.
- * The model files live in data/*.publicodes and are compiled at build time.
- *
- * All existing consumer interfaces are preserved for backward compatibility.
+ * Re-exports from model.ts for backward compatibility with existing components.
  */
 export {
   engine,
-  THEMES,
+  BLOCS,
+  BLOCS as THEMES,
+  BLOC_BY_ID,
   QUESTIONS,
   QUESTION_IDS,
+  FIRST_QUESTION_ID,
+  getQuestionById,
+  getNextQuestionId,
+  isQuestionApplicable,
   computeScores,
 } from './model'
 
 export type {
   Option,
   Question,
-  ThemeDef as Theme,
+  BlocDef,
+  BlocDef as Theme,
   Answers,
+  AnswerLabels,
   ThemeScore,
 } from './model'

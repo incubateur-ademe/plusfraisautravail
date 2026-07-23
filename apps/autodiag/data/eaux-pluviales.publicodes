@@ -1,78 +1,92 @@
 # Eaux pluviales 💧
 #
-# Ce thème couvre la gestion des eaux pluviales sur le site de travail :
-# infiltration, rétention, récupération et valorisation.
+# Infiltrer l'eau de pluie dans le sol, et notamment dans les espaces
+# verts, permet d'éviter le ruissellement des eaux pluviales et
+# d'amener de l'humidité dans le sol, condition indispensable à la
+# survie de vos plantations, contribuant au rafraîchissement de votre
+# site.
 
-autodiag . thèmes . eaux pluviales:
+autodiag . eaux pluviales:
   icônes: 💧
   titre: Eaux pluviales
+  applicable si: autodiag . contexte . blocs extérieurs applicables
   description: >
-    La valorisation des eaux pluviales contribue au rafraîchissement naturel
-    du site en alimentant le sol et la végétation. De plus elle contribue à
-    réduire les inondations par ruissellement.
-  solutionPageId: 81
+    Infiltrer l'eau de pluie dans le sol, et notamment dans les espaces
+    verts, permet d'éviter le ruissellement des eaux pluviales et
+    d'amener de l'humidité dans le sol, condition indispensable à la
+    survie de vos plantations, contribuant au rafraîchissement de votre
+    site.
 
-autodiag . thèmes . eaux pluviales . score:
-  formule: moyenne(autodiag . thèmes . eaux pluviales . questions . * . score)
+autodiag . eaux pluviales . score:
+  formule:
+    somme:
+      - autodiag . eaux pluviales . questions . q1 . score
+      - autodiag . eaux pluviales . questions . q2 . score
+      - autodiag . eaux pluviales . questions . q3 . score
   unité: sans-unité
-  plafond: 5
+  plafond: 300
 
-# Question eaux-pluviales-1
-autodiag . thèmes . eaux pluviales . questions . eaux-pluviales-1:
-  question: Quand il pleut, que devient l’eau de pluie sur votre site ?
+autodiag . eaux pluviales . questions:
+  formule: oui
+
+# Question q1
+autodiag . eaux pluviales . questions . q1:
+  question: Quand il pleut, que devient l'eau de pluie sur votre site ?
   formule:
     une possibilité:
-      - "'Elle est principalement évacuée vers le réseau d’assainissement (canalisations, égouts…).'"
-      - "'Une partie est évacuée dans le réseau d’assainissement, une autre s’infiltre sur place.'"
-      - "'Elle s’infiltre majoritairement sur place (espaces verts, chaussées perméables…).'"
+      - "'Elle est principalement évacuée vers le réseau d''assainissement (canalisations, égouts...)'"
+      - "'Une partie est évacuée dans le réseau d''assainissement, une autre s''infiltre sur place'"
+      - "'Elle s''infiltre majoritairement sur place (espaces verts, chaussées perméables...)'"
 
-autodiag . thèmes . eaux pluviales . questions . eaux-pluviales-1 . score:
+autodiag . eaux pluviales . questions . q1 . score:
   formule:
     variations:
-      - si: autodiag . thèmes . eaux pluviales . questions . eaux-pluviales-1 = "'Elle est principalement évacuée vers le réseau d’assainissement (canalisations, égouts…).'"
+      - si: |-
+          autodiag . eaux pluviales . questions . q1 = 'Elle est principalement évacuée vers le réseau d''assainissement (canalisations, égouts...)'
         alors: 0
-      - si: autodiag . thèmes . eaux pluviales . questions . eaux-pluviales-1 = "'Une partie est évacuée dans le réseau d’assainissement, une autre s’infiltre sur place.'"
-        alors: 2.5
-      - si: autodiag . thèmes . eaux pluviales . questions . eaux-pluviales-1 = "'Elle s’infiltre majoritairement sur place (espaces verts, chaussées perméables…).'"
-        alors: 5
+      - si: |-
+          autodiag . eaux pluviales . questions . q1 = 'Une partie est évacuée dans le réseau d''assainissement, une autre s''infiltre sur place'
+        alors: 50
+      - si: |-
+          autodiag . eaux pluviales . questions . q1 = 'Elle s''infiltre majoritairement sur place (espaces verts, chaussées perméables...)'
+        alors: 100
+      - sinon: 0
 
-# Question eaux-pluviales-2
-autodiag . thèmes . eaux pluviales . questions . eaux-pluviales-2:
-  question: Avez-vous déjà mis en place des solutions pour mieux gérer l’eau de pluie ?
+# Question q2
+autodiag . eaux pluviales . questions . q2:
+  question: Avez-vous déjà mis en place des solutions pour mieux gérer l'eau de pluie ?
   formule:
     une possibilité:
-      - "'Non, rien n’a été fait pour le moment.'"
-      - "'Oui, on y réfléchit ou on a commencé à se renseigner (agence de l’eau, ADOPTA, GRAIE…).'"
-      - "'Oui, des actions sont prévues (travaux de végétalisation interceptant les ruissellements prévus ou en cours…).'"
-      - "'Oui, des aménagements ont déjà été réalisés (travaux de végétalisation interceptant les ruissellements déjà réalisés…).'"
+      - "'Non, rien n''a été fait pour le moment'"
+      - "'Oui, on y réfléchit ou on a commencé à se renseigner (agence de l''eau, ADOPTA, GRAIE...)'"
+      - "'Oui, des actions sont prévues (travaux de végétalisation interceptant les ruissellements prévus ou en cours...)'"
+      - "'Oui, des aménagements ont déjà été réalisés (travaux de végétalisation interceptant les ruissellements déjà réalisés...)'"
 
-autodiag . thèmes . eaux pluviales . questions . eaux-pluviales-2 . score:
+autodiag . eaux pluviales . questions . q2 . score:
   formule:
     variations:
-      - si: autodiag . thèmes . eaux pluviales . questions . eaux-pluviales-2 = "'Non, rien n’a été fait pour le moment.'"
+      - si: |-
+          autodiag . eaux pluviales . questions . q2 = 'Non, rien n''a été fait pour le moment'
         alors: 0
-      - si: autodiag . thèmes . eaux pluviales . questions . eaux-pluviales-2 = "'Oui, on y réfléchit ou on a commencé à se renseigner (agence de l’eau, ADOPTA, GRAIE…).'"
-        alors: 1.25
-      - si: autodiag . thèmes . eaux pluviales . questions . eaux-pluviales-2 = "'Oui, des actions sont prévues (travaux de végétalisation interceptant les ruissellements prévus ou en cours…).'"
-        alors: 2.5
-      - si: autodiag . thèmes . eaux pluviales . questions . eaux-pluviales-2 = "'Oui, des aménagements ont déjà été réalisés (travaux de végétalisation interceptant les ruissellements déjà réalisés…).'"
-        alors: 5
+      - si: |-
+          autodiag . eaux pluviales . questions . q2 = 'Oui, on y réfléchit ou on a commencé à se renseigner (agence de l''eau, ADOPTA, GRAIE...)'
+        alors: 25
+      - si: |-
+          autodiag . eaux pluviales . questions . q2 = 'Oui, des actions sont prévues (travaux de végétalisation interceptant les ruissellements prévus ou en cours...)'
+        alors: 50
+      - si: |-
+          autodiag . eaux pluviales . questions . q2 = 'Oui, des aménagements ont déjà été réalisés (travaux de végétalisation interceptant les ruissellements déjà réalisés...)'
+        alors: 100
+      - sinon: 0
 
-# Question eaux-pluviales-3
-autodiag . thèmes . eaux pluviales . questions . eaux-pluviales-3:
-  question: Récupérez-vous l’eau de pluie pour des usages sur votre bâtiment (arrosage, nettoyage de l’unité de production…) ?
+# Question q3 (pas de score dans le document source)
+autodiag . eaux pluviales . questions . q3:
+  question: Récupérez-vous l'eau de pluie pour des usages sur votre bâtiment (arrosage, nettoyage de l'unité de production...) ?
   formule:
     une possibilité:
       - "'Non'"
       - "'Oui, en partie'"
       - "'Oui, de manière régulière'"
 
-autodiag . thèmes . eaux pluviales . questions . eaux-pluviales-3 . score:
-  formule:
-    variations:
-      - si: autodiag . thèmes . eaux pluviales . questions . eaux-pluviales-3 = "'Non'"
-        alors: 0
-      - si: autodiag . thèmes . eaux pluviales . questions . eaux-pluviales-3 = "'Oui, en partie'"
-        alors: 2.5
-      - si: autodiag . thèmes . eaux pluviales . questions . eaux-pluviales-3 = "'Oui, de manière régulière'"
-        alors: 5
+autodiag . eaux pluviales . questions . q3 . score:
+  formule: 0  # aucun score indiqué dans le document source

@@ -1,57 +1,94 @@
+import type { CSSProperties } from 'react';
 import { fr } from '@codegouvfr/react-dsfr';
-import { Stepper } from '@codegouvfr/react-dsfr/Stepper';
-import { Button } from '@codegouvfr/react-dsfr/Button';
 import { useNavigate } from 'react-router-dom';
-import type { Question, Theme } from '../data/questions';
-import { QUESTIONS } from '../data/questions';
+import type { Question, BlocDef } from '../data/questions';
+import { QUESTIONS, QUESTION_IDS } from '../data/questions';
 import { CONTENU } from '../data/contenu';
 
 interface ProgressHeaderProps {
   question: Question;
-  theme: Theme | undefined;
+  bloc?: BlocDef;
 }
 
-export function ProgressHeader({ question, theme }: ProgressHeaderProps) {
+/**
+ * Couleur d'accent par bloc — noms de la palette illustrative DSFR.
+ * On utilise les tokens de décision (`--text-label-*`, `--background-contrast-*`)
+ * fournis par le CSS DSFR, qui s'adaptent automatiquement au mode sombre.
+ * @see https://www.systeme-de-design.gouv.fr/version-courante/fr/fondamentaux/couleurs-utilisation-dans-le-dsfr
+ */
+const BLOC_COLOR_NAMES: Record<string, string> = {
+  'contexte': 'blue-france',
+  'désimperméabilisation des sols': 'green-bourgeon',
+  'eaux pluviales': 'blue-cumulus',
+  'îlots de rafraîchissement': 'green-menthe',
+  'bâtiments': 'orange-terre-battue',
+};
+
+const DEFAULT_COLOR_NAME = 'blue-france';
+
+export function ProgressHeader({ question, bloc }: ProgressHeaderProps) {
   const navigate = useNavigate();
-  const currentIndex = QUESTIONS.findIndex((q) => q.id === question.id);
-  const nextQuestion = QUESTIONS[currentIndex + 1];
+  const currentIndex = QUESTION_IDS.indexOf(question.id);
+  const total = QUESTION_IDS.length;
+  const progressPercent = total > 0 ? Math.round(((currentIndex + 1) / total) * 100) : 0;
+  const c = CONTENU.navigation;
+
+  const colorName = (bloc && BLOC_COLOR_NAMES[bloc.id]) ?? DEFAULT_COLOR_NAME;
+
+  // Position de la question au sein de son thème (ex. « Question 2 sur 4 »)
+  const blocQuestions = QUESTIONS.filter((q) => q.blocId === question.blocId);
+  const indexInBloc = blocQuestions.findIndex((q) => q.id === question.id);
 
   return (
-    <>
-      <div className="autodiag-question-header">
-        <div className={fr.cx('fr-container')}>
-          <div className="autodiag-question-header__inner">
-            <Button
-              priority="tertiary no outline"
-              iconId="fr-icon-arrow-left-line"
-              iconPosition="left"
-              onClick={() => navigate('/')}
-              size="small"
-            >
-              {CONTENU.navigation.button_back_home}
-            </Button>
-            {theme && (
-              <span className={fr.cx('fr-badge', 'fr-badge--blue-cumulus', 'fr-badge--sm')}>
-                <span aria-hidden="true">{theme.icon}</span>{' '}
-                {theme.label}
-              </span>
-            )}
-          </div>
-        </div>
+    <header
+      className="autodiag-progress-header"
+      style={
+        {
+          '--bloc-color': `var(--text-label-${colorName})`,
+          '--bloc-bg': `var(--background-contrast-${colorName})`,
+        } as CSSProperties
+      }
+    >
+      <div
+        className="autodiag-progress-header__bar"
+        role="progressbar"
+        aria-label={`Étape ${currentIndex + 1} sur ${total}`}
+        aria-valuenow={progressPercent}
+        aria-valuemin={0}
+        aria-valuemax={100}
+      >
+        <div
+          className="autodiag-progress-header__bar-fill"
+          style={{ width: `${progressPercent}%` }}
+        />
       </div>
 
-      <div className={fr.cx('fr-container', 'fr-pt-3w')}>
-        <div className={fr.cx('fr-grid-row', 'fr-grid-row--center')}>
-          <div className={fr.cx('fr-col-12', 'fr-col-md-10', 'fr-col-lg-8')}>
-            <Stepper
-              currentStep={currentIndex + 1}
-              stepCount={QUESTIONS.length}
-              title={question.question}
-              nextTitle={nextQuestion?.question}
-            />
-          </div>
+      <div className={fr.cx('fr-container')}>
+        <div className="autodiag-progress-header__top">
+          <button
+            className={fr.cx('fr-link', 'fr-link--sm')}
+            onClick={() => navigate('/')}
+          >
+            {c.button_back_home}
+          </button>
         </div>
+
+        {bloc && (
+          <div className="autodiag-progress-header__theme">
+            <span className="autodiag-progress-header__theme-icon" aria-hidden="true">
+              {bloc.icon}
+            </span>
+            <div className="autodiag-progress-header__theme-text">
+              <p className="autodiag-progress-header__theme-label">{bloc.label}</p>
+              {blocQuestions.length > 1 && indexInBloc >= 0 && (
+                <p className="autodiag-progress-header__theme-count">
+                  Question {indexInBloc + 1} sur {blocQuestions.length}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
       </div>
-    </>
+    </header>
   );
 }

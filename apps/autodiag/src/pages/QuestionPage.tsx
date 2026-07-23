@@ -5,19 +5,17 @@ import { Button } from '@codegouvfr/react-dsfr/Button';
 import { ProgressHeader } from '../components/ProgressHeader';
 import { QuestionCard } from '../components/QuestionCard';
 import { useFormContext } from '../context/FormContext';
-import { useWagtail } from '../context/WagtailContext';
-import { QUESTIONS, THEMES } from '../data/questions';
+import { QUESTIONS, getNextQuestionId, BLOC_BY_ID } from '../data/questions';
 import { CONTENU } from '../data/contenu';
 
 export function QuestionPage() {
   const { questionId } = useParams<{ questionId: string }>();
   const navigate = useNavigate();
-  const { answers, setAnswer } = useFormContext();
-  const { prefetchSolutionPages } = useWagtail();
+  const { setAnswer, answerLabels, markCompleted } = useFormContext();
   const containerRef = useRef<HTMLDivElement>(null);
 
   const question = QUESTIONS.find((q) => q.id === questionId);
-  const theme = THEMES.find((t) => t.id === question?.themeId);
+  const bloc = question ? BLOC_BY_ID[question.blocId] : undefined;
 
   useEffect(() => {
     if (!question) {
@@ -39,36 +37,51 @@ export function QuestionPage() {
 
   if (!question) return null;
 
-  const rawAnswer = answers[question.id];
-  const selectedScore = rawAnswer !== undefined && rawAnswer >= 0 ? rawAnswer : undefined;
-  const hasSelection = selectedScore !== undefined;
+  const selectedLabel = answerLabels[question.id];
+  const hasSelection = selectedLabel !== undefined;
   const c = CONTENU.navigation;
 
-  function triggerPrefetch() {
-    if (question!.id === QUESTIONS[0].id) {
-      prefetchSolutionPages(THEMES);
+  const dontKnowLabel = c.button_dont_know;
+
+  function handleSelect(score: number, label: string) {
+    setAnswer(question!.id, score, label);
+  }
+
+  function goToNext(labels: Record<string, string>) {
+    // Prochaine question applicable selon le moteur Publicodes
+    // (ordre fixe + « non applicable si », cf. model.ts).
+    const nextId = getNextQuestionId(question!.id, labels);
+    if (nextId === null) {
+      markCompleted();
+      navigate('/resultats');
+    } else {
+      navigate(`/${nextId}`);
     }
   }
 
-  function handleSelect(score: number) {
-    setAnswer(question!.id, score);
-    triggerPrefetch();
+  function handleDontKnow() {
+    // Enregistre la réponse et passe directement à la question suivante.
+    // setAnswer est asynchrone : on passe la réponse explicitement (le label
+    // « Je ne sais pas » est ignoré par la situation Publicodes, mais il doit
+    // écraser une éventuelle réponse précédente).
+    setAnswer(question!.id, -1, dontKnowLabel);
+    goToNext({ ...answerLabels, [question!.id]: dontKnowLabel });
   }
 
   function handleNext() {
-    triggerPrefetch();
-    navigate(question!.nextRoute ?? '/resultats');
+    if (!selectedLabel) return;
+    goToNext(answerLabels);
   }
 
-  function handleDontKnow() {
-    setAnswer(question!.id, -1);
-    triggerPrefetch();
-    navigate(question!.nextRoute ?? '/resultats');
+  function handleBack() {
+    // L'historique navigateur suit exactement le chemin parcouru (navigation
+    // conditionnelle incluse), contrairement à l'ordre linéaire des questions.
+    navigate(-1);
   }
 
   return (
     <div ref={containerRef} className="autodiag-question-page">
-      <ProgressHeader question={question} theme={theme} />
+      <ProgressHeader question={question} bloc={bloc} />
 
       <div className={`${fr.cx('fr-container', 'fr-py-4w')} autodiag-question-body`}>
         <div className={fr.cx('fr-grid-row', 'fr-grid-row--center')}>
@@ -78,9 +91,13 @@ export function QuestionPage() {
             <QuestionCard
               questionId={question.id}
               options={question.options}
-              selectedScore={selectedScore}
+              selectedLabel={selectedLabel}
               onSelect={handleSelect}
             />
+
+            <Button priority="tertiary" onClick={handleDontKnow}>
+              {dontKnowLabel}
+            </Button>
           </div>
         </div>
       </div>
@@ -99,9 +116,11 @@ export function QuestionPage() {
             </Button>
             <Button
               priority="tertiary no outline"
-              onClick={handleDontKnow}
+              iconId="fr-icon-arrow-left-line"
+              iconPosition="left"
+              onClick={handleBack}
             >
-              {c.button_dont_know}
+              {c.button_back}
             </Button>
           </div>
         </div>

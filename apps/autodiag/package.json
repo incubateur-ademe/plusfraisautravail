@@ -9,7 +9,8 @@
     "build:embed": "tsc -b && BUILD_TARGET=embed vite build",
     "preview:embed": "npm run build:embed && cp dist/autodiag-embed.js test-embed/ && npx serve test-embed -p 4173",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@codegouvfr/react-dsfr": "^1.31.1",
@@ -22,6 +23,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@playwright/test": "^1.61.1",
     "@rollup/plugin-yaml": "^4.1.2",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^24.10.1",
