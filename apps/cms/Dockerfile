@@ -35,15 +35,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Django handles user-uploaded media - run as non-root, unlike api/Dockerfile
-# which has no comparable file-handling surface.
-RUN useradd --system --create-home cms
-
 COPY --from=builder /app /app
 COPY entrypoint.sh ./
-RUN chmod +x entrypoint.sh && chown -R cms:cms /app
-
-USER cms
+RUN chmod +x entrypoint.sh
 
 EXPOSE 8080
 

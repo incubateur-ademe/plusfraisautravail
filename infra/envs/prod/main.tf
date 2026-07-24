@@ -99,6 +99,7 @@ module "api" {
   max_scale                    = 5
   environment_variables        = local.api_env
   secret_environment_variables = local.api_secret_env
+  health_check_path            = "/health"
 }
 
 module "cms_db" {
@@ -124,6 +125,7 @@ module "cms" {
   port                         = 8080
   min_scale                    = var.cms_min_scale
   max_scale                    = 3
+  timeout_seconds              = 300
   environment_variables        = local.cms_env
   secret_environment_variables = local.cms_secret_env
   # Private network is bypassed for now while debugging DB connectivity.

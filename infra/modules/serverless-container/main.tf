@@ -2,7 +2,7 @@ terraform {
   required_providers {
     scaleway = {
       source  = "scaleway/scaleway"
-      version = "~> 2.50"
+      version = ">= 2.73"
     }
   }
 }
@@ -25,14 +25,34 @@ resource "scaleway_container" "this" {
   timeout                      = var.timeout_seconds
   privacy                      = "public"
   protocol                     = "http1"
+  http_option                  = "enabled"
   deploy                       = var.deploy
   private_network_id           = var.private_network_id != "" ? var.private_network_id : null
   environment_variables        = var.environment_variables
   secret_environment_variables = var.secret_environment_variables
 
-  # Image rollouts are owned by deploy-api.yml (PATCH on the container API),
-  # not by tofu. Without this, every `tofu apply` would try to revert the
-  # running image to whatever bootstrap reference is in terraform.tfvars.
+  liveness_probe {
+    http {
+      path = var.health_check_path
+    }
+    failure_threshold = 5
+    interval          = "30s"
+    timeout           = "10s"
+  }
+
+  startup_probe {
+    http {
+      path = var.health_check_path
+    }
+    failure_threshold = 10
+    interval          = "30s"
+    timeout           = "10s"
+  }
+
+  # Image rollouts are owned by deploy-api.yml / deploy-cms.yml (PATCH on the
+  # container API), not by tofu. Without this, every `tofu apply` would try to
+  # revert the running image to whatever bootstrap reference is in
+  # terraform.tfvars.
   lifecycle {
     ignore_changes = [registry_image]
   }

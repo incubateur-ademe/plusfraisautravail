@@ -59,6 +59,7 @@ WSGI_APPLICATION = "sites_conformes.wsgi.application"
 DATABASES = {
     "default": dj_database_url.config(default=os.environ.get("DATABASE_URL", "")),
 }
+CONN_HEALTH_CHECKS = True
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
