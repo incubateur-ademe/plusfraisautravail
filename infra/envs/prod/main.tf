@@ -34,7 +34,7 @@ locals {
   }
 
   cms_secret_env = merge(
-    { DATABASE_URL = module.cms_db.database_url },
+    { DATABASE_URL = module.cms_db.private_database_url },
     var.django_secret_key == "" ? {} : { DJANGO_SECRET_KEY = var.django_secret_key },
     # ponytail: reusing the same account-wide Scaleway key already used for
     # tofu apply, rather than a bucket-scoped IAM application/key - the
@@ -128,9 +128,5 @@ module "cms" {
   timeout_seconds              = 300
   environment_variables        = local.cms_env
   secret_environment_variables = local.cms_secret_env
-  # Private network is bypassed for now while debugging DB connectivity.
-  # The RDB instance has a public load-balancer endpoint, and the container
-  # reaches it over the public internet (postgresql://...@<lb-hostname>:5432).
-  # Restore private_network_id = module.cms_db.private_network_id once VPC
-  # routing is confirmed working.
+  private_network_id           = module.cms_db.private_network_id
 }
