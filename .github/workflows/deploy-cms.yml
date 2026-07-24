@@ -91,7 +91,7 @@ jobs:
           # expects just the UUID. Strip any leading "<region>/" defensively.
           CONTAINER_ID="${CONTAINER_ID##*/}"
           curl --fail-with-body -X PATCH \
-            "https://api.scaleway.com/containers/v1beta1/regions/$REGION/containers/$CONTAINER_ID" \
+            "https://api.scaleway.com/containers/v1/regions/$REGION/containers/$CONTAINER_ID" \
             -H "X-Auth-Token: $SCW_SECRET_KEY" \
             -H "Content-Type: application/json" \
-            -d "{\"registry_image\": \"$IMAGE\", \"redeploy\": true}"
+            -d "{\"image\": \"$IMAGE\", \"redeploy\": true}"
