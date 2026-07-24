@@ -33,16 +33,16 @@ locals {
     ))
   }
 
-  cms_secret_env = {
-    DATABASE_URL      = module.cms_db.database_url
-    DJANGO_SECRET_KEY = var.django_secret_key
+  cms_secret_env = merge(
+    { DATABASE_URL = module.cms_db.database_url },
+    var.django_secret_key == "" ? {} : { DJANGO_SECRET_KEY = var.django_secret_key },
     # ponytail: reusing the same account-wide Scaleway key already used for
     # tofu apply, rather than a bucket-scoped IAM application/key - the
     # deploying key doesn't have IAM write permission yet. Narrow this once
     # it does (see infra/modules/object-bucket/main.tf).
-    AWS_ACCESS_KEY_ID     = var.scw_access_key
-    AWS_SECRET_ACCESS_KEY = var.scw_secret_key
-  }
+    var.scw_access_key == "" ? {} : { AWS_ACCESS_KEY_ID = var.scw_access_key },
+    var.scw_secret_key == "" ? {} : { AWS_SECRET_ACCESS_KEY = var.scw_secret_key },
+  )
 
   cms_env = {
     # Can't include module.cms.domain_name here - it's only known after the
@@ -99,6 +99,7 @@ module "api" {
   max_scale                    = 5
   environment_variables        = local.api_env
   secret_environment_variables = local.api_secret_env
+  health_check_path            = "/health"
 }
 
 module "cms_db" {
@@ -124,7 +125,12 @@ module "cms" {
   port                         = 8080
   min_scale                    = var.cms_min_scale
   max_scale                    = 3
-  private_network_id           = module.cms_db.private_network_id
+  timeout_seconds              = 300
   environment_variables        = local.cms_env
   secret_environment_variables = local.cms_secret_env
+  # Private network is bypassed for now while debugging DB connectivity.
+  # The RDB instance has a public load-balancer endpoint, and the container
+  # reaches it over the public internet (postgresql://...@<lb-hostname>:5432).
+  # Restore private_network_id = module.cms_db.private_network_id once VPC
+  # routing is confirmed working.
 }

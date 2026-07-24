@@ -56,7 +56,7 @@ variable "max_scale" {
 
 variable "timeout_seconds" {
   type    = number
-  default = 60
+  default = 300
 }
 
 variable "environment_variables" {
@@ -76,4 +76,10 @@ variable "private_network_id" {
   type        = string
   default     = ""
   description = "Private Network ID to attach the container to (e.g. for a DB reachable only over the private network). Leave empty for public-only containers like api."
+}
+
+variable "health_check_path" {
+  type        = string
+  default     = "/healthz/"
+  description = "HTTP path for liveness and startup probes."
 }
