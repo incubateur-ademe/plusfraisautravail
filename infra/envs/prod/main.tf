@@ -124,7 +124,11 @@ module "cms" {
   port                         = 8080
   min_scale                    = var.cms_min_scale
   max_scale                    = 3
-  private_network_id           = module.cms_db.private_network_id
   environment_variables        = local.cms_env
   secret_environment_variables = local.cms_secret_env
+  # Private network is bypassed for now while debugging DB connectivity.
+  # The RDB instance has a public load-balancer endpoint, and the container
+  # reaches it over the public internet (postgresql://...@<lb-hostname>:5432).
+  # Restore private_network_id = module.cms_db.private_network_id once VPC
+  # routing is confirmed working.
 }

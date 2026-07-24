@@ -43,14 +43,12 @@ resource "scaleway_rdb_instance" "this" {
   user_name         = var.db_user
   password          = random_password.db.result
 
-  # enable_ipam lets Scaleway auto-assign the private IP - no manual
-  # subnet/CIDR bookkeeping needed. This is the only network path to the
-  # instance; there's no public load-balancer endpoint, so only resources
-  # attached to this same Private Network (the cms container) can reach it.
   private_network {
     pn_id       = scaleway_vpc_private_network.this.id
     enable_ipam = true
   }
+
+  load_balancer {}
 }
 
 resource "scaleway_rdb_database" "this" {
