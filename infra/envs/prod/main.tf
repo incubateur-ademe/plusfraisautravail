@@ -33,16 +33,16 @@ locals {
     ))
   }
 
-  cms_secret_env = {
-    DATABASE_URL      = module.cms_db.database_url
-    DJANGO_SECRET_KEY = var.django_secret_key
+  cms_secret_env = merge(
+    { DATABASE_URL = module.cms_db.database_url },
+    var.django_secret_key == "" ? {} : { DJANGO_SECRET_KEY = var.django_secret_key },
     # ponytail: reusing the same account-wide Scaleway key already used for
     # tofu apply, rather than a bucket-scoped IAM application/key - the
     # deploying key doesn't have IAM write permission yet. Narrow this once
     # it does (see infra/modules/object-bucket/main.tf).
-    AWS_ACCESS_KEY_ID     = var.scw_access_key
-    AWS_SECRET_ACCESS_KEY = var.scw_secret_key
-  }
+    var.scw_access_key == "" ? {} : { AWS_ACCESS_KEY_ID = var.scw_access_key },
+    var.scw_secret_key == "" ? {} : { AWS_SECRET_ACCESS_KEY = var.scw_secret_key },
+  )
 
   cms_env = {
     # Can't include module.cms.domain_name here - it's only known after the
