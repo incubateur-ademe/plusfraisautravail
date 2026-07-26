@@ -1,0 +1,51 @@
+name: OpenTofu destroy
+
+on:
+  workflow_dispatch:
+
+env:
+  TOFU_VERSION: "1.8.5"
+
+concurrency:
+  group: tofu-apply
+  cancel-in-progress: false
+
+jobs:
+  destroy:
+    runs-on: ubuntu-latest
+    environment:
+      name: tofu-apply
+    defaults:
+      run:
+        working-directory: infra/envs/prod
+    env:
+      SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+      SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+      SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_DEFAULT_PROJECT_ID }}
+      SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_DEFAULT_ORGANIZATION_ID }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+      TF_VAR_vigilance_app_id: ${{ secrets.VIGILANCE_APP_ID }}
+      TF_VAR_rte_client_id: ${{ secrets.RTE_CLIENT_ID }}
+      TF_VAR_rte_client_secret: ${{ secrets.RTE_CLIENT_SECRET }}
+      TF_VAR_climadiag_api_token: ${{ secrets.CLIMADIAG_API_TOKEN }}
+      TF_VAR_django_secret_key: ${{ secrets.DJANGO_SECRET_KEY }}
+      TF_VAR_scw_access_key: ${{ secrets.SCW_ACCESS_KEY }}
+      TF_VAR_scw_secret_key: ${{ secrets.SCW_SECRET_KEY }}
+      TF_VAR_api_deploy: "true"
+      TF_VAR_cms_deploy: "true"
+      TF_VAR_api_image: "rg.fr-par.scw.cloud/pfat/api:latest"
+      TF_VAR_cms_image: "rg.fr-par.scw.cloud/pfat/cms:latest"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: ${{ env.TOFU_VERSION }}
+          tofu_wrapper: false
+
+      - name: tofu init
+        run: tofu init -input=false
+
+      - name: tofu destroy
+        run: tofu destroy -input=false -auto-approve
