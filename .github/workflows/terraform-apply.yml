@@ -48,6 +48,8 @@ jobs:
       # flow is a one-time local thing.
       TF_VAR_api_deploy: "true"
       TF_VAR_cms_deploy: "true"
+      TF_VAR_api_image: "rg.fr-par.scw.cloud/pfat/api:latest"
+      TF_VAR_cms_image: "rg.fr-par.scw.cloud/pfat/cms:latest"
     steps:
       - uses: actions/checkout@v4
 
