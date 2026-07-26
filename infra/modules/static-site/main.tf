@@ -8,8 +8,9 @@ terraform {
 }
 
 resource "scaleway_object_bucket" "this" {
-  name   = var.bucket_name
-  region = var.region
+  name          = var.bucket_name
+  region        = var.region
+  force_destroy = true
   tags = merge(
     {
       app         = var.app_name

@@ -47,5 +47,8 @@ jobs:
       - name: tofu init
         run: tofu init -input=false
 
+      - name: tofu apply (update resources)
+        run: tofu apply -input=false -auto-approve
+
       - name: tofu destroy
         run: tofu destroy -input=false -auto-approve
