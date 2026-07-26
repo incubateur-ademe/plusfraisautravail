@@ -1,0 +1,20 @@
+import os
+
+from .base import *  # noqa: F403
+
+DEBUG = False
+
+STORAGES["staticfiles"]["BACKEND"] = "whitenoise.storage.CompressedManifestStaticFilesStorage"  # noqa: F405
+STORAGES["default"]["BACKEND"] = "storages.backends.s3.S3Storage"  # noqa: F405
+
+AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID", "")
+AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY", "")
+AWS_STORAGE_BUCKET_NAME = os.environ.get("AWS_STORAGE_BUCKET_NAME", "")
+AWS_S3_ENDPOINT_URL = os.environ.get("AWS_S3_ENDPOINT_URL", "")
+AWS_S3_REGION_NAME = os.environ.get("AWS_S3_REGION_NAME", "")
+AWS_QUERYSTRING_AUTH = True
+
+try:
+    from .local import *  # noqa: F403
+except ImportError:
+    pass

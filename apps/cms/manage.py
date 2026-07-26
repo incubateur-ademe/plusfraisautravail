@@ -4,7 +4,7 @@ import sys
 
 
 def main():
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "sites_conformes.settings")
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "cms.settings.production")
     from django.core.management import execute_from_command_line
 
     execute_from_command_line(sys.argv)

@@ -13,7 +13,7 @@ COPY pyproject.toml uv.lock* README.md ./
 RUN uv sync --frozen --no-install-project --no-dev || uv sync --no-install-project --no-dev
 
 COPY manage.py ./
-COPY sites_conformes ./sites_conformes
+COPY cms ./cms
 RUN uv sync --frozen --no-dev || uv sync --no-dev
 
 # collectstatic doesn't touch the DB, so a placeholder DATABASE_URL is fine -

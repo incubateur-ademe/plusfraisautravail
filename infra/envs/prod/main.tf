@@ -55,7 +55,7 @@ locals {
     AWS_STORAGE_BUCKET_NAME = module.cms_media.bucket_name
     AWS_S3_ENDPOINT_URL     = module.cms_media.endpoint
     AWS_S3_REGION_NAME      = var.region
-    DJANGO_SETTINGS_MODULE  = "sites_conformes.settings"
+    DJANGO_SETTINGS_MODULE  = "cms.settings.production"
   }
 }
 
