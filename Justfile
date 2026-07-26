@@ -526,3 +526,34 @@ clean:
     rm -rf api/.venv api/.pytest_cache api/.ruff_cache
     rm -rf apps/cms/.venv apps/cms/.pytest_cache apps/cms/.ruff_cache apps/cms/staticfiles
     find . -type d -name __pycache__ -prune -exec rm -rf {} +
+
+# ── CMS media migration ─────────────────────────────────────────────────
+
+# Download the old pfat-cms media bucket to ./media-local/.
+# Uses AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY (old bucket creds —
+# not the SCW_* keys used by the new infra).
+sync-prod-media:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if ! command -v aws >/dev/null 2>&1; then
+      echo "ERROR: aws CLI not found. Install it:"
+      echo "  nix-shell -p awscli"
+      exit 1
+    fi
+    if [[ -z "${AWS_ACCESS_KEY_ID:-}" || -z "${AWS_SECRET_ACCESS_KEY:-}" ]]; then
+      echo "ERROR: AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY must be set."
+      echo "       These are the S3 credentials for the old (Scalingo) bucket."
+      exit 1
+    fi
+    ENDPOINT="${AWS_S3_ENDPOINT_URL:-https://s3.fr-par.scw.cloud}"
+    REGION="${AWS_S3_REGION_NAME:-fr-par}"
+    BUCKET="${SYNC_BUCKET:-pfat-cms}"
+    DEST="${SYNC_DEST:-media-local}"
+
+    echo "Syncing s3://${BUCKET}/ -> ./${DEST}/"
+    echo "  endpoint: ${ENDPOINT}"
+    echo "  region:   ${REGION}"
+    mkdir -p "$DEST"
+    aws s3 sync "s3://${BUCKET}/" "./${DEST}/" \
+      --endpoint-url "$ENDPOINT" \
+      --region "$REGION"
