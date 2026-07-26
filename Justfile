@@ -4,7 +4,7 @@
 # Requires: node 22+, uv, opentofu (`tofu`), awscli (for bucket sync).
 
 set shell := ["bash", "-cu"]
-set dotenv-load := false
+set dotenv-load := true
 
 # ── default ──────────────────────────────────────────────────────────────
 
@@ -541,9 +541,15 @@ sync-prod-media:
       exit 1
     fi
     if [[ -z "${AWS_ACCESS_KEY_ID:-}" || -z "${AWS_SECRET_ACCESS_KEY:-}" ]]; then
-      echo "ERROR: AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY must be set."
-      echo "       These are the S3 credentials for the old (Scalingo) bucket."
-      exit 1
+      if [[ -n "${S3_ACCESS_KEY_ID:-}" && -n "${S3_SECRET_ACCESS_KEY:-}" ]]; then
+        export AWS_ACCESS_KEY_ID="$S3_ACCESS_KEY_ID"
+        export AWS_SECRET_ACCESS_KEY="$S3_SECRET_ACCESS_KEY"
+      else
+        echo "ERROR: AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY must be set"
+        echo "       (or S3_ACCESS_KEY_ID / S3_SECRET_ACCESS_KEY)."
+        echo "       These are the S3 credentials for the old (Scalingo) bucket."
+        exit 1
+      fi
     fi
     ENDPOINT="${AWS_S3_ENDPOINT_URL:-https://s3.fr-par.scw.cloud}"
     REGION="${AWS_S3_REGION_NAME:-fr-par}"
