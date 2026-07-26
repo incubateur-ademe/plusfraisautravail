@@ -563,3 +563,29 @@ sync-prod-media:
     aws s3 sync "s3://${BUCKET}/" "./${DEST}/" \
       --endpoint-url "$ENDPOINT" \
       --region "$REGION"
+
+# Sync the old pfat-cms media bucket to the new pfat-cms-media bucket.
+# Two-step: download from old → local, then upload local → new.
+# Source creds: AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY (or S3_*).
+# Dest creds:   SCW_ACCESS_KEY / SCW_SECRET_KEY.
+sync-prod-media-to-new: sync-prod-media
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [[ -z "${SCW_ACCESS_KEY:-}" || -z "${SCW_SECRET_KEY:-}" ]]; then
+      echo "ERROR: SCW_ACCESS_KEY and SCW_SECRET_KEY must be set."
+      echo "       These are the Scaleway credentials for the new pfat-cms-media bucket."
+      exit 1
+    fi
+    ENDPOINT="${AWS_S3_ENDPOINT_URL:-https://s3.fr-par.scw.cloud}"
+    REGION="${AWS_S3_REGION_NAME:-fr-par}"
+    DEST="${SYNC_DEST:-media-local}"
+    NEW_BUCKET="${SYNC_NEW_BUCKET:-pfat-cms-media}"
+
+    echo "Syncing ./${DEST}/ -> s3://${NEW_BUCKET}/"
+    echo "  endpoint: ${ENDPOINT}"
+    echo "  region:   ${REGION}"
+    AWS_ACCESS_KEY_ID="$SCW_ACCESS_KEY" \
+    AWS_SECRET_ACCESS_KEY="$SCW_SECRET_KEY" \
+    aws s3 sync "./${DEST}/" "s3://${NEW_BUCKET}/" \
+      --endpoint-url "$ENDPOINT" \
+      --region "$REGION"
