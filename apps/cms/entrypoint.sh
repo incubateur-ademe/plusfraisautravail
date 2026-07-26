@@ -28,26 +28,20 @@ if not cursor.fetchone()[0]:
 if [ "$NEEDS_RESTORE" -eq 1 ]; then
   echo "Empty database — downloading dump..."
   python -c "
-import boto3, os, tarfile, glob
+import boto3, os
 s3 = boto3.client('s3',
   endpoint_url=os.environ['AWS_S3_ENDPOINT_URL'],
   region_name=os.environ['AWS_S3_REGION_NAME'],
 )
 s3.download_file(
   os.environ['AWS_STORAGE_BUCKET_NAME'],
-  'migration/dump.tar.gz',
-  '/tmp/dump.tar.gz',
+  'migration/dump.pgsql',
+  '/tmp/dump.pgsql',
 )
-with tarfile.open('/tmp/dump.tar.gz', 'r:gz') as tar:
-    tar.extractall('/tmp/')
-dump_file = glob.glob('/tmp/*.pgsql')[0]
-with open('/tmp/dump_path.txt', 'w') as f:
-    f.write(dump_file)
 "
-  DUMP_FILE=$(cat /tmp/dump_path.txt)
-  echo "Restoring database from $DUMP_FILE..."
-  pg_restore --clean --if-exists --no-owner -d "$DATABASE_URL" "$DUMP_FILE"
-  rm -f /tmp/dump.tar.gz /tmp/dump_path.txt "$DUMP_FILE"
+  echo "Restoring database..."
+  pg_restore --clean --if-exists --no-owner -d "$DATABASE_URL" /tmp/dump.pgsql
+  rm -f /tmp/dump.pgsql
   echo "Restore complete."
 fi
 
