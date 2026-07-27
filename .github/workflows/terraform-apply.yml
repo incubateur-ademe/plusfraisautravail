@@ -50,6 +50,10 @@ jobs:
       TF_VAR_cms_deploy: "true"
       TF_VAR_api_image: "rg.fr-par.scw.cloud/pfat/api:latest"
       TF_VAR_cms_image: "rg.fr-par.scw.cloud/pfat/cms:latest"
+      # Scaleway-assigned domain for cms-prod (from `tofu output cms_url`).
+      # Without this, ALLOWED_HOSTS defaults to [] and Django 400s Scaleway's
+      # own health probe, so the container can never pass its startup check.
+      TF_VAR_cms_extra_allowed_hosts: '["cmsprodd46721f9-cms-prod.functions.fnc.fr-par.scw.cloud"]'
     steps:
       - uses: actions/checkout@v4
 
