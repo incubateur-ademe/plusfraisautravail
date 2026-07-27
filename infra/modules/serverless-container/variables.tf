@@ -17,13 +17,13 @@ variable "region" {
 
 variable "registry_image" {
   type        = string
-  description = "Full image reference. Use a placeholder on first apply (deploy = false), then update once the image has been pushed."
+  description = "Full image reference. Must already exist in the registry, even on first apply - Scaleway validates the image at container-create time regardless of `deploy`."
   default     = ""
 }
 
 variable "deploy" {
   type        = bool
-  description = "Whether to deploy the container. Set to false on first apply (no image pushed yet)."
+  description = "Whether to roll the container out to traffic. Does not affect image validation - `registry_image` must exist in the registry either way."
   default     = false
 }
 

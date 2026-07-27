@@ -57,7 +57,7 @@ variable "rte_use_sandbox" {
 
 variable "api_image" {
   type        = string
-  description = "Full image reference for the API container (e.g. rg.fr-par.scw.cloud/pfat/api:sha-abc123). Leave empty on first apply."
+  description = "Full image reference for the API container (e.g. rg.fr-par.scw.cloud/pfat/api:sha-abc123). Must already be pushed to the registry - Scaleway validates it at container-create time even on first apply."
   default     = ""
 }
 
@@ -105,7 +105,7 @@ variable "django_secret_key" {
 
 variable "cms_image" {
   type        = string
-  description = "Full image reference for the cms container (e.g. rg.fr-par.scw.cloud/pfat/cms:sha-abc123). Leave empty on first apply."
+  description = "Full image reference for the cms container (e.g. rg.fr-par.scw.cloud/pfat/cms:sha-abc123). Must already be pushed to the registry - Scaleway validates it at container-create time even on first apply."
   default     = ""
 }
 
