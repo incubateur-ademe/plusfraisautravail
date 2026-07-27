@@ -52,6 +52,18 @@ output "cms_db_host" {
   value = module.cms_db.host
 }
 
+output "cms_db_password" {
+  value       = module.cms_db.password
+  sensitive   = true
+  description = "cms RDB password. Use `tofu output -raw cms_db_password` for one-off pg_restore/psql access."
+}
+
+output "cms_db_public_url" {
+  value       = module.cms_db.database_url
+  sensitive   = true
+  description = "Full DSN over the public load-balancer endpoint. Use `tofu output -raw cms_db_public_url`."
+}
+
 output "cms_media_bucket" {
   value = module.cms_media.bucket_name
 }

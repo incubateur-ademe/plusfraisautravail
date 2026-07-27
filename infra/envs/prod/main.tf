@@ -34,7 +34,11 @@ locals {
   }
 
   cms_secret_env = merge(
-    { DATABASE_URL = module.cms_db.private_database_url },
+    # ponytail: public endpoint for now instead of the private-network DSN -
+    # the container failed to reach the DB over the VPC (entrypoint hung on
+    # "Waiting for database..." and got killed). Revisit private networking
+    # once that's root-caused.
+    { DATABASE_URL = module.cms_db.database_url },
     var.django_secret_key == "" ? {} : { DJANGO_SECRET_KEY = var.django_secret_key },
     # ponytail: reusing the same account-wide Scaleway key already used for
     # tofu apply, rather than a bucket-scoped IAM application/key - the
@@ -128,5 +132,4 @@ module "cms" {
   timeout_seconds              = 300
   environment_variables        = local.cms_env
   secret_environment_variables = local.cms_secret_env
-  private_network_id           = module.cms_db.private_network_id
 }
