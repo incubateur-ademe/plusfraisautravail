@@ -152,13 +152,21 @@ module "cms" {
 #   scw jobs definition start $(tofu output -raw cms_manage_job_id)
 # Change the command via `command = "..."` + `tofu apply` before starting a
 # different manage.py command.
+#
+# command runs through `sh -c` (not exec'd directly), so `&&`/`;` work as
+# real shell separators - Scaleway Jobs doesn't wrap `command` in a shell
+# itself, and passing a raw "cmd1; cmd2" string as command gets tokenized as
+# literal argv to the first program instead of being split into two.
 module "cms_manage" {
-  source                = "../../modules/serverless-job"
-  app_name              = "cms-manage"
-  environment           = local.environment
-  registry_image        = var.cms_image
-  command               = "python manage.py set_s3_cache_control"
-  cpu_limit             = 560
-  memory_limit          = 1024
+  source         = "../../modules/serverless-job"
+  app_name       = "cms-manage"
+  environment    = local.environment
+  registry_image = var.cms_image
+  command        = "sh -c 'python manage.py wagtail_update_image_renditions && python manage.py set_s3_cache_control'"
+  cpu_limit      = 560
+  memory_limit   = 1024
+  # Full bucket scan (list + head + copy per object) can run past the
+  # module default (300s) once there are enough media objects.
+  timeout_seconds       = 1800
   environment_variables = merge(local.cms_env, local.cms_secret_env)
 }
