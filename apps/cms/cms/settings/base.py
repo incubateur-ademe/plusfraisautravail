@@ -155,8 +155,16 @@ DSFR_USE_INTEGRITY_CHECKSUMS = False
 
 SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 
+# wagtail.contrib.settings' context processor supplies the `settings`
+# template variable that sites_conformes' header/footer overrides read
+# CmsDsfrConfig from (site title, tagline, logo, etc.) - without it those
+# all silently render empty instead of raising, which is why the header
+# logo was missing and text fell back to whatever hardcoded English strings
+# exist in the DSFR/sites_conformes templates rather than the DB-configured
+# French content.
 TEMPLATES[0]["OPTIONS"]["context_processors"].extend(
     [
+        "wagtail.contrib.settings.context_processors.settings",
         "wagtailmenus.context_processors.wagtailmenus",
         "sites_conformes.core.context_processors.skiplinks",
         "sites_conformes.core.context_processors.mega_menus",
