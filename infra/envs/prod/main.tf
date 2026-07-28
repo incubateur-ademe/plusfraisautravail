@@ -121,15 +121,20 @@ module "cms_media" {
 }
 
 module "cms" {
-  source                       = "../../modules/serverless-container"
-  app_name                     = "cms"
-  environment                  = local.environment
-  registry_image               = var.cms_image
-  deploy                       = var.cms_deploy
-  port                         = 8080
-  min_scale                    = var.cms_min_scale
-  max_scale                    = 3
-  timeout_seconds              = 300
+  source          = "../../modules/serverless-container"
+  app_name        = "cms"
+  environment     = local.environment
+  registry_image  = var.cms_image
+  deploy          = var.cms_deploy
+  port            = 8080
+  min_scale       = var.cms_min_scale
+  max_scale       = 3
+  timeout_seconds = 300
+  # Wagtail + the sites_conformes migration set needs more headroom than the
+  # module default (280 mvCPU / 512 MiB) to boot within the startup probe
+  # budget, especially cold (min_scale=0) with 2 gunicorn workers.
+  cpu_limit                    = 560
+  memory_limit                 = 1024
   environment_variables        = local.cms_env
   secret_environment_variables = local.cms_secret_env
 }
