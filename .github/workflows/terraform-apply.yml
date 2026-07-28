@@ -8,6 +8,11 @@ on:
       - "infra/**"
       - ".github/workflows/terraform-apply.yml"
   workflow_dispatch:
+    inputs:
+      tofu_replace:
+        description: "Resource address to force-replace (tofu apply -replace=<address>), e.g. module.cms_db.random_password.db. Leave empty for a normal apply."
+        required: false
+        type: string
 
 env:
   TOFU_VERSION: "1.8.5"
@@ -66,8 +71,14 @@ jobs:
         run: tofu init -input=false
 
       - name: tofu plan
+        env:
+          TOFU_REPLACE: ${{ inputs.tofu_replace }}
         run: |
-          tofu plan -no-color -input=false -out=tfplan | tee plan.txt
+          replace_flag=()
+          if [ -n "$TOFU_REPLACE" ]; then
+            replace_flag=(-replace="$TOFU_REPLACE")
+          fi
+          tofu plan -no-color -input=false "${replace_flag[@]}" -out=tfplan | tee plan.txt
           {
             echo '## OpenTofu plan'
             echo
