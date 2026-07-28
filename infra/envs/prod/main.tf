@@ -119,12 +119,11 @@ module "cms_media" {
   app_name    = "cms"
   environment = local.environment
   bucket_name = "pfat-cms-media"
-  # CMS/blog images are public content served directly to site visitors -
-  # public_read lets AWS_QUERYSTRING_AUTH=false give them stable URLs so
-  # Cache-Control actually gets a cache hit on repeat visits. Presigned URLs
-  # (private bucket) are re-signed on every render, so the browser never
-  # sees the same URL twice and can't cache regardless of max-age.
-  public_read = true
+  # Rolled back to private: existing objects kept 403ing even after the
+  # bucket ACL/policy went public-read (root cause unconfirmed - likely a
+  # stale per-object ACL from before the switch), and the rendition-rebuild
+  # job meant to fix that never completed. Revisit public_read once that's
+  # actually diagnosed with real log access, not just API status polling.
 }
 
 module "cms" {

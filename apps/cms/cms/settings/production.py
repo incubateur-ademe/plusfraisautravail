@@ -12,12 +12,12 @@ AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY", "")
 AWS_STORAGE_BUCKET_NAME = os.environ.get("AWS_STORAGE_BUCKET_NAME", "")
 AWS_S3_ENDPOINT_URL = os.environ.get("AWS_S3_ENDPOINT_URL", "")
 AWS_S3_REGION_NAME = os.environ.get("AWS_S3_REGION_NAME", "")
-# Bucket is public-read (see infra: object-bucket module's public_read=true
-# for cms_media) so URLs can be stable instead of presigned. A presigned URL
-# gets a new signature+timestamp on every render, so the browser never
-# requests the same URL twice and Cache-Control can't produce a cache hit
-# no matter how long max-age is.
-AWS_QUERYSTRING_AUTH = False
+# Rolled back to presigned URLs - bucket is private again (see infra:
+# object-bucket module's public_read for cms_media). The public-read
+# attempt still 403'd on existing objects and was reverted before that
+# was diagnosed; revisit AWS_QUERYSTRING_AUTH=False together with
+# public_read once it is.
+AWS_QUERYSTRING_AUTH = True
 AWS_S3_OBJECT_PARAMETERS = {"CacheControl": os.environ.get("S3_CACHE_CONTROL", MEDIA_CACHE_CONTROL)}  # noqa: F405
 
 try:
