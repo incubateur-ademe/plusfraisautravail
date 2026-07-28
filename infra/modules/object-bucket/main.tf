@@ -23,7 +23,26 @@ resource "scaleway_object_bucket" "this" {
 
 resource "scaleway_object_bucket_acl" "this" {
   bucket = scaleway_object_bucket.this.id
-  acl    = "private"
+  acl    = var.public_read ? "public-read" : "private"
+}
+
+# Bucket-level policy, not per-object ACLs - applies uniformly to every
+# object regardless of when it was uploaded (matches infra/modules/static-site).
+resource "scaleway_object_bucket_policy" "public_read" {
+  count  = var.public_read ? 1 : 0
+  bucket = scaleway_object_bucket.this.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "PublicRead"
+        Effect    = "Allow"
+        Principal = "*"
+        Action    = ["s3:GetObject"]
+        Resource  = ["${scaleway_object_bucket.this.name}/*"]
+      },
+    ]
+  })
 }
 
 # ponytail: no app-scoped IAM application/policy/key here - the deploying

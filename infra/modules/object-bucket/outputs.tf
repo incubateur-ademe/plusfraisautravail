@@ -8,5 +8,5 @@ output "bucket_id" {
 
 output "endpoint" {
   value       = "https://s3.${var.region}.scw.cloud"
-  description = "S3 API endpoint (this bucket is private and never served as a website, unlike the static-site module)."
+  description = "S3 API endpoint. Never served as a website (unlike the static-site module), regardless of public_read."
 }

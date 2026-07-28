@@ -12,7 +12,10 @@ BASE_DIR = PROJECT_DIR.parent
 
 # Cache-Control header applied to media served/uploaded via S3.
 # Ported from sites-conformes PR #537 (not yet released upstream).
-MEDIA_CACHE_CONTROL = os.environ.get("MEDIA_CACHE_CONTROL", "public, max-age=3600")
+# 1 day, not 1 year+immutable: Wagtail can overwrite an existing image's file
+# in place on re-upload without changing its filename, so a very long-lived
+# immutable cache risks serving stale content after an editor swaps an image.
+MEDIA_CACHE_CONTROL = os.environ.get("MEDIA_CACHE_CONTROL", "public, max-age=86400")
 
 SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 DEBUG = os.environ.get("DEBUG", "false").lower() == "true"

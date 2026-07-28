@@ -25,3 +25,9 @@ variable "tags" {
   default     = {}
   description = "Extra tags merged with the standard app/environment/managed_by set."
 }
+
+variable "public_read" {
+  type        = bool
+  default     = false
+  description = "Allow anonymous s3:GetObject on every object (bucket ACL + policy). Use for media meant to be served directly, e.g. CMS uploads - not for buckets holding anything sensitive."
+}
