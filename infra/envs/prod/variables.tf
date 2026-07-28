@@ -117,8 +117,8 @@ variable "cms_deploy" {
 
 variable "cms_min_scale" {
   type        = number
-  description = "Minimum number of always-warm cms container instances. 0 is fine here (unlike api_min_scale) - a CMS admin backend isn't hit on every page load of the public site, so occasional cold starts are acceptable."
-  default     = 0
+  description = "Minimum number of always-warm cms container instances. Kept at 1 so the site is always reachable, no cold starts."
+  default     = 1
 }
 
 variable "cms_db_node_type" {
