@@ -20,9 +20,9 @@ variable "registry_image" {
   description = "Full image reference. Reuse the same image as the app's serverless-container - same code, different command."
 }
 
-variable "command" {
-  type        = string
-  description = "Startup command, e.g. \"python manage.py set_s3_cache_control --dry-run\". Overrides the image's default command/entrypoint."
+variable "startup_command" {
+  type        = list(string)
+  description = "Argv, e.g. [\"./manage_jobs.sh\"] or [\"python\", \"manage.py\", \"set_s3_cache_control\"]. Exec'd directly (no shell) - overrides the image's ENTRYPOINT. Chain multiple commands in a script baked into the image rather than a single \"cmd1 && cmd2\" string."
 }
 
 variable "cpu_limit" {

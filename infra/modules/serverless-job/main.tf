@@ -21,8 +21,13 @@ resource "scaleway_job_definition" "this" {
   # minimum is enough.
   local_storage_capacity = var.local_storage_capacity
   image_uri              = var.registry_image
-  command                = var.command
-  region                 = var.region
+  # startup_command (list(string), exec'd directly - like Kubernetes
+  # container.command) instead of the deprecated `command` (string). The
+  # string form isn't run through a shell, so a "cmd1 && cmd2" string
+  # either fails outright or gets naively split, never actually
+  # shell-parsed - confirmed against Scaleway's own troubleshooting docs.
+  startup_command = var.startup_command
+  region          = var.region
   # No secret_reference blocks (Secret Manager) - this project doesn't use
   # Secret Manager elsewhere, and `env` here is the same plain Terraform map
   # already used for scaleway_container.secret_environment_variables, so

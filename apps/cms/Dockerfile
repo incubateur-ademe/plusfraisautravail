@@ -41,8 +41,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 COPY --from=builder /app /app
-COPY entrypoint.sh ./
-RUN chmod +x entrypoint.sh
+COPY entrypoint.sh manage_jobs.sh ./
+RUN chmod +x entrypoint.sh manage_jobs.sh
 
 EXPOSE 8080
 

@@ -150,21 +150,21 @@ module "cms" {
 # One-shot management-command runner, reusing the same image and env/secrets
 # as module.cms. Not run on apply - trigger manually:
 #   scw jobs definition start $(tofu output -raw cms_manage_job_id)
-# Change the command via `command = "..."` + `tofu apply` before starting a
-# different manage.py command.
 #
-# command runs through `sh -c` (not exec'd directly), so `&&`/`;` work as
-# real shell separators - Scaleway Jobs doesn't wrap `command` in a shell
-# itself, and passing a raw "cmd1; cmd2" string as command gets tokenized as
-# literal argv to the first program instead of being split into two.
+# Scaleway Jobs' `command` field isn't run through a shell - `&&`/`;` in one
+# string fails (confirmed against Scaleway's own troubleshooting docs, which
+# point at Secret Manager script references as the workaround for anything
+# beyond a single command). Simpler here since we already control the
+# image: chain the actual commands in apps/cms/manage_jobs.sh and just call
+# that one script - no quoting/splitting to get wrong.
 module "cms_manage" {
-  source         = "../../modules/serverless-job"
-  app_name       = "cms-manage"
-  environment    = local.environment
-  registry_image = var.cms_image
-  command        = "sh -c 'python manage.py wagtail_update_image_renditions && python manage.py set_s3_cache_control'"
-  cpu_limit      = 560
-  memory_limit   = 1024
+  source          = "../../modules/serverless-job"
+  app_name        = "cms-manage"
+  environment     = local.environment
+  registry_image  = var.cms_image
+  startup_command = ["./manage_jobs.sh"]
+  cpu_limit       = 560
+  memory_limit    = 1024
   # Full bucket scan (list + head + copy per object) can run past the
   # module default (300s) once there are enough media objects.
   timeout_seconds       = 1800
