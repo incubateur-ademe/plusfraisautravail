@@ -135,11 +135,11 @@ module "cms" {
   # budget, especially cold (min_scale=0) with 2 gunicorn workers.
   cpu_limit    = 560
   memory_limit = 1024
-  # Diagnostic: /healthz/ never once passed the container's own health check
-  # despite gunicorn confirmed booting cleanly (verified via logs and local
-  # Docker runs). Probing a real Wagtail page instead isolates whether the
-  # issue is specific to the healthz view or platform-wide.
-  health_check_path            = "/admin/login/"
+  # Diagnostic: /healthz/ and /admin/login/ both never once passed the
+  # container's own health check despite gunicorn confirmed booting cleanly
+  # (verified via logs and local Docker runs). /ping/ is a bare 200 with no
+  # DB/middleware involvement, to rule out the entire app layer.
+  health_check_path            = "/ping/"
   environment_variables        = local.cms_env
   secret_environment_variables = local.cms_secret_env
 }
