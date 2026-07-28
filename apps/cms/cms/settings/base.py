@@ -140,6 +140,13 @@ WAGTAILSEARCH_BACKENDS = {
 WAGTAILADMIN_PATH = "admin/"
 WAGTAIL_I18N_ENABLED = True
 
+# django-dsfr 3.5.2's bundled dsfr.min.css/utility.min.css don't match the
+# SHA-384 hashes hardcoded in its own checksums.py (upstream packaging bug,
+# verified by hand-hashing the served files) - browsers silently block the
+# stylesheets on integrity mismatch, breaking all site styling with no
+# server-side error. Disable SRI for these until upstream ships a fix.
+DSFR_USE_INTEGRITY_CHECKSUMS = False
+
 TEMPLATES[0]["OPTIONS"]["context_processors"].extend(
     [
         "wagtailmenus.context_processors.wagtailmenus",

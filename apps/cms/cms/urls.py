@@ -25,14 +25,8 @@ def healthz(request):
     return HttpResponse("ok")
 
 
-def ping(request):
-    """Diagnostic: static 200, no DB, no middleware-heavy logic."""
-    return HttpResponse("pong")
-
-
 urlpatterns = [
     path("healthz/", healthz, name="healthz"),
-    path("ping/", ping, name="ping"),
     path("sitemap.xml", sitemap, name="xml_sitemap"),
     path(settings.WAGTAILADMIN_PATH, include(wagtailadmin_urls)),
     path("documents/", include(wagtaildocs_urls)),

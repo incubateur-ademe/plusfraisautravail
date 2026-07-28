@@ -35,9 +35,7 @@ resource "scaleway_container" "this" {
     http {
       path = var.health_check_path
     }
-    # ponytail: bumped from 5 to 20 while debugging cms-prod never passing
-    # its startup probe - revert once root-caused.
-    failure_threshold = 20
+    failure_threshold = 5
     interval          = "30s"
     timeout           = "10s"
   }
@@ -46,8 +44,7 @@ resource "scaleway_container" "this" {
     http {
       path = var.health_check_path
     }
-    # ponytail: bumped from 10 to 20, same reason as liveness_probe above.
-    failure_threshold = 20
+    failure_threshold = 10
     interval          = "30s"
     timeout           = "10s"
   }

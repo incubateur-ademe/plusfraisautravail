@@ -128,18 +128,13 @@ module "cms" {
   deploy          = var.cms_deploy
   port            = 8080
   min_scale       = var.cms_min_scale
-  max_scale       = 1
+  max_scale       = 3
   timeout_seconds = 300
   # Wagtail + the sites_conformes migration set needs more headroom than the
   # module default (280 mvCPU / 512 MiB) to boot within the startup probe
   # budget, especially cold (min_scale=0) with 2 gunicorn workers.
-  cpu_limit    = 560
-  memory_limit = 1024
-  # Diagnostic: /healthz/ and /admin/login/ both never once passed the
-  # container's own health check despite gunicorn confirmed booting cleanly
-  # (verified via logs and local Docker runs). /ping/ is a bare 200 with no
-  # DB/middleware involvement, to rule out the entire app layer.
-  health_check_path            = "/ping/"
+  cpu_limit                    = 560
+  memory_limit                 = 1024
   environment_variables        = local.cms_env
   secret_environment_variables = local.cms_secret_env
 }
