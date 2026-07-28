@@ -104,6 +104,7 @@ module "api" {
   environment_variables        = local.api_env
   secret_environment_variables = local.api_secret_env
   health_check_path            = "/health"
+  custom_domain                = "api.${var.base_domain}"
 }
 
 module "cms_db" {
@@ -137,4 +138,5 @@ module "cms" {
   memory_limit                 = 1024
   environment_variables        = local.cms_env
   secret_environment_variables = local.cms_secret_env
+  custom_domain                = var.base_domain
 }

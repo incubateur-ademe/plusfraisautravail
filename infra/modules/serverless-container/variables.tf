@@ -83,3 +83,9 @@ variable "health_check_path" {
   default     = "/healthz/"
   description = "HTTP path for liveness and startup probes."
 }
+
+variable "custom_domain" {
+  type        = string
+  default     = ""
+  description = "Custom hostname to bind to the container (e.g. api.example.com, or a bare zone apex like example.com). Requires a DNS record pointing this hostname at the container's public_endpoint to already exist first - a CNAME for a subdomain, or the DNS provider's apex-alias equivalent for a bare domain. See the cname_target output. Leave empty to skip."
+}

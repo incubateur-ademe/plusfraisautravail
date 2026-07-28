@@ -67,3 +67,23 @@ output "cms_db_public_url" {
 output "cms_media_bucket" {
   value = module.cms_media.bucket_name
 }
+
+# DNS records to create manually in OVH (the zone isn't managed by
+# Terraform - see infra/README.md). Each custom_domain binding on the
+# Scaleway side stays "pending" until the matching record exists and
+# resolves, then Scaleway auto-issues the TLS cert.
+#
+# api.<base_domain> is a normal subdomain: a CNAME record works.
+# <base_domain> itself is the zone apex - OVH (like all DNS providers)
+# forbids a plain CNAME there. Use OVH's HTTPS-type DNS record in "Alias
+# Mode" instead: priority 0, target = the cname_target value, settings
+# left empty. See https://docs.ovhcloud.com/en/guides/web-cloud/domains/dns-zone-records
+# ("Alias Mode" under the HTTPS/SVCB record types) - this is OVH's
+# purpose-built apex-alias mechanism, not a workaround.
+output "dns_records_to_create" {
+  value = {
+    (var.base_domain)        = "HTTPS record, priority 0 (Alias Mode) -> ${module.cms.cname_target}"
+    "api.${var.base_domain}" = "CNAME -> ${module.api.cname_target}"
+  }
+  description = "Hostname -> required DNS record. Create these in the OVH DNS zone for plusfraisautravail.beta.gouv.fr."
+}

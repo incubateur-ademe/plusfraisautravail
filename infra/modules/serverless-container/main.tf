@@ -57,3 +57,17 @@ resource "scaleway_container" "this" {
     ignore_changes = [registry_image]
   }
 }
+
+# Scaleway validates that custom_domain resolves to this container before
+# activating the binding, so the DNS record (see the cname_target output)
+# must exist first - a subdomain gets a plain CNAME; a zone apex needs
+# whatever apex-alias mechanism the DNS provider offers (e.g. OVH's HTTPS
+# record in "Alias Mode", since CNAME isn't valid at an apex). This
+# resource can be applied ahead of that and will just show as pending
+# until the record exists and resolves.
+resource "scaleway_container_domain" "this" {
+  count        = var.custom_domain != "" ? 1 : 0
+  container_id = scaleway_container.this.id
+  hostname     = var.custom_domain
+  region       = var.region
+}

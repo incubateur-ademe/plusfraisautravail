@@ -8,6 +8,12 @@ variable "zone" {
   default = "fr-par-1"
 }
 
+variable "base_domain" {
+  type        = string
+  default     = "plusfraisautravail.beta.gouv.fr"
+  description = "Root domain. cms is served at the root; every other app gets a subdomain of this (e.g. api.<base_domain>)."
+}
+
 # ponytail: only needed so cms's container can reuse the same account key as
 # S3 media credentials (see cms_secret_env in main.tf) - not read by the
 # provider block itself, which still auths via the SCW_ACCESS_KEY/
