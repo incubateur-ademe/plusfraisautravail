@@ -29,6 +29,11 @@ RUN python manage.py collectstatic --noinput
 
 FROM python:3.12-slim AS runtime
 
+# Printed by entrypoint.sh at boot so log lines can be traced back to the
+# exact build, e.g. when comparing deployments while debugging.
+ARG BUILD_SHA=unknown
+ENV BUILD_SHA=${BUILD_SHA}
+
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PATH="/app/.venv/bin:$PATH"

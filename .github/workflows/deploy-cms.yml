@@ -66,6 +66,8 @@ jobs:
           push: true
           # Scaleway Serverless Containers only run amd64.
           platforms: linux/amd64
+          build-args: |
+            BUILD_SHA=sha-${{ github.sha }}
           tags: |
             ${{ steps.meta.outputs.image }}
             ${{ env.REGISTRY }}/${{ env.REGISTRY_NAMESPACE }}/${{ env.IMAGE_NAME }}:latest

@@ -6,5 +6,5 @@
 # before gunicorn ever started, even though the migration itself was fine.
 set -euo pipefail
 
-echo "Starting gunicorn..."
+echo "Starting gunicorn (build ${BUILD_SHA:-unknown})..."
 exec gunicorn cms.wsgi:application --bind 0.0.0.0:8080 --workers 2
