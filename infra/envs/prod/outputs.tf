@@ -68,6 +68,11 @@ output "cms_media_bucket" {
   value = module.cms_media.bucket_name
 }
 
+output "cms_manage_job_id" {
+  value       = module.cms_manage.job_definition_id
+  description = "Run with `scw jobs definition start $(tofu output -raw cms_manage_job_id)`."
+}
+
 # DNS records to create manually in OVH (the zone isn't managed by
 # Terraform - see infra/README.md). Each custom_domain binding on the
 # Scaleway side stays "pending" until the matching record exists and
