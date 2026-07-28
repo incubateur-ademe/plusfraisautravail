@@ -13,6 +13,10 @@ BASE_DIR = PROJECT_DIR.parent
 SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 DEBUG = os.environ.get("DEBUG", "false").lower() == "true"
 ALLOWED_HOSTS = json.loads(os.environ.get("ALLOWED_HOSTS", "[]"))
+# Matches upstream sites-conformes' default (opt-in via env var, not
+# force-enabled) - Scaleway's proxy layer hasn't been confirmed to set
+# X-Forwarded-Host correctly, so don't trust it until verified.
+USE_X_FORWARDED_HOST = os.environ.get("USE_X_FORWARDED_HOST", "false").lower() == "true"
 
 INSTALLED_APPS = [
     "wagtail.contrib.forms",
@@ -137,15 +141,19 @@ WAGTAILSEARCH_BACKENDS = {
     }
 }
 
-WAGTAILADMIN_PATH = "admin/"
+# Matches upstream sites-conformes' default admin path.
+WAGTAILADMIN_PATH = "cms-admin/"
 WAGTAIL_I18N_ENABLED = True
 
-# django-dsfr 3.5.2's bundled dsfr.min.css/utility.min.css don't match the
-# SHA-384 hashes hardcoded in its own checksums.py (upstream packaging bug,
-# verified by hand-hashing the served files) - browsers silently block the
-# stylesheets on integrity mismatch, breaking all site styling with no
-# server-side error. Disable SRI for these until upstream ships a fix.
+# Upstream disables this by default too: "They can clash with Whitenoise and
+# are normally not useful as we serve the statics from a trusted source."
+# Confirmed independently here - django-dsfr 3.5.2's bundled
+# dsfr.min.css/utility.min.css don't match the SHA-384 hashes hardcoded in
+# its own checksums.py, so browsers silently blocked all DSFR styling on
+# integrity mismatch with no server-side error.
 DSFR_USE_INTEGRITY_CHECKSUMS = False
+
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 
 TEMPLATES[0]["OPTIONS"]["context_processors"].extend(
     [
@@ -178,3 +186,11 @@ HOST_PROTO = "http"
 PROCONNECT_ACTIVATED = False
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Matches upstream sites-conformes' pattern of deriving CSRF_TRUSTED_ORIGINS
+# from ALLOWED_HOSTS. Skipped while ALLOWED_HOSTS is the "*" wildcard (see
+# TODO in .github/workflows/terraform-apply.yml) since "*" isn't a valid
+# origin and Django requires a scheme+host per entry.
+CSRF_TRUSTED_ORIGINS = [
+    f"https://{host}" for host in ALLOWED_HOSTS if host not in ("*", "127.0.0.1", "localhost")
+]
