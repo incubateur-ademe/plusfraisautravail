@@ -128,7 +128,7 @@ module "cms" {
   deploy          = var.cms_deploy
   port            = 8080
   min_scale       = var.cms_min_scale
-  max_scale       = 3
+  max_scale       = 1
   timeout_seconds = 300
   # Wagtail + the sites_conformes migration set needs more headroom than the
   # module default (280 mvCPU / 512 MiB) to boot within the startup probe
