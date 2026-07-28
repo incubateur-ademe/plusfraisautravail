@@ -10,6 +10,10 @@ load_dotenv()
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 BASE_DIR = PROJECT_DIR.parent
 
+# Cache-Control header applied to media served/uploaded via S3.
+# Ported from sites-conformes PR #537 (not yet released upstream).
+MEDIA_CACHE_CONTROL = os.environ.get("MEDIA_CACHE_CONTROL", "public, max-age=3600")
+
 SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 DEBUG = os.environ.get("DEBUG", "false").lower() == "true"
 ALLOWED_HOSTS = json.loads(os.environ.get("ALLOWED_HOSTS", "[]"))
@@ -186,6 +190,7 @@ INSTALLED_APPS.extend(
         "wagtailmenus",
         "wagtailmarkdown",
         "sites_conformes.proconnect",
+        "cms.media_tools",
     ]
 )
 
