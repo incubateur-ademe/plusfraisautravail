@@ -97,3 +97,33 @@ jobs:
             -H "X-Auth-Token: $SCW_SECRET_KEY" \
             -H "Content-Type: application/json" \
             -d "{\"image\": \"$IMAGE\", \"redeploy\": true}"
+
+      - name: Run cms_manage job (migrations, image renditions, cache-control)
+        env:
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          JOB_DEFINITION_ID: ${{ vars.SCW_CMS_MANAGE_JOB_ID }}
+          IMAGE: ${{ needs.build-push.outputs.image }}
+        run: |
+          if [ -z "$JOB_DEFINITION_ID" ]; then
+            echo "SCW_CMS_MANAGE_JOB_ID is not set - skipping (run 'just bootstrap-environments' to set it)."
+            exit 0
+          fi
+          JOB_DEFINITION_ID="${JOB_DEFINITION_ID##*/}"
+          # Unlike module.cms's container, tofu never re-applies this job
+          # definition from CI (deploy-cms.yml only PATCHes the container, it
+          # doesn't run tofu apply) - its image_uri would otherwise stay pinned
+          # to whatever cms_image was set at the last manual `tofu apply`. PATCH
+          # it to the image we just built and pushed before starting a run, so
+          # migrate always runs against the code that's actually being deployed.
+          curl --fail-with-body -X PATCH \
+            "https://api.scaleway.com/serverless-jobs/v1alpha1/regions/$REGION/job-definitions/$JOB_DEFINITION_ID" \
+            -H "X-Auth-Token: $SCW_SECRET_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{\"image_uri\": \"$IMAGE\"}"
+          # manage_jobs.sh (baked into the image) currently leads with
+          # `manage.py migrate --noinput`.
+          curl --fail-with-body -X POST \
+            "https://api.scaleway.com/serverless-jobs/v1alpha1/regions/$REGION/job-definitions/$JOB_DEFINITION_ID/start" \
+            -H "X-Auth-Token: $SCW_SECRET_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{}"

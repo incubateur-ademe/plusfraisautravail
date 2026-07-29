@@ -333,6 +333,7 @@ bootstrap-environments:
     container_id=""
     cms_url=""
     cms_container_id=""
+    cms_manage_job_id=""
     autodiag_url=""
     alert_widget_url=""
     climadiag_url=""
@@ -353,8 +354,10 @@ bootstrap-environments:
       cms_url=$(cd infra/envs/prod && tofu output -raw cms_url)
       cms_container_id=$(cd infra/envs/prod && tofu output -raw cms_container_id)
       cms_container_id="${cms_container_id##*/}"
+      cms_manage_job_id=$(cd infra/envs/prod && tofu output -raw cms_manage_job_id)
+      cms_manage_job_id="${cms_manage_job_id##*/}"
     else
-      echo "  warn   tofu output unavailable - CMS_URL / SCW_CMS_CONTAINER_ID will be skipped."
+      echo "  warn   tofu output unavailable - CMS_URL / SCW_CMS_CONTAINER_ID / SCW_CMS_MANAGE_JOB_ID will be skipped."
       echo "         Run \`just tf-apply\` (with cms_deploy=true), then re-run this."
     fi
 
@@ -378,6 +381,7 @@ bootstrap-environments:
     set_env_secret   cms SCW_DEFAULT_PROJECT_ID "${SCW_DEFAULT_PROJECT_ID:-}"
     set_env_secret   cms DJANGO_SECRET_KEY      "${DJANGO_SECRET_KEY:-}"
     set_env_variable cms SCW_CMS_CONTAINER_ID   "$cms_container_id"
+    set_env_variable cms SCW_CMS_MANAGE_JOB_ID  "$cms_manage_job_id"
     set_env_variable cms CMS_URL                "$cms_url"
 
     echo
