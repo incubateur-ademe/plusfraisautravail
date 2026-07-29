@@ -55,20 +55,21 @@ climadiag:
 cms:
     cd apps/cms && DJANGO_SETTINGS_MODULE=cms.settings.dev uv run python manage.py runserver 8080
 
-# Extract translatable strings from cms/extensions into its French .po file.
-makemessages-cms:
-    cd apps/cms/cms/extensions && ../../.venv/bin/python ../../manage.py makemessages -l fr
-
 # Extract translatable strings from the wagtail-notion-form package into its French .po file.
 makemessages-notion-form:
     cd packages/wagtail-notion-form/wagtail_notion_form && ../../../apps/cms/.venv/bin/python ../../../apps/cms/manage.py makemessages -l fr
 
-# Compile all .po files (including cms/extensions) into .mo, so translations take effect.
-# wagtail-notion-form lives outside apps/cms's tree, so compilemessages doesn't reach it -
-# compiled separately below.
+# Extract translatable strings from the sites-conformes-footer-partners package into its French .po file.
+makemessages-footer-partners:
+    cd packages/sites-conformes-footer-partners/sites_conformes_footer_partners && ../../../apps/cms/.venv/bin/python ../../../apps/cms/manage.py makemessages -l fr
+
+# Compile all .po files (including the local packages) into .mo, so translations take effect.
+# wagtail-notion-form and sites-conformes-footer-partners live outside apps/cms's tree, so
+# compilemessages doesn't reach them - compiled separately below.
 compilemessages-cms:
     cd apps/cms && DJANGO_SETTINGS_MODULE=cms.settings.dev uv run python manage.py compilemessages -l fr
     cd packages/wagtail-notion-form/wagtail_notion_form && ../../../apps/cms/.venv/bin/python ../../../apps/cms/manage.py compilemessages -l fr
+    cd packages/sites-conformes-footer-partners/sites_conformes_footer_partners && ../../../apps/cms/.venv/bin/python ../../../apps/cms/manage.py compilemessages -l fr
 
 # Run API + alert-widget together (requires `parallel` from moreutils, or split into two shells).
 dev:

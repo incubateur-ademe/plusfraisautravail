@@ -111,7 +111,7 @@ class Migration(migrations.Migration):
                     modelcluster.fields.ParentalKey(
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="sub_partners",
-                        to="extensions.footerpartnerssettings",
+                        to="sites_conformes_footer_partners.footerpartnerssettings",
                     ),
                 ),
             ],

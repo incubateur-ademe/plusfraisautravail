@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('extensions', '0002_footerpartnerssettings_logo_height_and_more'),
+        ('sites_conformes_footer_partners', '0002_footerpartnerssettings_logo_height_and_more'),
     ]
 
     operations = [

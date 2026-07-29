@@ -41,7 +41,7 @@
 
 {% block footer_partners %}
   {% translate "Opens a new window" as new_window_label %}
-  {% with partners=settings.extensions.FooterPartnersSettings %}
+  {% with partners=settings.sites_conformes_footer_partners.FooterPartnersSettings %}
     {% if partners.main_partner_logo or partners.sub_partners.all %}
       <div class="fr-footer__partners">
         {% if partners.title %}

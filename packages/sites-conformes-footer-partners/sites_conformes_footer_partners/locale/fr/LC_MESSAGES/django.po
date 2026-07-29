@@ -1,4 +1,4 @@
-# Translations for the cms.extensions app.
+# Translations for the sites_conformes_footer_partners app.
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"

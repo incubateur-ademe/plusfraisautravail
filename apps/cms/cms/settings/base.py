@@ -181,6 +181,11 @@ TEMPLATES[0]["OPTIONS"]["context_processors"].extend(
 INSTALLED_APPS.extend(
     [
         "dsfr",
+        # Overrides sites_conformes_core/blocks/footer.html - must come before
+        # "sites_conformes" (which ships that same template path) so Django's
+        # app_directories loader (first INSTALLED_APPS match wins) picks this
+        # template over the upstream one.
+        "sites_conformes_footer_partners",
         "sites_conformes",
         "sites_conformes.blog",
         "sites_conformes.core",
@@ -196,7 +201,6 @@ INSTALLED_APPS.extend(
         "wagtailmarkdown",
         "sites_conformes.proconnect",
         "cms.media_tools",
-        "cms.extensions",
         "wagtail_notion_form",
     ]
 )

@@ -14,10 +14,12 @@ dependencies = [
     "python-dotenv>=1.0",
     "django-debug-toolbar>=6.1",
     "wagtail-notion-form",
+    "sites-conformes-footer-partners",
 ]
 
 [tool.uv.sources]
 wagtail-notion-form = { path = "../../packages/wagtail-notion-form", editable = true }
+sites-conformes-footer-partners = { path = "../../packages/sites-conformes-footer-partners", editable = true }
 
 [project.optional-dependencies]
 dev = [

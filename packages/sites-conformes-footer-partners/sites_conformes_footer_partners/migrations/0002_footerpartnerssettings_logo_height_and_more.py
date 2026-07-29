@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('extensions', '0001_initial'),
+        ('sites_conformes_footer_partners', '0001_initial'),
     ]
 
     operations = [
