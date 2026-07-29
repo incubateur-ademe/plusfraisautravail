@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - "apps/cms/**"
+      - "packages/**"
       - ".github/workflows/deploy-cms.yml"
   workflow_dispatch:
 
@@ -78,7 +79,11 @@ jobs:
       - name: Build & push
         uses: docker/build-push-action@v6
         with:
-          context: apps/cms
+          # Repo root, not apps/cms: the Dockerfile needs to COPY packages/*,
+          # which apps/cms/pyproject.toml depends on via editable path sources
+          # (../../packages/*) and which live outside apps/cms's own tree.
+          context: .
+          file: apps/cms/Dockerfile
           push: true
           # Scaleway Serverless Containers only run amd64.
           platforms: linux/amd64

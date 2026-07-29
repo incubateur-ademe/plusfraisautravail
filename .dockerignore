@@ -1,0 +1,40 @@
+# CMS's Docker build context is the repo root (needed so its Dockerfile can
+# COPY the local packages/* it depends on via `uv`'s editable path sources -
+# apps/cms alone can't see outside itself). Excluding everything not needed
+# by that build keeps the context small; add exceptions as `!pattern` for
+# anything else a future Dockerfile needs from outside its own directory.
+
+# Only apps/cms and packages/ are needed.
+apps/*
+!apps/cms
+packages/*/__pycache__
+packages/*/.pytest_cache
+packages/*/.ruff_cache
+
+# Same exclusions as apps/cms/.dockerignore, since that file only applies
+# within apps/cms and this one is now the effective root.
+apps/cms/.venv
+apps/cms/__pycache__
+apps/cms/**/*.pyc
+apps/cms/.pytest_cache
+apps/cms/.ruff_cache
+apps/cms/.mypy_cache
+apps/cms/tests
+apps/cms/.env
+apps/cms/.env.*
+apps/cms/staticfiles
+apps/cms/db.sqlite3
+apps/cms/build.sqlite3
+apps/cms/media
+
+# Never needed by any image build.
+.git
+node_modules
+*.log
+media-local
+.pgdata
+.pgrun
+*.pgsql
+*.tar.gz
+*.png
+infra

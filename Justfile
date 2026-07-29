@@ -102,8 +102,10 @@ build-api:
     cd api && docker build -t pfat-api:local .
 
 # Build the CMS container image locally.
+# Context is the repo root, not apps/cms: the Dockerfile COPYs packages/*,
+# which apps/cms depends on via editable path sources outside its own tree.
 build-cms:
-    cd apps/cms && docker build -t pfat-cms:local .
+    docker build -f apps/cms/Dockerfile -t pfat-cms:local .
 
 # ── test / lint ──────────────────────────────────────────────────────────
 
