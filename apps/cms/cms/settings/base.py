@@ -208,6 +208,7 @@ INSTALLED_APPS.extend(
         "sites_conformes.proconnect",
         "cms.media_tools",
         "wagtail_notion_form",
+        "sites_conformes_rgaa",
     ]
 )
 

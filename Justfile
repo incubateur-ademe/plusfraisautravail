@@ -127,6 +127,10 @@ fmt-api:
 test-cms:
     cd apps/cms && uv run pytest
 
+# sites-conformes-rgaa package tests (not covered by test-cms's testpaths).
+test-rgaa:
+    cd packages/sites-conformes-rgaa && DJANGO_SETTINGS_MODULE=cms.settings.dev PYTHONPATH="../../apps/cms:${PYTHONPATH:-}" ../../apps/cms/.venv/bin/python -m pytest sites_conformes_rgaa/tests/
+
 # CMS lint (ruff).
 lint-cms:
     cd apps/cms && uv run ruff check .

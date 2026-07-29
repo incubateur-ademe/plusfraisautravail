@@ -17,6 +17,7 @@ dependencies = [
     "sites-conformes-footer-partners",
     "sites-conformes-header-logo",
     "sites-conformes-posthog",
+    "sites-conformes-rgaa",
 ]
 
 [tool.uv.sources]
@@ -24,6 +25,7 @@ wagtail-notion-form = { path = "../../packages/wagtail-notion-form", editable = 
 sites-conformes-footer-partners = { path = "../../packages/sites-conformes-footer-partners", editable = true }
 sites-conformes-header-logo = { path = "../../packages/sites-conformes-header-logo", editable = true }
 sites-conformes-posthog = { path = "../../packages/sites-conformes-posthog", editable = true }
+sites-conformes-rgaa = { path = "../../packages/sites-conformes-rgaa", editable = true }
 
 [project.optional-dependencies]
 dev = [
