@@ -57,3 +57,12 @@ venv/
 .playwright-mcp/
 # Local screenshots from manual smoke-tests
 /*.png
+
+# Local Postgres (see `just db-*` recipes) and synced prod media
+.pgdata/
+.pgrun/
+/media-local/
+
+# Local DB dumps (pg_restore input for `just db-restore`)
+*.pgsql
+*.pgsql.gz

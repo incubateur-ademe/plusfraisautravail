@@ -535,6 +535,7 @@ clean:
 sync-prod-media:
     #!/usr/bin/env bash
     set -euo pipefail
+    set -a; source .env; set +a
     if ! command -v aws >/dev/null 2>&1; then
       echo "ERROR: aws CLI not found. Install it:"
       echo "  nix-shell -p awscli"
