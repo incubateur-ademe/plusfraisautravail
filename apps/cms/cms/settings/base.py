@@ -191,6 +191,7 @@ INSTALLED_APPS.extend(
         # templates over the upstream ones.
         "sites_conformes_footer_partners",
         "sites_conformes_header_logo",
+        "sites_conformes_posthog",
         "sites_conformes",
         "sites_conformes.blog",
         "sites_conformes.core",

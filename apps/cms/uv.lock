@@ -1428,6 +1428,7 @@ dependencies = [
     { name = "sites-conformes" },
     { name = "sites-conformes-footer-partners" },
     { name = "sites-conformes-header-logo" },
+    { name = "sites-conformes-posthog" },
     { name = "wagtail-notion-form" },
     { name = "whitenoise" },
 ]
@@ -1457,6 +1458,7 @@ requires-dist = [
     { name = "sites-conformes", specifier = ">=4.0" },
     { name = "sites-conformes-footer-partners", editable = "../../packages/sites-conformes-footer-partners" },
     { name = "sites-conformes-header-logo", editable = "../../packages/sites-conformes-header-logo" },
+    { name = "sites-conformes-posthog", editable = "../../packages/sites-conformes-posthog" },
     { name = "wagtail-notion-form", editable = "../../packages/wagtail-notion-form" },
     { name = "whitenoise", specifier = ">=6.8" },
 ]
@@ -1501,6 +1503,25 @@ requires-dist = [
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.7" },
     { name = "sites-conformes", specifier = ">=4.0" },
     { name = "wagtail", specifier = ">=6.0" },
+]
+provides-extras = ["dev"]
+
+[[package]]
+name = "sites-conformes-posthog"
+version = "0.1.0"
+source = { editable = "../../packages/sites-conformes-posthog" }
+dependencies = [
+    { name = "django" },
+    { name = "sites-conformes" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "django", specifier = ">=5.0" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3" },
+    { name = "pytest-django", marker = "extra == 'dev'", specifier = ">=4.9" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.7" },
+    { name = "sites-conformes", specifier = ">=4.0" },
 ]
 provides-extras = ["dev"]
 
