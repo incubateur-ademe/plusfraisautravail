@@ -1,24 +1,26 @@
 # sites-conformes-footer-partners
 
-Sitewide "ils nous soutiennent" partner logos for [sites-conformes](https://github.com/betagouv/sites-conformes),
-rendered in the DSFR footer's native `fr-footer__partners` block on every
-page, instead of being limited to a StreamField block on a single page.
+Logos partenaires ("ils nous soutiennent") affichés sur tout le site pour
+[sites-conformes](https://github.com/betagouv/sites-conformes), rendus dans
+le bloc natif `fr-footer__partners` du pied de page DSFR sur toutes les
+pages, plutôt que limités à un bloc StreamField sur une seule page.
 
-Markup follows the [DSFR footer spec](https://www.systeme-de-design.gouv.fr/version-courante/fr/composants/pied-de-page):
-a main partner logo plus an unlimited list of secondary partner logos, all
-sharing a configurable uniform height.
+Le balisage suit la [spécification du pied de page DSFR](https://www.systeme-de-design.gouv.fr/version-courante/fr/composants/pied-de-page) :
+un logo de partenaire principal, suivi d'une liste illimitée de logos de
+partenaires secondaires, tous partageant une hauteur uniforme configurable.
 
-## Install
+## Installation
 
 ```bash
 uv add --editable ../../packages/sites-conformes-footer-partners
 ```
 
-This package overrides `sites_conformes_core/blocks/footer.html`, which the
-`sites_conformes` package itself ships (under `sites_conformes/templates/`,
-not `sites_conformes/core/templates/`). Django's `APP_DIRS` template loader
-tries each installed app's `templates/` dir in `INSTALLED_APPS` order and
-uses the first match, so add this app **before** `sites_conformes`:
+Ce package surcharge `sites_conformes_core/blocks/footer.html`, template que
+le package `sites_conformes` fournit lui-même (dans `sites_conformes/templates/`,
+pas `sites_conformes/core/templates/`). Le chargeur de templates `APP_DIRS`
+de Django essaie le dossier `templates/` de chaque application installée
+dans l'ordre de `INSTALLED_APPS` et retient la première correspondance :
+il faut donc placer cette application **avant** `sites_conformes` :
 
 ```python
 INSTALLED_APPS = [
@@ -30,6 +32,7 @@ INSTALLED_APPS = [
 ]
 ```
 
-Then in the Wagtail admin, under **Settings → Footer partners**, set the
-title, main partner logo, other partner logos, and the shared logo height
-(defaults to 5.625rem, per the DSFR docs).
+Ensuite, dans l'admin Wagtail, sous **Réglages → Footer partners**,
+renseignez le titre, le logo du partenaire principal, les autres logos
+partenaires, et la hauteur commune des logos (5,625rem par défaut, comme
+recommandé par le DSFR).
