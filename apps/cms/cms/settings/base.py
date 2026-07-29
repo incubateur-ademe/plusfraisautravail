@@ -25,6 +25,10 @@ ALLOWED_HOSTS = json.loads(os.environ.get("ALLOWED_HOSTS", "[]"))
 # X-Forwarded-Host correctly, so don't trust it until verified.
 USE_X_FORWARDED_HOST = os.environ.get("USE_X_FORWARDED_HOST", "false").lower() == "true"
 
+# sites_conformes' {% root_url %} tag reads this directly (defaults to Django's
+# None when unset), so header/footer home links rendered "None/" without it.
+FORCE_SCRIPT_NAME = ""
+
 INSTALLED_APPS = [
     "wagtail.contrib.forms",
     "wagtail.contrib.redirects",
@@ -181,11 +185,12 @@ TEMPLATES[0]["OPTIONS"]["context_processors"].extend(
 INSTALLED_APPS.extend(
     [
         "dsfr",
-        # Overrides sites_conformes_core/blocks/footer.html - must come before
-        # "sites_conformes" (which ships that same template path) so Django's
-        # app_directories loader (first INSTALLED_APPS match wins) picks this
-        # template over the upstream one.
+        # Override sites_conformes_core/blocks/footer.html and header.html - must come
+        # before "sites_conformes" (which ships those same template paths) so Django's
+        # app_directories loader (first INSTALLED_APPS match wins) picks these
+        # templates over the upstream ones.
         "sites_conformes_footer_partners",
+        "sites_conformes_header_logo",
         "sites_conformes",
         "sites_conformes.blog",
         "sites_conformes.core",

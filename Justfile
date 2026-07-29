@@ -63,13 +63,18 @@ makemessages-notion-form:
 makemessages-footer-partners:
     cd packages/sites-conformes-footer-partners/sites_conformes_footer_partners && ../../../apps/cms/.venv/bin/python ../../../apps/cms/manage.py makemessages -l fr
 
+# Extract translatable strings from the sites-conformes-header-logo package into its French .po file.
+makemessages-header-logo:
+    cd packages/sites-conformes-header-logo/sites_conformes_header_logo && ../../../apps/cms/.venv/bin/python ../../../apps/cms/manage.py makemessages -l fr
+
 # Compile all .po files (including the local packages) into .mo, so translations take effect.
-# wagtail-notion-form and sites-conformes-footer-partners live outside apps/cms's tree, so
-# compilemessages doesn't reach them - compiled separately below.
+# wagtail-notion-form, sites-conformes-footer-partners, and sites-conformes-header-logo live
+# outside apps/cms's tree, so compilemessages doesn't reach them - compiled separately below.
 compilemessages-cms:
     cd apps/cms && DJANGO_SETTINGS_MODULE=cms.settings.dev uv run python manage.py compilemessages -l fr
     cd packages/wagtail-notion-form/wagtail_notion_form && ../../../apps/cms/.venv/bin/python ../../../apps/cms/manage.py compilemessages -l fr
     cd packages/sites-conformes-footer-partners/sites_conformes_footer_partners && ../../../apps/cms/.venv/bin/python ../../../apps/cms/manage.py compilemessages -l fr
+    cd packages/sites-conformes-header-logo/sites_conformes_header_logo && ../../../apps/cms/.venv/bin/python ../../../apps/cms/manage.py compilemessages -l fr
 
 # Run API + alert-widget together (requires `parallel` from moreutils, or split into two shells).
 dev:
