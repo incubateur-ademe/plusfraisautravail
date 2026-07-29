@@ -62,6 +62,7 @@ venv/
 .pgdata/
 .pgrun/
 /media-local/
+/apps/cms/media
 
 # Local DB dumps (pg_restore input for `just db-restore`)
 *.pgsql
