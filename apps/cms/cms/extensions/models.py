@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
@@ -12,6 +13,13 @@ from wagtail.models import Orderable
 class FooterPartnersSettings(ClusterableModel, BaseSiteSetting):
     """Sitewide "ils nous soutiennent" partner logos, rendered in the footer
     of every page (DSFR fr-footer__partners block)."""
+
+    def clean(self):
+        super().clean()
+        if self.main_partner_logo and not self.main_partner_alt:
+            raise ValidationError(
+                {"main_partner_alt": _("Required when a main partner logo is set.")}
+            )
 
     title = models.CharField(
         _("Title"),
@@ -34,13 +42,21 @@ class FooterPartnersSettings(ClusterableModel, BaseSiteSetting):
         max_length=200,
         blank=True,
         default="",
-        help_text=_("Must contain the text present in the image."),
+        help_text=_("Required if a main partner logo is set. Must be the partner's name."),
     )
     main_partner_url = models.URLField(
         _("Main partner link"),
         max_length=2000,
         blank=True,
         default="",
+    )
+
+    logo_height = models.DecimalField(
+        _("Logo height (rem)"),
+        max_digits=4,
+        decimal_places=3,
+        default="5.625",
+        help_text=_("Applied to every logo for a uniform height, as recommended by the DSFR."),
     )
 
     panels = [
@@ -54,6 +70,7 @@ class FooterPartnersSettings(ClusterableModel, BaseSiteSetting):
             heading=_("Main partner"),
         ),
         InlinePanel("sub_partners", label=_("Other partners")),
+        FieldPanel("logo_height"),
     ]
 
     class Meta:
@@ -76,7 +93,7 @@ class PartnerLogo(Orderable):
     alt = models.CharField(
         _("Alt text"),
         max_length=200,
-        help_text=_("Must contain the text present in the image."),
+        help_text=_("Must be the partner's name."),
     )
     url = models.URLField(
         _("Link"),

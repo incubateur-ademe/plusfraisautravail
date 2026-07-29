@@ -57,40 +57,50 @@
                    target="_blank"
                    rel="noopener external"
                    title="{{ partners.main_partner_alt }} - {{ new_window_label }}">
-                  <img class="fr-footer__logo" src="{{ main_logo_img.url }}" alt="{{ partners.main_partner_alt }}" />
+                  <img class="fr-footer__logo"
+                       src="{{ main_logo_img.url }}"
+                       alt="{{ partners.main_partner_alt }}"
+                       style="height: {{ partners.logo_height|floatformat:"-3u" }}rem;" />
                 </a>
               {% else %}
                 <p class="fr-footer__partners-link">
-                  <img class="fr-footer__logo" src="{{ main_logo_img.url }}" alt="{{ partners.main_partner_alt }}" />
+                  <img class="fr-footer__logo"
+                       src="{{ main_logo_img.url }}"
+                       alt="{{ partners.main_partner_alt }}"
+                       style="height: {{ partners.logo_height|floatformat:"-3u" }}rem;" />
                 </p>
               {% endif %}
             </div>
           {% endif %}
           {% if partners.sub_partners.all %}
-            <div class="fr-footer__partners-sub">
-              <ul class="fr-footer__partners-list">
-                {% for partner in partners.sub_partners.all %}
-                  {% if partner.logo %}
-                    {% image partner.logo original as partner_logo_img %}
-                    <li class="fr-footer__partners-item">
-                      {% if partner.url %}
-                        <a class="fr-footer__partners-link"
-                           href="{{ partner.url }}"
-                           target="_blank"
-                           rel="noopener external"
-                           title="{{ partner.alt }} - {{ new_window_label }}">
-                          <img class="fr-footer__logo" src="{{ partner_logo_img.url }}" alt="{{ partner.alt }}" />
-                        </a>
-                      {% else %}
-                        <p class="fr-footer__partners-link">
-                          <img class="fr-footer__logo" src="{{ partner_logo_img.url }}" alt="{{ partner.alt }}" />
-                        </p>
-                      {% endif %}
-                    </li>
-                  {% endif %}
-                {% endfor %}
-              </ul>
-            </div>
+            <ul class="fr-footer__partners-sub">
+              {% for partner in partners.sub_partners.all %}
+                {% if partner.logo %}
+                  {% image partner.logo original as partner_logo_img %}
+                  <li>
+                    {% if partner.url %}
+                      <a class="fr-footer__partners-link"
+                         href="{{ partner.url }}"
+                         target="_blank"
+                         rel="noopener external"
+                         title="{{ partner.alt }} - {{ new_window_label }}">
+                        <img class="fr-footer__logo"
+                             src="{{ partner_logo_img.url }}"
+                             alt="{{ partner.alt }}"
+                             style="height: {{ partners.logo_height|floatformat:"-3u" }}rem;" />
+                      </a>
+                    {% else %}
+                      <p class="fr-footer__partners-link">
+                        <img class="fr-footer__logo"
+                             src="{{ partner_logo_img.url }}"
+                             alt="{{ partner.alt }}"
+                             style="height: {{ partners.logo_height|floatformat:"-3u" }}rem;" />
+                      </p>
+                    {% endif %}
+                  </li>
+                {% endif %}
+              {% endfor %}
+            </ul>
           {% endif %}
         </div>
       </div>
