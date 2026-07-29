@@ -1,0 +1,70 @@
+# Translations for the cms.extensions app.
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-07-29 14:14+0200\n"
+"PO-Revision-Date: 2026-07-29 14:14+0200\n"
+"Last-Translator: \n"
+"Language-Team: French\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: models.py:17
+msgid "Title"
+msgstr "Titre"
+
+#: models.py:21
+msgid "Example: \"Ce site est développé et financé par\" or \"Ils nous soutiennent\"."
+msgstr "Exemple : « Ce site est développé et financé par » ou « Ils nous soutiennent »."
+
+#: models.py:30
+msgid "Main partner logo"
+msgstr "Logo du partenaire principal"
+
+#: models.py:33
+msgid "Main partner logo alt text"
+msgstr "Texte alternatif du logo du partenaire principal"
+
+#: models.py:37 models.py:77
+msgid "Must contain the text present in the image."
+msgstr "Doit contenir le texte présent dans l'image."
+
+#: models.py:40
+msgid "Main partner link"
+msgstr "Lien du partenaire principal"
+
+#: models.py:54
+msgid "Main partner"
+msgstr "Partenaire principal"
+
+#: models.py:56
+msgid "Other partners"
+msgstr "Autres partenaires"
+
+#: models.py:60
+msgid "Footer partners"
+msgstr "Partenaires (pied de page)"
+
+#: models.py:72
+msgid "Logo"
+msgstr "Logo"
+
+#: models.py:75
+msgid "Alt text"
+msgstr "Texte alternatif"
+
+#: models.py:80
+msgid "Link"
+msgstr "Lien"
+
+#: models.py:93
+msgid "Partner logo"
+msgstr "Logo partenaire"
+
+#: models.py:94
+msgid "Partner logos"
+msgstr "Logos partenaires"

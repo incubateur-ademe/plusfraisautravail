@@ -194,6 +194,7 @@ INSTALLED_APPS.extend(
         "wagtailmarkdown",
         "sites_conformes.proconnect",
         "cms.media_tools",
+        "cms.extensions",
     ]
 )
 

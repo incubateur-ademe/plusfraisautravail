@@ -53,7 +53,15 @@ climadiag:
 
 # Run the CMS locally on :8080 (auto-reload). Requires apps/cms/.env - copy from .env.example.
 cms:
-    cd apps/cms && uv run python manage.py runserver 8080
+    cd apps/cms && DJANGO_SETTINGS_MODULE=cms.settings.dev uv run python manage.py runserver 8080
+
+# Extract translatable strings from cms/extensions into its French .po file.
+makemessages-cms:
+    cd apps/cms/cms/extensions && ../../.venv/bin/python ../../manage.py makemessages -l fr
+
+# Compile all .po files (including cms/extensions) into .mo, so translations take effect.
+compilemessages-cms:
+    cd apps/cms && DJANGO_SETTINGS_MODULE=cms.settings.dev uv run python manage.py compilemessages -l fr
 
 # Run API + alert-widget together (requires `parallel` from moreutils, or split into two shells).
 dev:
