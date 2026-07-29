@@ -18,6 +18,22 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
+    # Postgres, not sqlite: sites_conformes ships at least one migration with
+    # Postgres-only raw SQL (UPDATE ... FROM ... JOIN), which sqlite can't
+    # parse. Matches what dev/prod actually run, so a migration or query that
+    # only works on one engine gets caught here instead of at deploy time.
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v4
@@ -31,7 +47,7 @@ jobs:
       - working-directory: apps/cms
         env:
           DJANGO_SECRET_KEY: test
-          DATABASE_URL: "sqlite:///test.sqlite3"
+          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/postgres"
           ALLOWED_HOSTS: '["testserver","localhost"]'
         run: uv run pytest
 
