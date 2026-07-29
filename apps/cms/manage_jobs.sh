@@ -12,5 +12,5 @@ set -euo pipefail
 # when the migration itself succeeded (see fea5b49). This job has no such
 # time pressure (1800s timeout, no probe).
 python manage.py migrate --noinput
-python manage.py wagtail_update_image_renditions
-python manage.py set_s3_cache_control
+# python manage.py wagtail_update_image_renditions
+# python manage.py set_s3_cache_control
