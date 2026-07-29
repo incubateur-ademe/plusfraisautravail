@@ -13,11 +13,11 @@ dependencies = [
     "whitenoise>=6.8",
     "python-dotenv>=1.0",
     "django-debug-toolbar>=6.1",
-    "wagtail-notion-contact",
+    "wagtail-notion-form",
 ]
 
 [tool.uv.sources]
-wagtail-notion-contact = { path = "../../packages/wagtail-notion-contact", editable = true }
+wagtail-notion-form = { path = "../../packages/wagtail-notion-form", editable = true }
 
 [project.optional-dependencies]
 dev = [

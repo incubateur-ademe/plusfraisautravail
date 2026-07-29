@@ -197,7 +197,7 @@ INSTALLED_APPS.extend(
         "sites_conformes.proconnect",
         "cms.media_tools",
         "cms.extensions",
-        "wagtail_notion_contact",
+        "wagtail_notion_form",
     ]
 )
 

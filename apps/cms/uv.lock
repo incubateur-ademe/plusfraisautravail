@@ -1426,7 +1426,7 @@ dependencies = [
     { name = "psycopg", extra = ["binary"] },
     { name = "python-dotenv" },
     { name = "sites-conformes" },
-    { name = "wagtail-notion-contact" },
+    { name = "wagtail-notion-form" },
     { name = "whitenoise" },
 ]
 
@@ -1453,7 +1453,7 @@ requires-dist = [
     { name = "python-dotenv", specifier = ">=1.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.7" },
     { name = "sites-conformes", specifier = ">=4.0" },
-    { name = "wagtail-notion-contact", editable = "../../packages/wagtail-notion-contact" },
+    { name = "wagtail-notion-form", editable = "../../packages/wagtail-notion-form" },
     { name = "whitenoise", specifier = ">=6.8" },
 ]
 provides-extras = ["dev"]
@@ -1634,9 +1634,9 @@ wheels = [
 ]
 
 [[package]]
-name = "wagtail-notion-contact"
+name = "wagtail-notion-form"
 version = "0.1.0"
-source = { editable = "../../packages/wagtail-notion-contact" }
+source = { editable = "../../packages/wagtail-notion-form" }
 dependencies = [
     { name = "django" },
     { name = "requests" },

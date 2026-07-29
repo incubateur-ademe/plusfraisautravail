@@ -59,16 +59,16 @@ cms:
 makemessages-cms:
     cd apps/cms/cms/extensions && ../../.venv/bin/python ../../manage.py makemessages -l fr
 
-# Extract translatable strings from the wagtail-notion-contact package into its French .po file.
-makemessages-notion-contact:
-    cd packages/wagtail-notion-contact/wagtail_notion_contact && ../../../apps/cms/.venv/bin/python ../../../apps/cms/manage.py makemessages -l fr
+# Extract translatable strings from the wagtail-notion-form package into its French .po file.
+makemessages-notion-form:
+    cd packages/wagtail-notion-form/wagtail_notion_form && ../../../apps/cms/.venv/bin/python ../../../apps/cms/manage.py makemessages -l fr
 
 # Compile all .po files (including cms/extensions) into .mo, so translations take effect.
-# wagtail-notion-contact lives outside apps/cms's tree, so compilemessages doesn't reach it -
+# wagtail-notion-form lives outside apps/cms's tree, so compilemessages doesn't reach it -
 # compiled separately below.
 compilemessages-cms:
     cd apps/cms && DJANGO_SETTINGS_MODULE=cms.settings.dev uv run python manage.py compilemessages -l fr
-    cd packages/wagtail-notion-contact/wagtail_notion_contact && ../../../apps/cms/.venv/bin/python ../../../apps/cms/manage.py compilemessages -l fr
+    cd packages/wagtail-notion-form/wagtail_notion_form && ../../../apps/cms/.venv/bin/python ../../../apps/cms/manage.py compilemessages -l fr
 
 # Run API + alert-widget together (requires `parallel` from moreutils, or split into two shells).
 dev:

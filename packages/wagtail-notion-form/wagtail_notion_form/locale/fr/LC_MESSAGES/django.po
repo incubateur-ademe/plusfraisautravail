@@ -1,4 +1,4 @@
-# Translations for the wagtail_notion_contact app.
+# Translations for the wagtail_notion_form app.
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"

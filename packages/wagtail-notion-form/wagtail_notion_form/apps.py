@@ -1,9 +1,9 @@
 from django.apps import AppConfig
 
 
-class WagtailNotionContactConfig(AppConfig):
+class WagtailNotionFormConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
-    name = "wagtail_notion_contact"
+    name = "wagtail_notion_form"
     verbose_name = "Notion contact sync"
 
     def ready(self):

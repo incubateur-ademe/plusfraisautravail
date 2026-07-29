@@ -1,4 +1,4 @@
-# wagtail-notion-contact
+# wagtail-notion-form
 
 Sync submissions of a sites-conformes contact `FormPage` (4 fields: name,
 email, subject, message) into a Notion database, mirroring the pattern used
@@ -7,13 +7,13 @@ by [quefairedemesobjets](https://github.com/incubateur-ademe/quefairedemesobjets
 ## Install
 
 ```bash
-uv add --editable ../../packages/wagtail-notion-contact
+uv add --editable ../../packages/wagtail-notion-form
 ```
 
 Add to `INSTALLED_APPS`:
 
 ```python
-INSTALLED_APPS += ["wagtail_notion_contact"]
+INSTALLED_APPS += ["wagtail_notion_form"]
 ```
 
 Set the Notion API token (from a [Notion internal integration](https://www.notion.so/my-integrations)):
