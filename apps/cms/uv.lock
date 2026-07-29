@@ -1426,6 +1426,7 @@ dependencies = [
     { name = "psycopg", extra = ["binary"] },
     { name = "python-dotenv" },
     { name = "sites-conformes" },
+    { name = "wagtail-notion-contact" },
     { name = "whitenoise" },
 ]
 
@@ -1452,6 +1453,7 @@ requires-dist = [
     { name = "python-dotenv", specifier = ">=1.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.7" },
     { name = "sites-conformes", specifier = ">=4.0" },
+    { name = "wagtail-notion-contact", editable = "../../packages/wagtail-notion-contact" },
     { name = "whitenoise", specifier = ">=6.8" },
 ]
 provides-extras = ["dev"]
@@ -1630,6 +1632,27 @@ sdist = { url = "https://files.pythonhosted.org/packages/4d/fc/572d102ffddbb1cdc
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b1/bc/564c02172c3ee1717ebb69b8565f1cacadd59914a5c4b330741a9a9b9705/wagtail_modeladmin-2.4.0-py3-none-any.whl", hash = "sha256:3ddf8d099c402610ac9a5d668c72a0743463395316b23abcb4f9fbf2ddd2984f", size = 265759, upload-time = "2026-06-07T11:37:07.152Z" },
 ]
+
+[[package]]
+name = "wagtail-notion-contact"
+version = "0.1.0"
+source = { editable = "../../packages/wagtail-notion-contact" }
+dependencies = [
+    { name = "django" },
+    { name = "requests" },
+    { name = "wagtail" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "django", specifier = ">=5.0" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3" },
+    { name = "pytest-django", marker = "extra == 'dev'", specifier = ">=4.9" },
+    { name = "requests", specifier = ">=2.32" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.7" },
+    { name = "wagtail", specifier = ">=6.0" },
+]
+provides-extras = ["dev"]
 
 [[package]]
 name = "wagtailmenus"

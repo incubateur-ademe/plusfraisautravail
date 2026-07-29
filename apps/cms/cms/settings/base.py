@@ -185,16 +185,19 @@ INSTALLED_APPS.extend(
         "sites_conformes.blog",
         "sites_conformes.core",
         "sites_conformes.events",
+        "sites_conformes.forms",
         "sites_conformes.menus",
         "wagtail.contrib.settings",
         "wagtail.contrib.typed_table_block",
         "wagtail.contrib.routable_page",
         "wagtail_modeladmin",
+        "wagtail_honeypot",
         "wagtailmenus",
         "wagtailmarkdown",
         "sites_conformes.proconnect",
         "cms.media_tools",
         "cms.extensions",
+        "wagtail_notion_contact",
     ]
 )
 

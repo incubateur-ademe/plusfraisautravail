@@ -1,0 +1,49 @@
+# Translations for the wagtail_notion_contact app.
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-07-29 14:39+0200\n"
+"PO-Revision-Date: 2026-07-29 14:39+0200\n"
+"Last-Translator: \n"
+"Language-Team: French\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: models.py:22
+msgid "Contact form page"
+msgstr "Page de formulaire de contact"
+
+#: models.py:24
+msgid ""
+"The form page to sync. Must have exactly 4 fields, in this order: name, "
+"email, subject, message."
+msgstr ""
+"La page de formulaire à synchroniser. Doit avoir exactement 4 champs, dans "
+"cet ordre : nom, email, sujet, message."
+
+#: models.py:30
+msgid "Notion database ID"
+msgstr "Identifiant de la base Notion"
+
+#: models.py:34
+msgid ""
+"The UUID found in the Notion database's URL. Share it with your integration."
+msgstr ""
+"L'UUID présent dans l'URL de la base Notion. Partagez-la avec votre "
+"intégration."
+
+#: models.py:40
+msgid ""
+"Requires the NOTION_TOKEN environment variable to be set to a Notion "
+"internal integration token."
+msgstr ""
+"Nécessite que la variable d'environnement NOTION_TOKEN soit définie avec "
+"un jeton d'intégration interne Notion."
+
+#: models.py:49
+msgid "Notion contact sync"
+msgstr "Synchronisation Notion des contacts"
