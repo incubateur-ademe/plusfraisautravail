@@ -2,7 +2,8 @@ import os
 
 from .base import *  # noqa: F403
 
-DEBUG = False
+# ponytail: base.py already reads DEBUG from env; removed the hardcoded
+# False here so it can be flipped on prod (DEBUG=true) without a redeploy.
 
 STORAGES["staticfiles"]["BACKEND"] = "whitenoise.storage.CompressedManifestStaticFilesStorage"  # noqa: F405
 STORAGES["default"]["BACKEND"] = "storages.backends.s3.S3Storage"  # noqa: F405
