@@ -56,7 +56,7 @@ locals {
     # (from `tofu output cms_url`) and re-apply, same as the api_image /
     # api_deploy bootstrap two-step.
     ALLOWED_HOSTS           = jsonencode(var.cms_extra_allowed_hosts)
-    AWS_STORAGE_BUCKET_NAME = "pfat-cms-media"
+    AWS_STORAGE_BUCKET_NAME = "pfat-cms"
     AWS_S3_ENDPOINT_URL     = module.cms_media.endpoint
     AWS_S3_REGION_NAME      = var.region
     DJANGO_SETTINGS_MODULE  = "cms.settings.production"
