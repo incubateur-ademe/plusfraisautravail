@@ -132,7 +132,7 @@ STORAGES = {
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10_000
 
 WAGTAIL_SITE_NAME = "Plus Frais Au Travail"
-WAGTAILADMIN_BASE_URL = "http://example.com"
+WAGTAILADMIN_BASE_URL = "https://plusfraisautravail.beta.gouv.fr"
 WAGTAILDOCS_EXTENSIONS = [
     "csv",
     "docx",
