@@ -44,8 +44,8 @@ locals {
     # tofu apply, rather than a bucket-scoped IAM application/key - the
     # deploying key doesn't have IAM write permission yet. Narrow this once
     # it does (see infra/modules/object-bucket/main.tf).
-    var.scw_access_key == "" ? {} : { AWS_ACCESS_KEY_ID = var.scw_access_key },
-    var.scw_secret_key == "" ? {} : { AWS_SECRET_ACCESS_KEY = var.scw_secret_key },
+    var.s3_bucket_scw_access_key_id == "" ? {} : { AWS_ACCESS_KEY_ID = var.s3_bucket_scw_access_key_id },
+    var.s3_bucket_scw_secret_key == "" ? {} : { AWS_SECRET_ACCESS_KEY = var.s3_bucket_scw_secret_key }, #gitleaks:allow
   )
 
   cms_env = {
@@ -56,7 +56,7 @@ locals {
     # (from `tofu output cms_url`) and re-apply, same as the api_image /
     # api_deploy bootstrap two-step.
     ALLOWED_HOSTS           = jsonencode(var.cms_extra_allowed_hosts)
-    AWS_STORAGE_BUCKET_NAME = "pfat-cms"
+    AWS_STORAGE_BUCKET_NAME = "pfat-cms-media"
     AWS_S3_ENDPOINT_URL     = module.cms_media.endpoint
     AWS_S3_REGION_NAME      = var.region
     DJANGO_SETTINGS_MODULE  = "cms.settings.production"

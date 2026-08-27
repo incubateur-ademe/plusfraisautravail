@@ -273,9 +273,9 @@ bootstrap-secrets:
 
 # Create (or update) the api / cms / autodiag / alert-widget / climadiag
 # GitHub Environments and push the right secrets and variables to each. Reads
-# SCW_*, VIGILANCE_APP_ID, RTE_*, CLIMADIAG_API_TOKEN, DJANGO_SECRET_KEY from
-# your shell and api_url / container_id / cms_url / cms_container_id / *_url
-# from `tofu output`.
+# SCW_*, S3_BUCKET_SCW_*, VIGILANCE_APP_ID, RTE_*, CLIMADIAG_API_TOKEN,
+# DJANGO_SECRET_KEY from your shell and api_url / container_id / cms_url /
+# cms_container_id / *_url from `tofu output`.
 # Restricts each environment to the `main` branch so only main-branch deploys
 # can read them. Idempotent.
 bootstrap-environments:
@@ -423,6 +423,8 @@ bootstrap-environments:
     set_env_secret   tofu-apply RTE_CLIENT_SECRET           "${RTE_CLIENT_SECRET:-}"
     set_env_secret   tofu-apply CLIMADIAG_API_TOKEN         "${CLIMADIAG_API_TOKEN:-}"
     set_env_secret   tofu-apply DJANGO_SECRET_KEY           "${DJANGO_SECRET_KEY:-}"
+    set_env_secret   tofu-apply S3_BUCKET_SCW_ACCESS_KEY_ID "${S3_BUCKET_SCW_ACCESS_KEY_ID:-}"
+    set_env_secret   tofu-apply S3_BUCKET_SCW_SECRET_KEY    "${S3_BUCKET_SCW_SECRET_KEY:-}"
     set_env_variable tofu-apply API_URL                     "$api_url"
 
     echo
@@ -562,7 +564,7 @@ clean:
 
 # Download the old pfat-cms media bucket to ./media-local/.
 # Uses AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY (old bucket creds —
-# not the SCW_* keys used by the new infra).
+# not the dedicated S3 keys used by the new infra).
 sync-prod-media:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -599,13 +601,13 @@ sync-prod-media:
 # Sync the old pfat-cms media bucket to the new pfat-cms-media bucket.
 # Two-step: download from old → local, then upload local → new.
 # Source creds: AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY (or S3_*).
-# Dest creds:   SCW_ACCESS_KEY / SCW_SECRET_KEY.
+# Dest creds:   S3_BUCKET_SCW_ACCESS_KEY_ID / S3_BUCKET_SCW_SECRET_KEY.
 sync-prod-media-to-new: sync-prod-media
     #!/usr/bin/env bash
     set -euo pipefail
-    if [[ -z "${SCW_ACCESS_KEY:-}" || -z "${SCW_SECRET_KEY:-}" ]]; then
-      echo "ERROR: SCW_ACCESS_KEY and SCW_SECRET_KEY must be set."
-      echo "       These are the Scaleway credentials for the new pfat-cms-media bucket."
+    if [[ -z "${S3_BUCKET_SCW_ACCESS_KEY_ID:-}" || -z "${S3_BUCKET_SCW_SECRET_KEY:-}" ]]; then
+      echo "ERROR: S3_BUCKET_SCW_ACCESS_KEY_ID and S3_BUCKET_SCW_SECRET_KEY must be set."
+      echo "       These are the dedicated S3 credentials for the new pfat-cms-media bucket."
       exit 1
     fi
     ENDPOINT="${AWS_S3_ENDPOINT_URL:-https://s3.fr-par.scw.cloud}"
@@ -616,8 +618,8 @@ sync-prod-media-to-new: sync-prod-media
     echo "Syncing ./${DEST}/ -> s3://${NEW_BUCKET}/"
     echo "  endpoint: ${ENDPOINT}"
     echo "  region:   ${REGION}"
-    AWS_ACCESS_KEY_ID="$SCW_ACCESS_KEY" \
-    AWS_SECRET_ACCESS_KEY="$SCW_SECRET_KEY" \
+    AWS_ACCESS_KEY_ID="$S3_BUCKET_SCW_ACCESS_KEY_ID" \
+    AWS_SECRET_ACCESS_KEY="$S3_BUCKET_SCW_SECRET_KEY" \
     aws s3 sync "./${DEST}/" "s3://${NEW_BUCKET}/" \
       --endpoint-url "$ENDPOINT" \
       --region "$REGION"

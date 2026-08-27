@@ -65,10 +65,12 @@ set -x SCW_DEFAULT_PROJECT_ID      xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 set -x SCW_DEFAULT_ORGANIZATION_ID xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 set -x AWS_ACCESS_KEY_ID           $SCW_ACCESS_KEY
 set -x AWS_SECRET_ACCESS_KEY       $SCW_SECRET_KEY
-# Also feeds the cms container's S3 media credentials (see DEPLOY.md
-# troubleshooting - object-bucket doesn't create its own IAM key yet).
-set -x TF_VAR_scw_access_key       $SCW_ACCESS_KEY
-set -x TF_VAR_scw_secret_key       $SCW_SECRET_KEY
+# Dedicated S3 credentials for the cms container's media bucket (private
+# pfat-cms-media) - a separate key from the account-wide SCW key above.
+set -x S3_BUCKET_SCW_ACCESS_KEY_ID         SCWxxxxxxxxxxxxxxxxx
+set -x S3_BUCKET_SCW_SECRET_KEY            xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+set -x TF_VAR_s3_bucket_scw_access_key_id  $S3_BUCKET_SCW_ACCESS_KEY_ID
+set -x TF_VAR_s3_bucket_scw_secret_key     $S3_BUCKET_SCW_SECRET_KEY
 ```
 
 **bash / zsh:**
@@ -80,8 +82,10 @@ export SCW_DEFAULT_PROJECT_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 export SCW_DEFAULT_ORGANIZATION_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 export AWS_ACCESS_KEY_ID="$SCW_ACCESS_KEY"
 export AWS_SECRET_ACCESS_KEY="$SCW_SECRET_KEY"
-export TF_VAR_scw_access_key="$SCW_ACCESS_KEY"
-export TF_VAR_scw_secret_key="$SCW_SECRET_KEY"
+export S3_BUCKET_SCW_ACCESS_KEY_ID=SCWxxxxxxxxxxxxxxxxx
+export S3_BUCKET_SCW_SECRET_KEY=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+export TF_VAR_s3_bucket_scw_access_key_id="$S3_BUCKET_SCW_ACCESS_KEY_ID"
+export TF_VAR_s3_bucket_scw_secret_key="$S3_BUCKET_SCW_SECRET_KEY"
 ```
 
 ### 2.2 Create the OpenTofu state bucket
@@ -255,7 +259,7 @@ Check Scaleway dashboard -> Containers -> `cms-prod` -> Logs. Most common causes
 Migrations are *not* run automatically on deploy or container cold start - `entrypoint.sh` only starts gunicorn, to stay within the container's startup probe budget (a slow migration there previously got the container killed as "failed to start" even when the migration itself succeeded). Run them manually after any deploy with schema changes, via the `cms_manage` Serverless Job (`manage_jobs.sh`, which now includes `migrate --noinput`): `scw jobs definition start $(tofu output -raw cms_manage_job_id)`. If that job itself fails on "Still creating" style output for Postgres, the RDB instance may still be provisioning (can take several minutes on first apply).
 
 **CMS media uploads fail with 403.**
-`pfat-cms-media` is a private bucket. It currently has no bucket policy at all - `cms` authenticates as the same account-wide `SCW_ACCESS_KEY`/`SCW_SECRET_KEY` used everywhere else (via `TF_VAR_scw_access_key`/`TF_VAR_scw_secret_key`, see 2.1), not a bucket-scoped IAM key, so a 403 here means that key itself is wrong/missing, not a scoping issue. Check `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` actually reached the container (both are `secret_environment_variables`, so they won't show in `tofu output` - check the Scaleway container's env vars in the dashboard instead).
+`pfat-cms-media` is a private bucket. `cms` authenticates with a dedicated S3 key (via `TF_VAR_s3_bucket_scw_access_key_id`/`TF_VAR_s3_bucket_scw_secret_key`, see 2.1), so a 403 here usually means that key is wrong, missing, or lacks `s3:PutObject` on the bucket. Check `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` actually reached the container (both are `secret_environment_variables`, so they won't show in `tofu output` - check the Scaleway container's env vars in the dashboard instead).
 
 **`tofu apply` fails with `insufficient permissions: write application`.**
 The deploying Scaleway API key doesn't have IAM write rights. `object-bucket` used to create a bucket-scoped IAM application/policy/key for `cms`'s S3 media access; that's parked for now (see the `ponytail:` comment in `infra/modules/object-bucket/main.tf`) in favor of reusing the account-wide key, specifically to avoid needing this permission. If you still see this error, you're on an older revision of this module - pull `main`.
