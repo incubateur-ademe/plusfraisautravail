@@ -147,6 +147,11 @@ STORAGES = {
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10_000
 
+# Renditions come out as WebP: the editors upload PNG/JPEG screenshots that
+# weigh up to 1.4 MB at width-1200. SVG and GIF are left alone. Existing
+# renditions are regenerated with wagtail_update_image_renditions.
+WAGTAILIMAGES_FORMAT_CONVERSIONS = {"png": "webp", "jpeg": "webp"}
+
 WAGTAIL_SITE_NAME = "Plus Frais Au Travail"
 # Public origin of the site. Every absolute URL Django/Wagtail emits derives
 # from it: media (AWS_S3_CUSTOM_DOMAIN), image.full_url, admin emails,

@@ -7,7 +7,7 @@
 #
 # Cache layout (adapted from incubateur-ademe/quefairedemesobjets):
 # - /static/           whitenoise hashed files, honours upstream Cache-Control
-# - /media/            public-read S3 bucket (images only), 1d
+# - /media/            public-read S3 bucket (images only), 1y
 # - /media/documents/  404 - documents go through Django at /documents/
 # - /<spa>/assets/     Vite content-hashed files, forced to 1y
 # - /<spa>/            everything else from the buckets, 5m from the bucket's
@@ -80,9 +80,9 @@ server {
 
     # ── CMS media, straight from the public-read bucket (Django builds
     # unsigned /media/<key> URLs via AWS_S3_CUSTOM_DOMAIN). Files migrated
-    # from the old bucket carry no Cache-Control, so set it here: 1d in the
-    # proxy and in browsers. Wagtail never rewrites a file in place (new
-    # uploads and renditions get new names), so 1d is safe.
+    # from the old bucket carry no Cache-Control, so set it here. Wagtail
+    # never rewrites a file in place - renditions are named per filter and
+    # colliding uploads get a new suffix - so a year is safe.
     # Documents are served by Django at /documents/ (location /, uncached,
     # permission-checked); the bucket denies anonymous reads under this
     # prefix anyway.
@@ -95,8 +95,8 @@ server {
         proxy_pass https://media;
         proxy_cache pfat;
         proxy_ignore_headers Cache-Control Expires;
-        proxy_cache_valid 200 1d;
-        expires 1d;
+        proxy_cache_valid 200 1y;
+        expires 1y;
     }
 
     # ── Vite content-hashed bundles: safe to cache for a year regardless of

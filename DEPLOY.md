@@ -245,7 +245,7 @@ The script self-mounts right where it's placed in the DOM and injects the DSFR C
 | Path | Upstream | Cache |
 |---|---|---|
 | `/static/` | cms container | follows whitenoise headers (1y on hashed files) |
-| `/media/` | `pfat-cms-media` bucket (public-read on `images/*` and `original_images/*`) | 1d, unsigned URLs via `AWS_S3_CUSTOM_DOMAIN` |
+| `/media/` | `pfat-cms-media` bucket (public-read on `images/*` and `original_images/*`) | 1y, unsigned URLs via `AWS_S3_CUSTOM_DOMAIN` |
 | `/media/documents/` | none (404) | documents are served by Django at `/documents/`, permission-checked, uncached |
 | `/<spa>/assets/` | SPA bucket | 1y (Vite content-hashed) |
 | `/<spa>/` | SPA bucket | 5m (from the bucket's own Cache-Control) |
