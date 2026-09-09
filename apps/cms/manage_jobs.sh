@@ -11,6 +11,8 @@ set -euo pipefail
 # migration risked the container being killed as "failed to start" even
 # when the migration itself succeeded (see fea5b49). This job has no such
 # time pressure (1800s timeout, no probe).
+# Idempotent: no-op unless the DB still carries the legacy Sites Faciles schema.
+python manage.py migrate_from_sites_faciles --no-input
 python manage.py migrate --noinput
 # python manage.py wagtail_update_image_renditions
 # python manage.py set_s3_cache_control

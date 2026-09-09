@@ -56,7 +56,7 @@ locals {
     # (from `tofu output cms_url`) and re-apply, same as the api_image /
     # api_deploy bootstrap two-step.
     ALLOWED_HOSTS           = jsonencode(var.cms_extra_allowed_hosts)
-    AWS_STORAGE_BUCKET_NAME = "pfat-cms"
+    AWS_STORAGE_BUCKET_NAME = module.cms_media.bucket_name
     AWS_S3_ENDPOINT_URL     = module.cms_media.endpoint
     AWS_S3_REGION_NAME      = var.region
     DJANGO_SETTINGS_MODULE  = "cms.settings.production"
@@ -119,11 +119,13 @@ module "cms_media" {
   app_name    = "cms"
   environment = local.environment
   bucket_name = "pfat-cms-media"
-  # Rolled back to private: existing objects kept 403ing even after the
-  # bucket ACL/policy went public-read (root cause unconfirmed - likely a
-  # stale per-object ACL from before the switch), and the rendition-rebuild
-  # job meant to fix that never completed. Revisit public_read once that's
-  # actually diagnosed with real log access, not just API status polling.
+  # Media are served unsigned through the Scalingo nginx proxy (/media/ ->
+  # this bucket) so they can be cached. The earlier 403s were the policy
+  # locking out the project's own key - see the module for the fix.
+  public_read = true
+  # documents/* stays private: Wagtail serves documents through its own view
+  # (WAGTAILDOCS_SERVE_METHOD = serve_view) so collection privacy applies.
+  public_read_prefixes = ["images/*", "original_images/*"]
 }
 
 module "cms" {

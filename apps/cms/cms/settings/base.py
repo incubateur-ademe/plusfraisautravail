@@ -133,6 +133,11 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = 10_000
 
 WAGTAIL_SITE_NAME = "Plus Frais Au Travail"
 WAGTAILADMIN_BASE_URL = "https://plusfraisautravail.beta.gouv.fr"
+# Documents are streamed by Django (/documents/<id>/<name>) rather than
+# redirected to storage: the media bucket's public-read policy covers
+# images only, so documents stay behind Wagtail's collection privacy and
+# never get an anonymous /media/documents/ URL.
+WAGTAILDOCS_SERVE_METHOD = "serve_view"
 WAGTAILDOCS_EXTENSIONS = [
     "csv",
     "docx",

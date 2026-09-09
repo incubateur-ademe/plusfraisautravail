@@ -238,7 +238,40 @@ The script self-mounts right where it's placed in the DOM and injects the DSFR C
 
 ---
 
-## 5. Troubleshooting
+## 5. Public hostname: Scalingo nginx proxy
+
+`plusfraisautravail.beta.gouv.fr` carries MX records, so it can't be a CNAME to Scaleway. Instead a tiny Scalingo app running the [nginx buildpack](https://github.com/Scalingo/nginx-buildpack) keeps the existing A records + TLS cert and reverse-proxies to Scaleway. Config: `infra/scalingo-proxy/servers.conf.erb`.
+
+| Path | Upstream | Cache |
+|---|---|---|
+| `/static/` | cms container | follows whitenoise headers (1y on hashed files) |
+| `/media/` | `pfat-cms-media` bucket (public-read on `images/*` and `original_images/*`) | 1d, unsigned URLs via `AWS_S3_CUSTOM_DOMAIN` |
+| `/media/documents/` | none (404) | documents are served by Django at `/documents/`, permission-checked, uncached |
+| `/<spa>/assets/` | SPA bucket | 1y (Vite content-hashed) |
+| `/<spa>/` | SPA bucket | 5m (from the bucket's own Cache-Control) |
+| `/api/` | api container | none |
+| `/` | cms container | none |
+
+Setup, once:
+
+```bash
+scalingo create pfat-proxy --region osc-fr1
+scalingo -a pfat-proxy env-set BUILDPACK_URL=https://github.com/Scalingo/nginx-buildpack \
+  PROJECT_DIR=infra/scalingo-proxy \
+  CMS_HOST=$(cd infra/envs/prod && tofu output -raw cms_url | sed 's#https://##') \
+  API_HOST=$(cd infra/envs/prod && tofu output -raw api_url | sed 's#https://##')
+git push scalingo main   # or link the GitHub repo in the Scalingo dashboard
+```
+
+Copy the content over with `just sync-prod-db` (Scalingo Postgres -> Scaleway RDB, wipes the target). Mirror the media with `just sync-media-buckets` (pfat-cms -> pfat-cms-media, server-side). Then set `USE_X_FORWARDED_HOST=true` on the cms container and add the public hostname to `cms_extra_allowed_hosts`, test on the app's `osc-fr1.scalingo.io` URL, and move the domain from the old Sites Conformes app to `pfat-proxy`. Scalingo re-issues the Let's Encrypt cert within minutes - do it at a quiet hour. The old app stays as a one-click rollback.
+
+The SPAs must be built with their default sub-path base (`/autodiag/` etc.), not `VITE_BASE_URL=/`, for the proxy's prefix routing to work. Wagtail pages must not use the slugs `static`, `media`, `api`, `autodiag`, `alert-widget` or `climadiag`.
+
+`just proxy-check` renders the template and runs `nginx -t` on it.
+
+---
+
+## 6. Troubleshooting
 
 **"image not found" on the first `tofu apply`.**
 You forgot `api_deploy=false`/`cms_deploy=false` for the first pass. Set it, apply, then push the image with `just deploy-api-bootstrap`/`just deploy-cms-bootstrap`, then flip `*_deploy=true` and apply again.
@@ -259,7 +292,7 @@ Check Scaleway dashboard -> Containers -> `cms-prod` -> Logs. Most common causes
 Migrations are *not* run automatically on deploy or container cold start - `entrypoint.sh` only starts gunicorn, to stay within the container's startup probe budget (a slow migration there previously got the container killed as "failed to start" even when the migration itself succeeded). Run them manually after any deploy with schema changes, via the `cms_manage` Serverless Job (`manage_jobs.sh`, which now includes `migrate --noinput`): `scw jobs definition start $(tofu output -raw cms_manage_job_id)`. If that job itself fails on "Still creating" style output for Postgres, the RDB instance may still be provisioning (can take several minutes on first apply).
 
 **CMS media uploads fail with 403.**
-`pfat-cms-media` is a private bucket. `cms` authenticates with a dedicated S3 key (via `TF_VAR_s3_bucket_scw_access_key_id`/`TF_VAR_s3_bucket_scw_secret_key`, see 2.1), so a 403 here usually means that key is wrong, missing, or lacks `s3:PutObject` on the bucket. Check `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` actually reached the container (both are `secret_environment_variables`, so they won't show in `tofu output` - check the Scaleway container's env vars in the dashboard instead).
+`pfat-cms-media` has a bucket policy (public-read for objects). A Scaleway bucket policy denies everything it doesn't list, including the project's own keys, so the policy's first statement must keep `s3:*` for the project - see `infra/modules/object-bucket/main.tf`. If uploads 403, check that statement survived and that the S3 key the container uses belongs to this project. The key is a `secret_environment_variable`, so it won't show in `tofu output` - check the container's env in the Scaleway dashboard.
 
 **`tofu apply` fails with `insufficient permissions: write application`.**
 The deploying Scaleway API key doesn't have IAM write rights. `object-bucket` used to create a bucket-scoped IAM application/policy/key for `cms`'s S3 media access; that's parked for now (see the `ponytail:` comment in `infra/modules/object-bucket/main.tf`) in favor of reusing the account-wide key, specifically to avoid needing this permission. If you still see this error, you're on an older revision of this module - pull `main`.

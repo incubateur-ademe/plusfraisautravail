@@ -551,6 +551,16 @@ status:
         2>/dev/null || echo "(no runs yet)"
     done
 
+# Render infra/scalingo-proxy/servers.conf.erb and run `nginx -t` on it (nginx via nix).
+proxy-check:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    tmp=$(mktemp -d)
+    (cd infra/scalingo-proxy && PORT=8080 CMS_HOST=cms.example API_HOST=api.example erb servers.conf.erb) > "$tmp/servers.conf"
+    printf 'pid %s/nginx.pid;\nerror_log stderr;\nevents {}\nhttp { access_log off; include %s/servers.conf; }\n' "$tmp" "$tmp" > "$tmp/nginx.conf"
+    nix run nixpkgs#nginx -- -t -c "$tmp/nginx.conf" -p "$tmp" 2>&1 | grep -v 'could not open error log'
+    rm -rf "$tmp"
+
 # ── housekeeping ─────────────────────────────────────────────────────────
 
 # Remove all build/test caches and node_modules. Forces a fresh `just install`.
@@ -560,66 +570,112 @@ clean:
     rm -rf apps/cms/.venv apps/cms/.pytest_cache apps/cms/.ruff_cache apps/cms/staticfiles
     find . -type d -name __pycache__ -prune -exec rm -rf {} +
 
-# ── CMS media migration ─────────────────────────────────────────────────
+# ── CMS migration from Scalingo (sf-plusfraisautravail) ──────────────────
 
-# Download the old pfat-cms media bucket to ./media-local/.
-# Uses AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY (old bucket creds —
-# not the dedicated S3 keys used by the new infra).
-sync-prod-media:
+# Takes a fresh Scalingo backup (SKIP_BACKUP=1 reuses the latest one),
+# downloads it, pg_restores it over the public RDB endpoint, then starts the
+# migrate job so the schema matches this repo.
+# Copy the Scalingo (Sites Conformes) Postgres into the Scaleway cms RDB. WIPES the target.
+sync-prod-db:
     #!/usr/bin/env bash
     set -euo pipefail
-    set -a; source .env; set +a
-    if ! command -v aws >/dev/null 2>&1; then
-      echo "ERROR: aws CLI not found. Install it:"
-      echo "  nix-shell -p awscli"
-      exit 1
+    APP=sf-plusfraisautravail
+    ADDON=ad-2ccc7ba2-18df-42ce-878c-2f95df4d3cfa
+    DSN="$(cd infra/envs/prod && tofu output -raw cms_db_public_url)"
+    # The RDB password has URL-unsafe chars and the DSN is not percent-encoded,
+    # so libpq rejects it as a URI. Pass the pieces separately instead.
+    export PGPASSWORD="$(cd infra/envs/prod && tofu output -raw cms_db_password)" PGSSLMODE=require
+    userinfo="${DSN#*://}"; DB_USER="${userinfo%%:*}"
+    hostpart="${DSN##*@}"; hostport="${hostpart%%/*}"; DB_NAME="${hostpart#*/}"; DB_NAME="${DB_NAME%%\?*}"
+    DB_HOST="${hostport%%:*}"; DB_PORT="${hostport##*:}"
+    read -rp "This WIPES the Scaleway cms database and replaces it with $APP's. Continue? [y/N] " a
+    [[ "$a" == y ]] || exit 1
+    tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
+    # Scalingo's API has been timing out and dropping HTTP/2 streams
+    # mid-download; the CLI is a Go binary, this forces it onto HTTP/1.1.
+    export GODEBUG=http2client=0
+    # Empty on a transient API failure - callers must not treat that as fatal
+    # (set -e would otherwise kill the script on a failed $(newest)).
+    newest() { scalingo -a "$APP" --addon "$ADDON" backups 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | sed -n 4p || true; }
+    if [[ -n "${SKIP_BACKUP:-}" ]]; then
+      echo "SKIP_BACKUP set - reusing the latest backup: $(newest)"
+    else
+      # backups-create waits for the backup, but its poll loop dies on any
+      # transient API timeout. Track the newest backup ourselves.
+      before=""; for _ in 1 2 3 4 5; do before="$(newest)"; [[ -n "$before" ]] && break; sleep 3; done
+      [[ -n "$before" ]] || { echo "cannot list Scalingo backups - network to api.osc-fr1.scalingo.com is failing"; exit 1; }
+      scalingo -a "$APP" --addon "$ADDON" backups-create || echo "backups-create lost track of the backup - polling the list instead"
+      for _ in $(seq 1 120); do
+        top="$(newest)"
+        [[ "$top" != "$before" ]] && grep -q done <<<"$top" && break
+        sleep 5
+      done
+      [[ "$top" != "$before" ]] && grep -q done <<<"$top" || { echo "no new backup finished within 10 min"; exit 1; }
+      echo "Backup ready: $top"
     fi
-    if [[ -z "${AWS_ACCESS_KEY_ID:-}" || -z "${AWS_SECRET_ACCESS_KEY:-}" ]]; then
-      if [[ -n "${S3_ACCESS_KEY_ID:-}" && -n "${S3_SECRET_ACCESS_KEY:-}" ]]; then
-        export AWS_ACCESS_KEY_ID="$S3_ACCESS_KEY_ID"
-        export AWS_SECRET_ACCESS_KEY="$S3_SECRET_ACCESS_KEY"
-      else
-        echo "ERROR: AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY must be set"
-        echo "       (or S3_ACCESS_KEY_ID / S3_SECRET_ACCESS_KEY)."
-        echo "       These are the S3 credentials for the old (Scalingo) bucket."
-        exit 1
-      fi
-    fi
-    ENDPOINT="${AWS_S3_ENDPOINT_URL:-https://s3.fr-par.scw.cloud}"
-    REGION="${AWS_S3_REGION_NAME:-fr-par}"
-    BUCKET="${SYNC_BUCKET:-pfat-cms}"
-    DEST="${SYNC_DEST:-media-local}"
+    for attempt in 1 2 3; do
+      scalingo -a "$APP" --addon "$ADDON" backups-download --output "$tmp/backup.tar.gz" \
+        && tar -tzf "$tmp/backup.tar.gz" >/dev/null && break
+      echo "download attempt $attempt failed, retrying"; rm -f "$tmp/backup.tar.gz"; sleep 5
+    done
+    tar -tzf "$tmp/backup.tar.gz" >/dev/null || { echo "download failed 3 times"; exit 1; }
+    tar -xzf "$tmp/backup.tar.gz" -C "$tmp"
+    DUMP="$(find "$tmp" -name '*.pgsql' | head -1)"
+    PSQL() { psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 -q "$@"; }
+    # Wipe the schema so the dump lands in an empty database. `pg_restore
+    # --clean` can't do this: the target also carries the new
+    # sites_conformes_* schema plus legacy tables owned by a stray `import`
+    # role from an earlier attempt, which cms can neither drop nor overwrite.
+    # cms holds ADMIN on that role, so it can join it and drop what it owns
+    # (the role itself stays: it also owns objects in Scaleway's rdb database).
+    PSQL <<'SQL'
+    SET client_min_messages TO error;  -- hide the hundreds of cascade notices
+    DO $$ BEGIN
+      IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'import') THEN
+        GRANT import TO cms; DROP OWNED BY import;
+      END IF;
+    END $$;
+    DO $$ DECLARE r record; BEGIN
+      FOR r IN SELECT tablename FROM pg_tables WHERE schemaname = 'public' LOOP
+        EXECUTE format('DROP TABLE IF EXISTS public.%I CASCADE', r.tablename);
+      END LOOP;
+      FOR r IN SELECT sequencename FROM pg_sequences WHERE schemaname = 'public' LOOP
+        EXECUTE format('DROP SEQUENCE IF EXISTS public.%I CASCADE', r.sequencename);
+      END LOOP;
+    END $$;
+    SQL
+    echo "Target schema wiped."
+    # ponytail: Scalingo dumps with PG17, Scaleway runs PG16. pg_restore keeps
+    # going on errors and exits 1 at the end; the one expected error is
+    # "unrecognized configuration parameter transaction_timeout". Anything
+    # else in the log is a real problem.
+    pg_restore --no-owner --no-privileges --no-comments \
+      -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" "$DUMP" 2>&1 | tee "$tmp/restore.log" \
+      || echo "pg_restore reported errors - check the log above (transaction_timeout is expected)"
+    # The dump has the Sites Faciles schema (content_manager_*, blog_*, ...).
+    # sites-conformes ships a command that renames it to sites_conformes_*
+    # and rewrites django_migrations/content types; then migrate catches up.
+    # Run from the local venv over the public endpoint - the cms_manage job
+    # image would need a rebuild to pick up the extra command.
+    ENC_PW="$(python3 -c 'import sys,urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "$PGPASSWORD")"
+    export DATABASE_URL="postgresql://$DB_USER:$ENC_PW@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=require"
+    (cd apps/cms \
+      && DJANGO_SETTINGS_MODULE=cms.settings.dev uv run python manage.py migrate_from_sites_faciles --no-input \
+      && DJANGO_SETTINGS_MODULE=cms.settings.dev uv run python manage.py migrate --noinput)
+    echo "Done: $(PSQL -Atc 'select count(*) from wagtailcore_page') pages in the Scaleway cms database."
 
-    echo "Syncing s3://${BUCKET}/ -> ./${DEST}/"
-    echo "  endpoint: ${ENDPOINT}"
-    echo "  region:   ${REGION}"
-    mkdir -p "$DEST"
-    aws s3 sync "s3://${BUCKET}/" "./${DEST}/" \
-      --endpoint-url "$ENDPOINT" \
-      --region "$REGION"
 
-# Sync the old pfat-cms media bucket to the new pfat-cms-media bucket.
-# Two-step: download from old → local, then upload local → new.
-# Source creds: AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY (or S3_*).
-# Dest creds:   S3_BUCKET_SCW_ACCESS_KEY_ID / S3_BUCKET_SCW_SECRET_KEY.
-sync-prod-media-to-new: sync-prod-media
+# Both buckets live on Scaleway fr-par, so this is a server-side copy
+# (S3 CopyObject) driven by the account-wide SCW key from .env - nothing
+# streams through this machine. Metadata (Cache-Control) is preserved.
+# Idempotent; re-run right before cutover to catch late uploads.
+# Mirror the Scalingo app's media bucket (pfat-cms) into the tofu-managed pfat-cms-media.
+sync-media-buckets:
     #!/usr/bin/env bash
     set -euo pipefail
-    if [[ -z "${S3_BUCKET_SCW_ACCESS_KEY_ID:-}" || -z "${S3_BUCKET_SCW_SECRET_KEY:-}" ]]; then
-      echo "ERROR: S3_BUCKET_SCW_ACCESS_KEY_ID and S3_BUCKET_SCW_SECRET_KEY must be set."
-      echo "       These are the dedicated S3 credentials for the new pfat-cms-media bucket."
-      exit 1
-    fi
-    ENDPOINT="${AWS_S3_ENDPOINT_URL:-https://s3.fr-par.scw.cloud}"
-    REGION="${AWS_S3_REGION_NAME:-fr-par}"
-    DEST="${SYNC_DEST:-media-local}"
-    NEW_BUCKET="${SYNC_NEW_BUCKET:-pfat-cms-media}"
-
-    echo "Syncing ./${DEST}/ -> s3://${NEW_BUCKET}/"
-    echo "  endpoint: ${ENDPOINT}"
-    echo "  region:   ${REGION}"
-    AWS_ACCESS_KEY_ID="$S3_BUCKET_SCW_ACCESS_KEY_ID" \
-    AWS_SECRET_ACCESS_KEY="$S3_BUCKET_SCW_SECRET_KEY" \
-    aws s3 sync "./${DEST}/" "s3://${NEW_BUCKET}/" \
-      --endpoint-url "$ENDPOINT" \
-      --region "$REGION"
+    : "${SCW_ACCESS_KEY:?set in .env}" "${SCW_SECRET_KEY:?set in .env}"
+    AWS="$(command -v aws || echo "nix run nixpkgs#awscli2 --")"
+    export AWS_ACCESS_KEY_ID="$SCW_ACCESS_KEY" AWS_SECRET_ACCESS_KEY="$SCW_SECRET_KEY"
+    $AWS --endpoint-url https://s3.fr-par.scw.cloud --region fr-par \
+      s3 sync s3://pfat-cms/ s3://pfat-cms-media/ --no-progress
+    echo "pfat-cms-media now holds: $($AWS --endpoint-url https://s3.fr-par.scw.cloud --region fr-par s3 ls s3://pfat-cms-media/ --recursive --summarize | tail -2 | tr '\n' ' ')"

@@ -21,13 +21,26 @@ resource "scaleway_object_bucket" "this" {
   )
 }
 
+# Always private: public_read is granted per-object through the policy
+# below, so anonymous listing of the bucket stays denied.
 resource "scaleway_object_bucket_acl" "this" {
   bucket = scaleway_object_bucket.this.id
-  acl    = var.public_read ? "public-read" : "private"
+  acl    = "private"
 }
+
+data "scaleway_account_project" "current" {}
 
 # Bucket-level policy, not per-object ACLs - applies uniformly to every
 # object regardless of when it was uploaded (matches infra/modules/static-site).
+#
+# A Scaleway bucket policy is deny-by-default for everything it doesn't
+# list, *including the project's own API keys*: the previous version of this
+# block (PublicRead only) is exactly why cms uploads 403'd - the container
+# could no longer PutObject. The first statement keeps the project whole.
+# ponytail: Version 2012-10-17 because it's the only one that accepts a
+# project_id principal (2023-04-17 wants user_id/application_id, which the
+# deploying key can't look up without IAM read). Upgrade path: pass the
+# application_id of the S3 key and switch versions.
 resource "scaleway_object_bucket_policy" "public_read" {
   count  = var.public_read ? 1 : 0
   bucket = scaleway_object_bucket.this.id
@@ -35,11 +48,18 @@ resource "scaleway_object_bucket_policy" "public_read" {
     Version = "2012-10-17"
     Statement = [
       {
+        Sid       = "ProjectFullAccess"
+        Effect    = "Allow"
+        Principal = { SCW = "project_id:${data.scaleway_account_project.current.id}" }
+        Action    = ["s3:*"]
+        Resource  = [scaleway_object_bucket.this.name, "${scaleway_object_bucket.this.name}/*"]
+      },
+      {
         Sid       = "PublicRead"
         Effect    = "Allow"
         Principal = "*"
         Action    = ["s3:GetObject"]
-        Resource  = ["${scaleway_object_bucket.this.name}/*"]
+        Resource  = [for prefix in var.public_read_prefixes : "${scaleway_object_bucket.this.name}/${prefix}"]
       },
     ]
   })
