@@ -40,6 +40,7 @@ locals {
     { DATABASE_URL = module.cms_db.private_database_url },
     var.django_secret_key == "" ? {} : { DJANGO_SECRET_KEY = var.django_secret_key },
     var.notion_token == "" ? {} : { NOTION_TOKEN = var.notion_token },
+    var.email_host_password == "" ? {} : { EMAIL_HOST_PASSWORD = var.email_host_password },
     # ponytail: reusing the same account-wide Scaleway key already used for
     # tofu apply, rather than a bucket-scoped IAM application/key - the
     # deploying key doesn't have IAM write permission yet. Narrow this once
@@ -67,6 +68,11 @@ locals {
     # without this Django would build absolute URLs on the Scaleway hostname.
     USE_X_FORWARDED_HOST = "true"
     POSTHOG_KEY          = var.posthog_key
+    DEFAULT_FROM_EMAIL   = var.default_from_email
+    EMAIL_HOST           = var.email_host
+    EMAIL_PORT           = var.email_port
+    EMAIL_HOST_USER      = var.email_host_user
+    EMAIL_USE_TLS        = "true"
   }
 }
 

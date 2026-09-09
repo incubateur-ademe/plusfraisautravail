@@ -45,6 +45,7 @@ jobs:
       TF_VAR_climadiag_api_token: ${{ secrets.CLIMADIAG_API_TOKEN }}
       TF_VAR_django_secret_key: ${{ secrets.DJANGO_SECRET_KEY }}
       TF_VAR_notion_token: ${{ secrets.NOTION_TOKEN }}
+      TF_VAR_email_host_password: ${{ secrets.EMAIL_HOST_PASSWORD }}
       # Dedicated S3 credentials for cms's media access (private pfat-cms-media
       # bucket) - separate from the account-wide SCW_ACCESS_KEY/SCW_SECRET_KEY.
       TF_VAR_s3_bucket_scw_access_key_id: ${{ secrets.S3_BUCKET_SCW_ACCESS_KEY_ID }}

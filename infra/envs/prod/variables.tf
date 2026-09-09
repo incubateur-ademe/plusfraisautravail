@@ -157,3 +157,31 @@ variable "notion_token" {
   sensitive   = true
   description = "Notion internal-integration token for wagtail-notion-form (contact form -> Notion database). Empty disables the sync."
 }
+
+# Outgoing mail for the CMS (contact form). Defaults mirror the Brevo relay
+# the old Scalingo app used; only the password is a secret.
+variable "default_from_email" {
+  type    = string
+  default = "sites-faciles-saas@incubateur.ademe.fr"
+}
+
+variable "email_host" {
+  type    = string
+  default = "smtp-relay.brevo.com"
+}
+
+variable "email_port" {
+  type    = string
+  default = "587"
+}
+
+variable "email_host_user" {
+  type    = string
+  default = "6b4297001@smtp-brevo.com"
+}
+
+variable "email_host_password" {
+  type      = string
+  default   = ""
+  sensitive = true
+}

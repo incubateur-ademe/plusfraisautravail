@@ -16,6 +16,21 @@ STORAGES["default"]["BACKEND"] = "storages.backends.s3.S3Storage"
 # scheme in X-Forwarded-Proto.
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
+# Outgoing mail (contact form notifications). Same env names as Sites
+# Faciles / the old Scalingo app, so the Brevo SMTP relay config carries
+# over. Without DEFAULT_FROM_EMAIL Django would try localhost:25 and the
+# contact form would 500 on submit.
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "")
+if DEFAULT_FROM_EMAIL:
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+    EMAIL_HOST = os.environ.get("EMAIL_HOST", "")
+    EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+    EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+    EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+    EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "true").lower() == "true"
+    EMAIL_TIMEOUT = int(os.environ.get("EMAIL_TIMEOUT", "25"))
+    SERVER_EMAIL = DEFAULT_FROM_EMAIL
+
 AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID", "")
 AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY", "")
 AWS_STORAGE_BUCKET_NAME = os.environ.get("AWS_STORAGE_BUCKET_NAME", "")
