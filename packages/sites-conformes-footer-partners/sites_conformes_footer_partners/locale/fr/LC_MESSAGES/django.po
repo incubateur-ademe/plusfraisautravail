@@ -92,3 +92,7 @@ msgstr "Logo partenaire"
 #: models.py:113
 msgid "Partner logos"
 msgstr "Logos partenaires"
+
+#: sites_conformes_footer_partners/templates/sites_conformes_core/blocks/footer.html:141
+msgid "This website is made with"
+msgstr "Ce site est réalisé avec"
