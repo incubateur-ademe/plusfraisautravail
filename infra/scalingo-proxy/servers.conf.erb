@@ -1,0 +1,160 @@
+# Scalingo nginx-buildpack reverse proxy: one public hostname in front of the
+# Scaleway containers and buckets. Included inside the buildpack's http {}.
+#
+# Why this exists: plusfraisautravail.beta.gouv.fr carries MX records, so it
+# can't be a CNAME to Scaleway. The Scalingo app keeps the A records + TLS
+# cert and forwards everything to Scaleway (both in Paris).
+#
+# Cache layout (adapted from incubateur-ademe/quefairedemesobjets):
+# - /static/           whitenoise hashed files, honours upstream Cache-Control
+# - /media/            public-read S3 bucket (images only), 1d
+# - /media/documents/  404 - documents go through Django at /documents/
+# - /<spa>/assets/     Vite content-hashed files, forced to 1y
+# - /<spa>/            everything else from the buckets, 5m from the bucket's
+#                      own Cache-Control (set by `aws s3 sync` in CI)
+# - /api/, /           never cached
+#
+# Cache lives in /tmp: wiped on each container restart, which is fine.
+
+proxy_cache_path /tmp/nginx_cache levels=1:2 keys_zone=pfat:20m max_size=500m inactive=7d use_temp_path=off;
+
+# Headers shared by every upstream; each location only sets $up.
+proxy_set_header Host $up;
+proxy_set_header X-Forwarded-Host $host;
+proxy_set_header X-Forwarded-Proto https;
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+proxy_ssl_server_name on;
+proxy_ssl_name $up;
+proxy_http_version 1.1;
+proxy_set_header Connection "";
+
+# Serve stale on upstream errors/timeouts and refresh in the background, so
+# a cold Scaleway container never blocks a cached asset.
+proxy_cache_lock on;
+proxy_cache_lock_timeout 10s;
+proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;
+proxy_cache_background_update on;
+proxy_cache_valid 200 301 302 10m;
+proxy_cache_valid 404 1m;
+
+server {
+    listen <%= ENV["PORT"] %>;
+    server_name _;
+
+    # Scaleway hostnames are CNAMEs with a 60s TTL - re-resolve instead of
+    # pinning the IP nginx saw at boot.
+    resolver 1.1.1.1 8.8.8.8 valid=60s ipv6=off;
+
+    # ENV.fetch: a missing host must fail the build, not render `set $cms ;`.
+    set $cms      <%= ENV.fetch("CMS_HOST") %>;
+    set $api      <%= ENV.fetch("API_HOST") %>;
+    set $media    <%= ENV["MEDIA_HOST"] || "pfat-cms-media.s3.fr-par.scw.cloud" %>;
+    set $autodiag <%= ENV["AUTODIAG_HOST"] || "pfat-autodiag.s3-website.fr-par.scw.cloud" %>;
+    set $alert    <%= ENV["ALERT_WIDGET_HOST"] || "pfat-alert-widget.s3-website.fr-par.scw.cloud" %>;
+    set $climadiag <%= ENV["CLIMADIAG_HOST"] || "pfat-climadiag.s3-website.fr-par.scw.cloud" %>;
+
+    add_header X-Cache-Status $upstream_cache_status always;
+
+    # ── CMS static: whitenoise sends immutable/1y on hashed files, 60s on
+    # the rest - proxy_cache follows those headers.
+    location /static/ {
+        set $up $cms;
+        proxy_pass https://$up;
+        proxy_cache pfat;
+    }
+
+    # ── CMS media, straight from the public-read bucket (Django builds
+    # unsigned /media/<key> URLs via AWS_S3_CUSTOM_DOMAIN). Files migrated
+    # from the old bucket carry no Cache-Control, so set it here: 1d in the
+    # proxy and in browsers. Wagtail never rewrites a file in place (new
+    # uploads and renditions get new names), so 1d is safe.
+    # Documents are served by Django at /documents/ (location /, uncached,
+    # permission-checked); the bucket denies anonymous reads under this
+    # prefix anyway.
+    location /media/documents/ {
+        return 404;
+    }
+    location /media/ {
+        set $up $media;
+        rewrite ^/media/(.*) /$1 break;
+        proxy_pass https://$up;
+        proxy_cache pfat;
+        proxy_ignore_headers Cache-Control Expires;
+        proxy_cache_valid 200 1d;
+        expires 1d;
+    }
+
+    # ── Vite content-hashed bundles: safe to cache for a year regardless of
+    # the 5m Cache-Control the bucket sync applies.
+    location ~ ^/autodiag/assets/ {
+        set $up $autodiag;
+        rewrite ^/autodiag/(.*) /$1 break;
+        proxy_pass https://$up;
+        proxy_cache pfat;
+        proxy_ignore_headers Cache-Control Expires;
+        proxy_cache_valid 200 1y;
+        expires 1y;
+    }
+    location ~ ^/alert-widget/assets/ {
+        set $up $alert;
+        rewrite ^/alert-widget/(.*) /$1 break;
+        proxy_pass https://$up;
+        proxy_cache pfat;
+        proxy_ignore_headers Cache-Control Expires;
+        proxy_cache_valid 200 1y;
+        expires 1y;
+    }
+    location ~ ^/climadiag/assets/ {
+        set $up $climadiag;
+        rewrite ^/climadiag/(.*) /$1 break;
+        proxy_pass https://$up;
+        proxy_cache pfat;
+        proxy_ignore_headers Cache-Control Expires;
+        proxy_cache_valid 200 1y;
+        expires 1y;
+    }
+
+    # ── SPA shells and embeds (index.html, climadiag-embed.js, ...): short
+    # cache so a deploy shows up within minutes.
+    location /autodiag/ {
+        set $up $autodiag;
+        rewrite ^/autodiag/(.*) /$1 break;
+        proxy_pass https://$up;
+        proxy_cache pfat;
+    }
+    location /alert-widget/ {
+        set $up $alert;
+        rewrite ^/alert-widget/(.*) /$1 break;
+        proxy_pass https://$up;
+        proxy_cache pfat;
+    }
+    location /climadiag/ {
+        set $up $climadiag;
+        rewrite ^/climadiag/(.*) /$1 break;
+        proxy_pass https://$up;
+        proxy_cache pfat;
+    }
+
+    # ── API: live data, never cached.
+    location /api/ {
+        set $up $api;
+        rewrite ^/api/(.*) /$1 break;
+        proxy_pass https://$up;
+    }
+
+    # ── Wagtail admin: longer timeouts for imports/uploads.
+    location /admin/ {
+        set $up $cms;
+        proxy_pass https://$up;
+        proxy_read_timeout 120s;
+    }
+
+    # ── Everything else: Wagtail pages, not cached (ponytail: add a page cache
+    # with a logged-in cookie bypass, as quefairedemesobjets does, if Scalingo's
+    # 50 req/s router limit ever gets close).
+    location / {
+        set $up $cms;
+        proxy_pass https://$up;
+        proxy_read_timeout 30s;
+    }
+}

@@ -7,4 +7,4 @@
 set -euo pipefail
 
 echo "Starting gunicorn (build ${BUILD_SHA:-unknown})..."
-exec gunicorn cms.wsgi:application --bind 0.0.0.0:8080 --workers 2
+exec gunicorn cms.wsgi:application --bind 0.0.0.0:8080 --workers 2 --worker-class gthread --preload --threads 4 --max-requests 10000 --max-requests-jitter 2500

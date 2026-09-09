@@ -252,18 +252,15 @@ The script self-mounts right where it's placed in the DOM and injects the DSFR C
 | `/api/` | api container | none |
 | `/` | cms container | none |
 
-Setup, once:
+The app is `plusfraisautravail-proxy` (osc-fr1). Its env already carries `BUILDPACK_URL`, `PROJECT_DIR=infra/scalingo-proxy`, `CMS_HOST` and `API_HOST` (the containers' Scaleway hostnames, from `tofu output cms_url` / `api_url`). `scalingo -a plusfraisautravail-proxy git-setup` adds the `scalingo` git remote, then:
 
 ```bash
-scalingo create pfat-proxy --region osc-fr1
-scalingo -a pfat-proxy env-set BUILDPACK_URL=https://github.com/Scalingo/nginx-buildpack \
-  PROJECT_DIR=infra/scalingo-proxy \
-  CMS_HOST=$(cd infra/envs/prod && tofu output -raw cms_url | sed 's#https://##') \
-  API_HOST=$(cd infra/envs/prod && tofu output -raw api_url | sed 's#https://##')
 git push scalingo main   # or link the GitHub repo in the Scalingo dashboard
 ```
 
-Copy the content over with `just sync-prod-db` (Scalingo Postgres -> Scaleway RDB, wipes the target). Mirror the media with `just sync-media-buckets` (pfat-cms -> pfat-cms-media, server-side). Then set `USE_X_FORWARDED_HOST=true` on the cms container and add the public hostname to `cms_extra_allowed_hosts`, test on the app's `osc-fr1.scalingo.io` URL, and move the domain from the old Sites Conformes app to `pfat-proxy`. Scalingo re-issues the Let's Encrypt cert within minutes - do it at a quiet hour. The old app stays as a one-click rollback.
+The nginx buildpack needs no Procfile and no APT packages on the `scalingo-26` stack.
+
+Copy the content over with `just sync-prod-db` (Scalingo Postgres -> Scaleway RDB, wipes the target). Mirror the media with `just sync-media-buckets` (pfat-cms -> pfat-cms-media, server-side). Then set `USE_X_FORWARDED_HOST=true` on the cms container and add the public hostname to `cms_extra_allowed_hosts`, test on the app's `osc-fr1.scalingo.io` URL, and move the domain from the old Sites Conformes app to `plusfraisautravail-proxy`. Scalingo re-issues the Let's Encrypt cert within minutes - do it at a quiet hour. The old app stays as a one-click rollback.
 
 The SPAs must be built with their default sub-path base (`/autodiag/` etc.), not `VITE_BASE_URL=/`, for the proxy's prefix routing to work. Wagtail pages must not use the slugs `static`, `media`, `api`, `autodiag`, `alert-widget` or `climadiag`.
 
