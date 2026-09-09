@@ -192,3 +192,12 @@ server {
         proxy_read_timeout 30s;
     }
 }
+
+# Legacy hostnames (www + the pre-migration Sites Faciles domain): permanent
+# redirect to the canonical domain. Both must be attached to this Scalingo
+# app for routing + TLS. Everything else still lands on the main server above.
+server {
+    listen <%= ENV["PORT"] %>;
+    server_name www.plusfraisautravail.beta.gouv.fr plus-fraiche-ma-boite.sites.beta.gouv.fr;
+    return 301 https://plusfraisautravail.beta.gouv.fr$request_uri;
+}

@@ -253,6 +253,8 @@ The script self-mounts right where it's placed in the DOM and injects the DSFR C
 | `/api/` | api container | none |
 | `/` | cms container | none |
 
+Requests for `www.plusfraisautravail.beta.gouv.fr` and `plus-fraiche-ma-boite.sites.beta.gouv.fr` get a 301 to the canonical domain; both domains are attached to the proxy app.
+
 The app is `plusfraisautravail-proxy` (osc-fr1). Its env already carries `BUILDPACK_URL`, `PROJECT_DIR=infra/scalingo-proxy`, `CMS_HOST` and `API_HOST` (the containers' Scaleway hostnames, from `tofu output cms_url` / `api_url`). `scalingo -a plusfraisautravail-proxy git-setup` adds the `scalingo` git remote, then:
 
 ```bash
