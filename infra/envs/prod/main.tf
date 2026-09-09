@@ -34,11 +34,10 @@ locals {
   }
 
   cms_secret_env = merge(
-    # ponytail: public endpoint for now instead of the private-network DSN -
-    # the container failed to reach the DB over the VPC (entrypoint hung on
-    # "Waiting for database..." and got killed). Revisit private networking
-    # once that's root-caused.
-    { DATABASE_URL = module.cms_db.database_url },
+    # Private-network DSN: the container is attached to the DB's Private
+    # Network (module.cms private_network_id). The earlier "Waiting for
+    # database..." hang was this attachment missing, not the network itself.
+    { DATABASE_URL = module.cms_db.private_database_url },
     var.django_secret_key == "" ? {} : { DJANGO_SECRET_KEY = var.django_secret_key },
     # ponytail: reusing the same account-wide Scaleway key already used for
     # tofu apply, rather than a bucket-scoped IAM application/key - the
@@ -152,6 +151,7 @@ module "cms" {
   environment_variables        = local.cms_env
   secret_environment_variables = local.cms_secret_env
   custom_domain                = var.base_domain
+  private_network_id           = module.cms_db.private_network_id
 }
 
 # One-shot management-command runner, reusing the same image and env/secrets
@@ -174,6 +174,8 @@ module "cms_manage" {
   memory_limit    = 1024
   # Full bucket scan (list + head + copy per object) can run past the
   # module default (300s) once there are enough media objects.
-  timeout_seconds       = 1800
-  environment_variables = merge(local.cms_env, local.cms_secret_env)
+  timeout_seconds = 1800
+  # Serverless Jobs don't attach to a Private Network: reach the DB over its
+  # public load-balancer endpoint instead of the container's private DSN.
+  environment_variables = merge(local.cms_env, local.cms_secret_env, { DATABASE_URL = module.cms_db.database_url })
 }

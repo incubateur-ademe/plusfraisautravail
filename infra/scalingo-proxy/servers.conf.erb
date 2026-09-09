@@ -12,13 +12,33 @@
 # - /<spa>/assets/     Vite content-hashed files, forced to 1y
 # - /<spa>/            everything else from the buckets, 5m from the bucket's
 #                      own Cache-Control (set by `aws s3 sync` in CI)
+# - /ph/               PostHog EU, first-party analytics path, never cached
 # - /api/, /           never cached
 #
 # Cache lives in /tmp: wiped on each container restart, which is fine.
 
 proxy_cache_path /tmp/nginx_cache levels=1:2 keys_zone=pfat:20m max_size=500m inactive=7d use_temp_path=off;
 
-# Headers shared by every upstream; each location only sets $up.
+# Scaleway hostnames are CNAMEs with a 60s TTL. `resolve` on each upstream
+# server (nginx >= 1.27.3, Scalingo ships 1.30) re-resolves them in the
+# background, and the upstream block gives us a keepalive pool - one TLS
+# handshake per pooled connection instead of one per request.
+resolver 1.1.1.1 8.8.8.8 valid=60s ipv6=off;
+
+# ENV.fetch: a missing host must fail the build, not render an empty server.
+upstream cms       { zone cms 1m;       server <%= ENV.fetch("CMS_HOST") %>:443 resolve; keepalive 16; }
+upstream api       { zone api 1m;       server <%= ENV.fetch("API_HOST") %>:443 resolve; keepalive 16; }
+upstream media     { zone media 1m;     server <%= ENV["MEDIA_HOST"] || "pfat-cms-media.s3.fr-par.scw.cloud" %>:443 resolve; keepalive 8; }
+upstream autodiag  { zone autodiag 1m;  server <%= ENV["AUTODIAG_HOST"] || "pfat-autodiag.s3-website.fr-par.scw.cloud" %>:443 resolve; keepalive 8; }
+upstream alert     { zone alert 1m;     server <%= ENV["ALERT_WIDGET_HOST"] || "pfat-alert-widget.s3-website.fr-par.scw.cloud" %>:443 resolve; keepalive 8; }
+upstream climadiag { zone climadiag 1m; server <%= ENV["CLIMADIAG_HOST"] || "pfat-climadiag.s3-website.fr-par.scw.cloud" %>:443 resolve; keepalive 8; }
+# PostHog (EU), reverse-proxied under /ph/ so analytics stay first-party -
+# same layout as quefairedemesobjets. api_host in the PostHog snippet is "/ph".
+upstream posthog        { zone posthog 1m;        server eu.i.posthog.com:443 resolve;        keepalive 8; }
+upstream posthog_assets { zone posthog_assets 1m; server eu-assets.i.posthog.com:443 resolve; keepalive 8; }
+
+# Headers shared by every upstream; each location sets $up to the hostname
+# it targets (Host header + TLS SNI).
 proxy_set_header Host $up;
 proxy_set_header X-Forwarded-Host $host;
 proxy_set_header X-Forwarded-Proto https;
@@ -41,11 +61,6 @@ server {
     listen <%= ENV["PORT"] %>;
     server_name _;
 
-    # Scaleway hostnames are CNAMEs with a 60s TTL - re-resolve instead of
-    # pinning the IP nginx saw at boot.
-    resolver 1.1.1.1 8.8.8.8 valid=60s ipv6=off;
-
-    # ENV.fetch: a missing host must fail the build, not render `set $cms ;`.
     set $cms      <%= ENV.fetch("CMS_HOST") %>;
     set $api      <%= ENV.fetch("API_HOST") %>;
     set $media    <%= ENV["MEDIA_HOST"] || "pfat-cms-media.s3.fr-par.scw.cloud" %>;
@@ -59,7 +74,7 @@ server {
     # the rest - proxy_cache follows those headers.
     location /static/ {
         set $up $cms;
-        proxy_pass https://$up;
+        proxy_pass https://cms;
         proxy_cache pfat;
     }
 
@@ -77,7 +92,7 @@ server {
     location /media/ {
         set $up $media;
         rewrite ^/media/(.*) /$1 break;
-        proxy_pass https://$up;
+        proxy_pass https://media;
         proxy_cache pfat;
         proxy_ignore_headers Cache-Control Expires;
         proxy_cache_valid 200 1d;
@@ -89,7 +104,7 @@ server {
     location ~ ^/autodiag/assets/ {
         set $up $autodiag;
         rewrite ^/autodiag/(.*) /$1 break;
-        proxy_pass https://$up;
+        proxy_pass https://autodiag;
         proxy_cache pfat;
         proxy_ignore_headers Cache-Control Expires;
         proxy_cache_valid 200 1y;
@@ -98,7 +113,7 @@ server {
     location ~ ^/alert-widget/assets/ {
         set $up $alert;
         rewrite ^/alert-widget/(.*) /$1 break;
-        proxy_pass https://$up;
+        proxy_pass https://alert;
         proxy_cache pfat;
         proxy_ignore_headers Cache-Control Expires;
         proxy_cache_valid 200 1y;
@@ -107,7 +122,7 @@ server {
     location ~ ^/climadiag/assets/ {
         set $up $climadiag;
         rewrite ^/climadiag/(.*) /$1 break;
-        proxy_pass https://$up;
+        proxy_pass https://climadiag;
         proxy_cache pfat;
         proxy_ignore_headers Cache-Control Expires;
         proxy_cache_valid 200 1y;
@@ -119,33 +134,52 @@ server {
     location /autodiag/ {
         set $up $autodiag;
         rewrite ^/autodiag/(.*) /$1 break;
-        proxy_pass https://$up;
+        proxy_pass https://autodiag;
         proxy_cache pfat;
     }
     location /alert-widget/ {
         set $up $alert;
         rewrite ^/alert-widget/(.*) /$1 break;
-        proxy_pass https://$up;
+        proxy_pass https://alert;
         proxy_cache pfat;
     }
     location /climadiag/ {
         set $up $climadiag;
         rewrite ^/climadiag/(.*) /$1 break;
-        proxy_pass https://$up;
+        proxy_pass https://climadiag;
         proxy_cache pfat;
+    }
+
+    # ── PostHog, first-party path (lifted from quefairedemesobjets). Assets
+    # from the assets host, everything else to the ingest host with Origin/
+    # Referer stripped so PostHog doesn't reject unknown domains.
+    location /ph/static/ {
+        set $up eu-assets.i.posthog.com;
+        proxy_pass https://posthog_assets/static/;
+    }
+    location /ph/ {
+        set $up eu.i.posthog.com;
+        proxy_pass https://posthog/;
+        # A location-level proxy_set_header drops the inherited set - restate.
+        proxy_set_header Host $up;
+        proxy_set_header Connection "";
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header Origin "";
+        proxy_set_header Referer "";
     }
 
     # ── API: live data, never cached.
     location /api/ {
         set $up $api;
         rewrite ^/api/(.*) /$1 break;
-        proxy_pass https://$up;
+        proxy_pass https://api;
     }
 
     # ── Wagtail admin: longer timeouts for imports/uploads.
     location /admin/ {
         set $up $cms;
-        proxy_pass https://$up;
+        proxy_pass https://cms;
         proxy_read_timeout 120s;
     }
 
@@ -154,7 +188,7 @@ server {
     # 50 req/s router limit ever gets close).
     location / {
         set $up $cms;
-        proxy_pass https://$up;
+        proxy_pass https://cms;
         proxy_read_timeout 30s;
     }
 }

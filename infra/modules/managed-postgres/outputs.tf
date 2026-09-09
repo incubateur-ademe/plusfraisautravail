@@ -40,15 +40,17 @@ output "public_port" {
 
 output "database_url" {
   value = try(
-    "postgresql://${var.db_user}:${random_password.db.result}@${scaleway_rdb_instance.this.load_balancer[0].ip}:${scaleway_rdb_instance.this.load_balancer[0].port}/${scaleway_rdb_database.this.name}?sslmode=require",
-    "postgresql://${var.db_user}:${random_password.db.result}@${scaleway_rdb_instance.this.private_network[0].ip}:${scaleway_rdb_instance.this.private_network[0].port}/${scaleway_rdb_database.this.name}",
+    "postgresql://${var.db_user}:${urlencode(random_password.db.result)}@${scaleway_rdb_instance.this.load_balancer[0].ip}:${scaleway_rdb_instance.this.load_balancer[0].port}/${scaleway_rdb_database.this.name}?sslmode=require",
+    "postgresql://${var.db_user}:${urlencode(random_password.db.result)}@${scaleway_rdb_instance.this.private_network[0].ip}:${scaleway_rdb_instance.this.private_network[0].port}/${scaleway_rdb_database.this.name}?sslmode=require",
   )
   sensitive   = true
   description = "Full DSN - prefers the public load-balancer when available, falls back to private-network IP."
 }
 
+# Password is percent-encoded: the generated one contains URL-reserved
+# characters and consumers (dj-database-url, libpq) decode a URI password.
 output "private_database_url" {
-  value       = "postgresql://${var.db_user}:${random_password.db.result}@${scaleway_rdb_instance.this.private_network[0].ip}:${scaleway_rdb_instance.this.private_network[0].port}/${scaleway_rdb_database.this.name}"
+  value       = "postgresql://${var.db_user}:${urlencode(random_password.db.result)}@${scaleway_rdb_instance.this.private_network[0].ip}:${scaleway_rdb_instance.this.private_network[0].port}/${scaleway_rdb_database.this.name}?sslmode=require"
   sensitive   = true
   description = "Private-network DSN — use when the container is attached to the same VPC as the RDB instance."
 }

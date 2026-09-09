@@ -90,7 +90,9 @@ TEMPLATES = [
 WSGI_APPLICATION = "cms.wsgi.application"
 
 DATABASES = {
-    "default": dj_database_url.config(default=os.environ.get("DATABASE_URL", "")),
+    # conn_max_age: reuse connections across requests (gthread workers hold one
+    # per thread). Without it every request paid a fresh connect + TLS handshake.
+    "default": dj_database_url.config(default=os.environ.get("DATABASE_URL", ""), conn_max_age=600),
 }
 CONN_HEALTH_CHECKS = True
 

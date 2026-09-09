@@ -249,6 +249,7 @@ The script self-mounts right where it's placed in the DOM and injects the DSFR C
 | `/media/documents/` | none (404) | documents are served by Django at `/documents/`, permission-checked, uncached |
 | `/<spa>/assets/` | SPA bucket | 1y (Vite content-hashed) |
 | `/<spa>/` | SPA bucket | 5m (from the bucket's own Cache-Control) |
+| `/ph/` | PostHog EU (`eu.i.posthog.com`, assets from `eu-assets.i.posthog.com`) | none - the PostHog snippet in Wagtail's custom scripts uses `api_host: '/ph'` |
 | `/api/` | api container | none |
 | `/` | cms container | none |
 
@@ -262,7 +263,13 @@ The nginx buildpack needs no Procfile and no APT packages on the `scalingo-26` s
 
 **Testing on the proxy hostname before cutover.** Absolute URLs (media, `image.full_url`, admin emails) are built from `WAGTAILADMIN_BASE_URL`, which defaults to the production domain. To test on `https://plusfraisautravail-proxy.osc-fr1.scalingo.io`, set the GitHub repo variable `CMS_BASE_URL` to that URL and re-run `terraform-apply.yml`; delete the variable and re-apply at cutover. The `canonical`/`og:url` tags come from the Wagtail Site record in the database and always name the production domain, which is correct.
 
-Copy the content over with `just sync-prod-db` (Scalingo Postgres -> Scaleway RDB, wipes the target). Mirror the media with `just sync-media-buckets` (pfat-cms -> pfat-cms-media, server-side). Then set `USE_X_FORWARDED_HOST=true` on the cms container and add the public hostname to `cms_extra_allowed_hosts`, test on the app's `osc-fr1.scalingo.io` URL, and move the domain from the old Sites Conformes app to `plusfraisautravail-proxy`. Scalingo re-issues the Let's Encrypt cert within minutes - do it at a quiet hour. The old app stays as a one-click rollback.
+Copy the content over with `just sync-prod-db` (Scalingo Postgres -> Scaleway RDB, wipes the target). The sync also brings back the old PostHog snippet (`api_host: 'https://eu.i.posthog.com'`); re-point it at the proxy afterwards, in Wagtail Settings -> Custom scripts or with:
+
+```sql
+UPDATE sites_conformes_core_customscriptssettings SET head_scripts = replace(head_scripts, "api_host: 'https://eu.i.posthog.com',", "api_host: '/ph',
+        ui_host: 'https://eu.posthog.com',");
+```
+ Mirror the media with `just sync-media-buckets` (pfat-cms -> pfat-cms-media, server-side). Then set `USE_X_FORWARDED_HOST=true` on the cms container and add the public hostname to `cms_extra_allowed_hosts`, test on the app's `osc-fr1.scalingo.io` URL, and move the domain from the old Sites Conformes app to `plusfraisautravail-proxy`. Scalingo re-issues the Let's Encrypt cert within minutes - do it at a quiet hour. The old app stays as a one-click rollback.
 
 The SPAs must be built with their default sub-path base (`/autodiag/` etc.), not `VITE_BASE_URL=/`, for the proxy's prefix routing to work. Wagtail pages must not use the slugs `static`, `media`, `api`, `autodiag`, `alert-widget` or `climadiag`.
 
