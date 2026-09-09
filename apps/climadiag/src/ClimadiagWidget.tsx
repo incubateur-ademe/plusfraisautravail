@@ -6,7 +6,8 @@ import { ClimadiagIndicateurs } from './climadiag/Climadiag';
 import './climadiag/climadiag.css';
 
 const SEARCH_DEBOUNCE_MS = 300;
-const MIN_SEARCH_LENGTH = 2;
+// PlusFraîcheMaVille rejects queries shorter than 3 characters (our API relays that as a 502).
+const MIN_SEARCH_LENGTH = 3;
 
 export interface ClimadiagWidgetProps {
   apiBaseUrl: string;
