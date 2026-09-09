@@ -39,6 +39,7 @@ locals {
     # database..." hang was this attachment missing, not the network itself.
     { DATABASE_URL = module.cms_db.private_database_url },
     var.django_secret_key == "" ? {} : { DJANGO_SECRET_KEY = var.django_secret_key },
+    var.notion_token == "" ? {} : { NOTION_TOKEN = var.notion_token },
     # ponytail: reusing the same account-wide Scaleway key already used for
     # tofu apply, rather than a bucket-scoped IAM application/key - the
     # deploying key doesn't have IAM write permission yet. Narrow this once

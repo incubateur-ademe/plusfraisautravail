@@ -150,3 +150,10 @@ variable "posthog_key" {
   default     = ""
   description = "PostHog project key rendered into every page by sites-conformes-posthog. Empty disables analytics."
 }
+
+variable "notion_token" {
+  type        = string
+  default     = ""
+  sensitive   = true
+  description = "Notion internal-integration token for wagtail-notion-form (contact form -> Notion database). Empty disables the sync."
+}
