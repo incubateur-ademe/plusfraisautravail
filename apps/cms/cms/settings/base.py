@@ -1,6 +1,7 @@
 import json
 import os
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import dj_database_url
 from dotenv import load_dotenv
@@ -132,7 +133,13 @@ STORAGES = {
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10_000
 
 WAGTAIL_SITE_NAME = "Plus Frais Au Travail"
-WAGTAILADMIN_BASE_URL = "https://plusfraisautravail.beta.gouv.fr"
+# Public origin of the site. Every absolute URL Django/Wagtail emits derives
+# from it: media (AWS_S3_CUSTOM_DOMAIN), image.full_url, admin emails,
+# canonical scheme. Override it while the site is reachable on a temporary
+# host (e.g. the Scalingo proxy URL before the DNS cutover).
+WAGTAILADMIN_BASE_URL = os.environ.get(
+    "WAGTAILADMIN_BASE_URL", "https://plusfraisautravail.beta.gouv.fr"
+)
 # Documents are streamed by Django (/documents/<id>/<name>) rather than
 # redirected to storage: the media bucket's public-read policy covers
 # images only, so documents stay behind Wagtail's collection privacy and
@@ -218,7 +225,8 @@ INSTALLED_APPS.extend(
 )
 
 HOST_URL = "localhost"
-HOST_PROTO = "http"
+# sites_conformes reads this for {% canonical_url %}.
+HOST_PROTO = urlsplit(WAGTAILADMIN_BASE_URL).scheme
 PROCONNECT_ACTIVATED = False
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

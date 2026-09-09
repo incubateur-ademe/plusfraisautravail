@@ -60,6 +60,12 @@ locals {
     AWS_S3_ENDPOINT_URL     = module.cms_media.endpoint
     AWS_S3_REGION_NAME      = var.region
     DJANGO_SETTINGS_MODULE  = "cms.settings.production"
+    # Public origin for absolute URLs. cms_base_url overrides it while the
+    # site is tested on the Scalingo proxy hostname before the DNS cutover.
+    WAGTAILADMIN_BASE_URL = coalesce(var.cms_base_url, "https://${var.base_domain}")
+    # The Scalingo nginx proxy sets X-Forwarded-Host to the public hostname;
+    # without this Django would build absolute URLs on the Scaleway hostname.
+    USE_X_FORWARDED_HOST = "true"
   }
 }
 

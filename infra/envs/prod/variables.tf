@@ -138,3 +138,9 @@ variable "cms_extra_allowed_hosts" {
   description = "Hostnames for Django's ALLOWED_HOSTS. The container's own Scaleway domain isn't knowable until after the first apply (it would create a dependency cycle) - set it here from `tofu output cms_url` after the first apply, then re-apply. Also add any custom domain here once one is set up."
   default     = []
 }
+
+variable "cms_base_url" {
+  type        = string
+  default     = ""
+  description = "Public origin the CMS builds absolute URLs on (WAGTAILADMIN_BASE_URL). Empty = https://<base_domain>. Set to the Scalingo proxy URL while testing before the DNS cutover."
+}
