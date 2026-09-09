@@ -96,6 +96,19 @@ DATABASES = {
 }
 CONN_HEALTH_CHECKS = True
 
+# Wagtail looks image renditions up in the "renditions" cache alias when one
+# exists; without it every {% image %} is a query (10 of the 61 on the home
+# page). Per-process local memory is enough: renditions are immutable and
+# keyed by image + filter, so the two gunicorn workers just warm up separately.
+CACHES = {
+    "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"},
+    "renditions": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "renditions",
+        "TIMEOUT": 86400,
+    },
+}
+
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},

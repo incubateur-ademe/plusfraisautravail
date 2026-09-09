@@ -143,11 +143,12 @@ module "cms" {
   min_scale       = var.cms_min_scale
   max_scale       = 3
   timeout_seconds = 300
-  # Page rendering is CPU-bound (Wagtail on 560 mvCPU gave ~270 ms TTFB vs
-  # ~160 ms on the old Scalingo container); one tier up. Scaleway pairs
-  # memory with CPU, hence 2 GiB.
-  cpu_limit                    = 1120
-  memory_limit                 = 2048
+  # Wagtail + the sites_conformes migration set needs more headroom than the
+  # module default (280 mvCPU / 512 MiB) to boot within the startup probe
+  # budget. Doubling to 1120 mvCPU was measured and changed nothing: pages
+  # are bound by ~40-60 sequential DB queries, not CPU - see CACHES.
+  cpu_limit                    = 560
+  memory_limit                 = 1024
   environment_variables        = local.cms_env
   secret_environment_variables = local.cms_secret_env
   custom_domain                = var.base_domain
