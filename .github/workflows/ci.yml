@@ -38,9 +38,26 @@ jobs:
     defaults:
       run:
         working-directory: apps/cms
+    # Postgres, not SQLite: sites-conformes ships a migration with
+    # PostgreSQL-only SQL (forms/0004, UPDATE ... FROM), and production runs
+    # Postgres anyway.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: cms
+          POSTGRES_PASSWORD: cms
+          POSTGRES_DB: cms
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U cms"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     env:
       DJANGO_SECRET_KEY: test
-      DATABASE_URL: "sqlite:///test.sqlite3"
+      DATABASE_URL: "postgresql://cms:cms@localhost:5432/cms"
       ALLOWED_HOSTS: '["testserver","localhost"]'
     steps:
       - uses: actions/checkout@v4
