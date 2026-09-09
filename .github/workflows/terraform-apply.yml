@@ -73,6 +73,7 @@ jobs:
       # Empty = https://<base_domain>. Set the CMS_BASE_URL repo variable to
       # the Scalingo proxy URL while testing before the DNS cutover, unset after.
       TF_VAR_cms_base_url: ${{ vars.CMS_BASE_URL }}
+      TF_VAR_posthog_key: ${{ vars.POSTHOG_KEY }}
     steps:
       - uses: actions/checkout@v4
 

@@ -144,3 +144,9 @@ variable "cms_base_url" {
   default     = ""
   description = "Public origin the CMS builds absolute URLs on (WAGTAILADMIN_BASE_URL). Empty = https://<base_domain>. Set to the Scalingo proxy URL while testing before the DNS cutover."
 }
+
+variable "posthog_key" {
+  type        = string
+  default     = ""
+  description = "PostHog project key rendered into every page by sites-conformes-posthog. Empty disables analytics."
+}

@@ -65,6 +65,7 @@ locals {
     # The Scalingo nginx proxy sets X-Forwarded-Host to the public hostname;
     # without this Django would build absolute URLs on the Scaleway hostname.
     USE_X_FORWARDED_HOST = "true"
+    POSTHOG_KEY          = var.posthog_key
   }
 }
 

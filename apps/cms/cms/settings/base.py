@@ -240,6 +240,10 @@ INSTALLED_APPS.extend(
 )
 
 HOST_URL = "localhost"
+# PostHog project key (public by nature - it ships in every page). Empty
+# disables the loader; see packages/sites-conformes-posthog.
+POSTHOG_KEY = os.environ.get("POSTHOG_KEY", "")
+
 # sites_conformes reads this for {% canonical_url %}.
 HOST_PROTO = urlsplit(WAGTAILADMIN_BASE_URL).scheme
 PROCONNECT_ACTIVATED = False
