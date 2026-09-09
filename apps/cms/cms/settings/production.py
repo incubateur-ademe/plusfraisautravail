@@ -1,12 +1,16 @@
 import os
+from urllib.parse import urlsplit
+
+from django.core.exceptions import ImproperlyConfigured
 
 from .base import *  # noqa: F403
+from .base import MEDIA_CACHE_CONTROL, STORAGES, WAGTAILADMIN_BASE_URL
 
 # ponytail: base.py already reads DEBUG from env; removed the hardcoded
 # False here so it can be flipped on prod (DEBUG=true) without a redeploy.
 
-STORAGES["staticfiles"]["BACKEND"] = "whitenoise.storage.CompressedManifestStaticFilesStorage"  # noqa: F405
-STORAGES["default"]["BACKEND"] = "storages.backends.s3.S3Storage"  # noqa: F405
+STORAGES["staticfiles"]["BACKEND"] = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+STORAGES["default"]["BACKEND"] = "storages.backends.s3.S3Storage"
 
 AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID", "")
 AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY", "")
@@ -20,11 +24,13 @@ AWS_S3_REGION_NAME = os.environ.get("AWS_S3_REGION_NAME", "")
 # (pfat-cms-media.s3.fr-par.scw.cloud) to bypass the proxy, e.g. before the
 # DNS cutover.
 AWS_QUERYSTRING_AUTH = False
-AWS_S3_CUSTOM_DOMAIN = os.environ.get(
-    "AWS_S3_CUSTOM_DOMAIN",
-    WAGTAILADMIN_BASE_URL.removeprefix("https://") + "/media",  # noqa: F405
-)
-AWS_S3_OBJECT_PARAMETERS = {"CacheControl": os.environ.get("S3_CACHE_CONTROL", MEDIA_CACHE_CONTROL)}  # noqa: F405
+_site_host = urlsplit(WAGTAILADMIN_BASE_URL).netloc
+if not _site_host:
+    raise ImproperlyConfigured(
+        f"WAGTAILADMIN_BASE_URL must be an absolute URL, got {WAGTAILADMIN_BASE_URL!r}"
+    )
+AWS_S3_CUSTOM_DOMAIN = os.environ.get("AWS_S3_CUSTOM_DOMAIN", f"{_site_host}/media")
+AWS_S3_OBJECT_PARAMETERS = {"CacheControl": os.environ.get("S3_CACHE_CONTROL", MEDIA_CACHE_CONTROL)}
 
 try:
     from .local import *  # noqa: F403
