@@ -216,7 +216,7 @@ To roll out an infrastructure change: edit `infra/envs/prod/**`, open a PR, revi
 
 ## 4. Frontend bucket layout
 
-All SPAs are built with `VITE_BASE_URL=/` in CI so all asset URLs are root-relative. Buckets serve at the root, e.g.:
+All SPAs are built with their default sub-path base (`/autodiag/`, `/alert-widget/`, `/climadiag/`) so they work behind the proxy's prefix routing. Bucket files sit at the bucket root; the proxy strips the prefix. Direct bucket URLs therefore no longer render the SPAs on their own:
 
 - `https://pfat-autodiag.s3-website.fr-par.scw.cloud/`
 - `https://pfat-alert-widget.s3-website.fr-par.scw.cloud/`
