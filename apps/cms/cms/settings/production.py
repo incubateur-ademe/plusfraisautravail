@@ -21,12 +21,19 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 # over. Without DEFAULT_FROM_EMAIL Django would try localhost:25 and the
 # contact form would 500 on submit.
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "")
-if DEFAULT_FROM_EMAIL:
-    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+# No relay password = console backend: the mail is logged, not sent, and the
+# contact form still completes (submission saved, Notion row pushed) instead
+# of 500ing on an SMTP failure. Set EMAIL_HOST_PASSWORD to go live.
+EMAIL_BACKEND = (
+    "django.core.mail.backends.smtp.EmailBackend"
+    if DEFAULT_FROM_EMAIL and EMAIL_HOST_PASSWORD
+    else "django.core.mail.backends.console.EmailBackend"
+)
+if EMAIL_BACKEND.endswith("smtp.EmailBackend"):
     EMAIL_HOST = os.environ.get("EMAIL_HOST", "")
     EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
     EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
-    EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
     EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "true").lower() == "true"
     EMAIL_TIMEOUT = int(os.environ.get("EMAIL_TIMEOUT", "25"))
     SERVER_EMAIL = DEFAULT_FROM_EMAIL
