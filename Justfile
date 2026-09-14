@@ -55,6 +55,32 @@ climadiag:
 cms:
     cd apps/cms && DJANGO_SETTINGS_MODULE=cms.settings.dev uv run python manage.py runserver 8080
 
+# Django shell against the PROD database, read-write - every ORM write hits
+# production. Pass a command to run it non-interactively:
+#   just cms-shell-prod -c "from wagtail.images import get_image_model; print(get_image_model().objects.count())"
+[positional-arguments]
+cms-shell-prod *ARGS:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    # tofu's S3 backend needs the SCW keys from .env, same as the other
+    # prod recipes - without it `tofu output` 403s on state load.
+    cd "{{justfile_directory()}}/infra/envs/prod"
+    set -a && source ../../../.env && set +a
+    dsn="$(tofu output -raw cms_db_public_url)"
+    pw="$(tofu output -raw cms_db_password)"
+    # The RDB password contains % ) + < = - dj_database_url parses
+    # DATABASE_URL as a URI, so the raw password can't be interpolated
+    # (% starts an escape, + decodes to a space). Percent-encode it.
+    pw_enc="$(python3 -c 'import sys,urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "$pw")"
+    # Rebuild the DSN with the encoded password; cms_db_public_url carries
+    # the host/port/dbname and ?sslmode=require already.
+    url="${dsn%%://*}://cms:${pw_enc}@${dsn##*@}"
+    cd "{{justfile_directory()}}/apps/cms"
+    # "$@" via just's positional args, so a multi-line -c "..." script stays
+    # one argument instead of being word-split.
+    DATABASE_URL="$url" DJANGO_SETTINGS_MODULE=cms.settings.dev \
+      uv run python manage.py shell "$@"
+
 # Extract translatable strings from the wagtail-notion-form package into its French .po file.
 makemessages-notion-form:
     cd packages/wagtail-notion-form/wagtail_notion_form && ../../../apps/cms/.venv/bin/python ../../../apps/cms/manage.py makemessages -l fr

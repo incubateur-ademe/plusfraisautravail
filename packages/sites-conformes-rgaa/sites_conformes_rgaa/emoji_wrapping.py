@@ -70,26 +70,48 @@ def wrap_emojis_in_streamfield_raw_data(raw_data: list) -> tuple[list, bool]:
 
     Returns (new_raw_data, changed). Does not mutate the input.
     """
-    new_data, changed = _wrap_emojis_in_value(raw_data)
-    return new_data, changed
+    return _map_strings(raw_data, wrap_emojis_in_html)
 
 
-def _wrap_emojis_in_value(value):
+def unwrap_emojis_in_html(html: str) -> tuple[str, bool]:
+    """Inverse of wrap_emojis_in_html: replace every WRAPPER_CLASS span with
+    its bare text. Returns (new_html, changed).
+    """
+    if not html or WRAPPER_CLASS not in html:
+        return html, False
+
+    soup = BeautifulSoup(html, "html.parser")
+    spans = soup.find_all("span", class_=WRAPPER_CLASS)
+    if not spans:
+        return html, False
+
+    for span in spans:
+        span.replace_with(NavigableString(span.get_text()))
+    return str(soup), True
+
+
+def unwrap_emojis_in_streamfield_raw_data(raw_data: list) -> tuple[list, bool]:
+    """Inverse of wrap_emojis_in_streamfield_raw_data."""
+    return _map_strings(raw_data, unwrap_emojis_in_html)
+
+
+def _map_strings(value, fn):
+    """Apply `fn` (str -> (str, changed)) to every string in a nested
+    list/dict structure, without mutating the input."""
     if isinstance(value, str):
-        return wrap_emojis_in_html(value)
+        return fn(value)
     if isinstance(value, dict):
         changed = False
         new_dict = {}
         for key, sub_value in value.items():
-            new_sub_value, sub_changed = _wrap_emojis_in_value(sub_value)
-            new_dict[key] = new_sub_value
+            new_dict[key], sub_changed = _map_strings(sub_value, fn)
             changed = changed or sub_changed
         return new_dict, changed
     if isinstance(value, list):
         changed = False
         new_list = []
         for item in value:
-            new_item, item_changed = _wrap_emojis_in_value(item)
+            new_item, item_changed = _map_strings(item, fn)
             new_list.append(new_item)
             changed = changed or item_changed
         return new_list, changed

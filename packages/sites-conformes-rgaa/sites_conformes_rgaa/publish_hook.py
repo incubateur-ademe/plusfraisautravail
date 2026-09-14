@@ -11,6 +11,7 @@ since wrap_emojis_in_html/wrap_emojis_in_streamfield_raw_data are
 idempotent (the second pass finds nothing left to wrap).
 """
 
+from django.conf import settings
 from django.dispatch import receiver
 from wagtail.fields import RichTextField, StreamField
 from wagtail.signals import page_published
@@ -43,6 +44,10 @@ def wrap_emojis_on_page(page) -> bool:
 
 @receiver(page_published)
 def wrap_emojis_on_publish(sender, instance, revision, **kwargs):
+    # ponytail: disabled by default until the wrapper stops injecting HTML into
+    # plain-text blocks (CharBlock titles, tag names) where it renders escaped.
+    if not getattr(settings, "SITES_CONFORMES_RGAA_WRAP_EMOJIS", False):
+        return
     if not wrap_emojis_on_page(instance):
         return
     instance.save_revision().publish()

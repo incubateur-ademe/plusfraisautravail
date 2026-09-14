@@ -1,4 +1,6 @@
 from sites_conformes_rgaa.emoji_wrapping import (
+    unwrap_emojis_in_html,
+    unwrap_emojis_in_streamfield_raw_data,
     wrap_emojis_in_html,
     wrap_emojis_in_streamfield_raw_data,
 )
@@ -71,3 +73,26 @@ def test_streamfield_raw_data_does_not_mutate_input():
     original_value = raw_data[0]["value"]
     wrap_emojis_in_streamfield_raw_data(raw_data)
     assert raw_data[0]["value"] == original_value
+
+
+def test_unwrap_restores_the_original_html():
+    html = '<p data-block-key="abc">🟡 Chez <b>Foo</b> 🔥, bar</p>'
+    wrapped, _ = wrap_emojis_in_html(html)
+    restored, changed = unwrap_emojis_in_html(wrapped)
+    assert changed is True
+    assert restored == html
+
+
+def test_unwrap_is_a_noop_on_unwrapped_html():
+    html = "<p>Hello 👋 world</p>"
+    restored, changed = unwrap_emojis_in_html(html)
+    assert changed is False
+    assert restored == html
+
+
+def test_unwrap_streamfield_round_trips():
+    raw = [{"type": "title", "value": "👌 Dimensionnez juste"}]
+    wrapped, _ = wrap_emojis_in_streamfield_raw_data(raw)
+    restored, changed = unwrap_emojis_in_streamfield_raw_data(wrapped)
+    assert changed is True
+    assert restored == raw
