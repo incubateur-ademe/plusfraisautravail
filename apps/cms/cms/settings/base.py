@@ -1,4 +1,5 @@
 import json
+import mimetypes
 import os
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -151,6 +152,14 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = 10_000
 # weigh up to 1.4 MB at width-1200. SVG and GIF are left alone. Existing
 # renditions are regenerated with wagtail_update_image_renditions.
 WAGTAILIMAGES_FORMAT_CONVERSIONS = {"png": "webp", "jpeg": "webp"}
+
+# python:3.12-slim carries no system mime database, and 3.12's built-in table
+# has no .webp entry (3.13 added one). django-storages falls back to
+# mimetypes.guess_type, so every WebP rendition was uploaded as
+# application/octet-stream. Register it explicitly - version- and
+# image-independent. Repair already-uploaded objects with
+# `manage.py set_s3_cache_control`, which now recomputes ContentType.
+mimetypes.add_type("image/webp", ".webp")
 
 WAGTAIL_SITE_NAME = "Plus Frais Au Travail"
 # Public origin of the site. Every absolute URL Django/Wagtail emits derives

@@ -1,4 +1,4 @@
-"""Backfill Cache-Control headers on existing S3 media objects.
+"""Backfill Cache-Control (and Content-Type) headers on existing S3 media objects.
 
 Ported from sites-conformes PR #537 (not yet released), adapted to this
 project's AWS_* S3 settings instead of upstream's S3_* env vars.
@@ -8,6 +8,8 @@ Usage::
     python manage.py set_s3_cache_control --dry-run
     python manage.py set_s3_cache_control
 """
+
+import mimetypes
 
 import boto3
 from botocore.exceptions import ClientError
@@ -58,7 +60,19 @@ class Command(BaseCommand):
                         self.stderr.write(self.style.ERROR(f"  Error reading {key}: {e}"))
                         continue
 
-                    if head.get("CacheControl", "") == header_value:
+                    # Don't carry the stored ContentType over: objects
+                    # uploaded before the mimetypes fix are sitting on
+                    # application/octet-stream, and copy_object with
+                    # MetadataDirective=REPLACE would just re-stamp it.
+                    # Guess from the key, keep the stored value only when
+                    # the extension is unknown.
+                    guessed, _ = mimetypes.guess_type(key)
+                    content_type = guessed or head.get("ContentType") or "application/octet-stream"
+
+                    if (
+                        head.get("CacheControl", "") == header_value
+                        and head.get("ContentType", "") == content_type
+                    ):
                         skipped += 1
                         continue
 
@@ -74,7 +88,7 @@ class Command(BaseCommand):
                             CopySource={"Bucket": bucket, "Key": key},
                             MetadataDirective="REPLACE",
                             CacheControl=header_value,
-                            ContentType=head.get("ContentType", "application/octet-stream"),
+                            ContentType=content_type,
                         )
                         updated += 1
                         self.stdout.write(f"  Updated: {key}")
