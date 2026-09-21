@@ -1,0 +1,11 @@
+{% load wagtailcore_tags %}
+{% comment %}Body of one question's DSFR accordion. Included by the preview and, later, by the page block.{% endcomment %}
+{% if question.authors_line %}
+  <p class="fr-text--sm fr-mb-2w"><em>{{ question.authors_line }}</em></p>
+{% endif %}
+{{ question.answer|richtext }}
+{% if question.link %}
+  <p class="fr-mt-2w fr-mb-0">
+    <a class="fr-btn fr-btn--secondary fr-btn--sm fr-icon-arrow-right-line fr-btn--icon-right" href="{{ question.link }}">En savoir plus</a>
+  </p>
+{% endif %}
