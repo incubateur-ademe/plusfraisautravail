@@ -1,0 +1,21 @@
+<div class="fr-grid-row fr-grid-row--gutters fr-py-3w">
+  <div class="fr-col-12 fr-col-offset-md-2 fr-col-md-8">
+    <div class="fr-accordions-group">
+      {% for item in items %}
+        {% with question=item.question %}
+          <section class="fr-accordion">
+            <h3 class="fr-accordion__title">
+              <button type="button" class="fr-accordion__btn" aria-expanded="false" aria-controls="faq-{{ uid }}-{{ forloop.counter }}">
+                {{ question.question }}
+              </button>
+            </h3>
+            <div class="fr-collapse" id="faq-{{ uid }}-{{ forloop.counter }}">
+              {% include "sites_conformes_faq/question.html" %}
+            </div>
+          </section>
+        {% endwith %}
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% if seo_json %}<script type="application/ld+json">{{ seo_json }}</script>{% endif %}

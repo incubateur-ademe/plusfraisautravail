@@ -23,5 +23,14 @@ uv add --editable ../../packages/sites-conformes-faq
 INSTALLED_APPS = [..., "sites_conformes.blog", ..., "sites_conformes_faq"]
 ```
 
-L'insertion des questions dans les pages (bloc StreamField) et le balisage
-SEO `FAQPage` sont hors de ce package pour l'instant.
+## Bloc de page
+
+`sites_conformes_faq.blocks.FaqBlock` s'ajoute au `body` d'un modèle de page :
+une liste de questions (fragment + case « Page de référence SEO ») rendue en
+groupe d'accordéons DSFR.
+
+Balisage schema.org `FAQPage` : une question publiée sur une seule page est
+balisée automatiquement sur cette page. Une question affichée sur plusieurs
+pages n'est balisée que sur la page où la case est cochée, et une seule page
+peut la cocher - `seo_holder()` sert à le valider dans le `clean()` de la page
+(voir `cms.pages.models.ContentPage` dans ce dépôt).
