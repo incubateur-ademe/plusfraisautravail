@@ -13,6 +13,9 @@ set -euo pipefail
 # time pressure (1800s timeout, no probe).
 # Idempotent: no-op unless the DB still carries the legacy Sites Faciles schema.
 python manage.py migrate_from_sites_faciles --no-input
+# Idempotent too: moves sites_conformes_core.ContentPage rows to the swapped-in
+# cms_pages.ContentPage, which must happen before `migrate` can run at all.
+python manage.py migrate_content_page_model
 python manage.py migrate --noinput
 # python manage.py wagtail_update_image_renditions
 # python manage.py set_s3_cache_control
