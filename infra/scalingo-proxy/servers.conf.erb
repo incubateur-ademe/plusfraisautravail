@@ -183,7 +183,7 @@ server {
         proxy_read_timeout 120s;
     }
 
-    # ── Everything else: Wagtail pages, not cached (ponytail: add a page cache
+    # ── Everything else: Wagtail pages, not cached (add a page cache
     # with a logged-in cookie bypass, as quefairedemesobjets does, if Scalingo's
     # 50 req/s router limit ever gets close).
     location / {

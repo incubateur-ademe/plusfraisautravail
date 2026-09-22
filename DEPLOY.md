@@ -303,7 +303,7 @@ Migrations are *not* run automatically on deploy or container cold start - `entr
 `pfat-cms-media` has a bucket policy (public-read for objects). A Scaleway bucket policy denies everything it doesn't list, including the project's own keys, so the policy's first statement must keep `s3:*` for the project - see `infra/modules/object-bucket/main.tf`. If uploads 403, check that statement survived and that the S3 key the container uses belongs to this project. The key is a `secret_environment_variable`, so it won't show in `tofu output` - check the container's env in the Scaleway dashboard.
 
 **`tofu apply` fails with `insufficient permissions: write application`.**
-The deploying Scaleway API key doesn't have IAM write rights. `object-bucket` used to create a bucket-scoped IAM application/policy/key for `cms`'s S3 media access; that's parked for now (see the `ponytail:` comment in `infra/modules/object-bucket/main.tf`) in favor of reusing the account-wide key, specifically to avoid needing this permission. If you still see this error, you're on an older revision of this module - pull `main`.
+The deploying Scaleway API key doesn't have IAM write rights. `object-bucket` used to create a bucket-scoped IAM application/policy/key for `cms`'s S3 media access; that's parked for now in favor of reusing the account-wide key, specifically to avoid needing this permission. If you still see this error, you're on an older revision of this module - pull `main`.
 
 **GitHub Actions deploy fails on `aws s3 sync` or registry login.**
 Check `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` repo secrets - all deploy workflows use the same credentials.

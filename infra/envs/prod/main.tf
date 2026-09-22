@@ -41,7 +41,7 @@ locals {
     var.django_secret_key == "" ? {} : { DJANGO_SECRET_KEY = var.django_secret_key },
     var.notion_token == "" ? {} : { NOTION_TOKEN = var.notion_token },
     var.email_host_password == "" ? {} : { EMAIL_HOST_PASSWORD = var.email_host_password },
-    # ponytail: reusing the same account-wide Scaleway key already used for
+    # reusing the same account-wide Scaleway key already used for
     # tofu apply, rather than a bucket-scoped IAM application/key - the
     # deploying key doesn't have IAM write permission yet. Narrow this once
     # it does (see infra/modules/object-bucket/main.tf).

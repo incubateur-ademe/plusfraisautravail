@@ -671,7 +671,7 @@ sync-prod-db:
     END $$;
     SQL
     echo "Target schema wiped."
-    # ponytail: Scalingo dumps with PG17, Scaleway runs PG16. pg_restore keeps
+    # Scalingo dumps with PG17, Scaleway runs PG16. pg_restore keeps
     # going on errors and exits 1 at the end; the one expected error is
     # "unrecognized configuration parameter transaction_timeout". Anything
     # else in the log is a real problem.
