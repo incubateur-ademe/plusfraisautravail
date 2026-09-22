@@ -1,5 +1,6 @@
 from django import forms
 from django.db import models
+from django.template.loader import render_to_string
 from modelcluster.fields import ParentalManyToManyField
 from modelcluster.models import ClusterableModel
 from wagtail.admin.panels import FieldPanel, MultiFieldPanel
@@ -22,7 +23,7 @@ class Theme(models.Model):
 
 
 class Question(PreviewableMixin, index.Indexed, ClusterableModel):
-    # ponytail: no drafts/revisions (DraftStateMixin), add when editors ask for them
+    # no drafts/revisions (DraftStateMixin), add when editors ask for them
     question = models.CharField("Question", max_length=255)
     answer = RichTextField("Réponse")
     authors = ParentalManyToManyField(
@@ -90,6 +91,17 @@ class Question(PreviewableMixin, index.Indexed, ClusterableModel):
             " - ".join(filter(None, [p.role, p.name, str(p.organization or "")]))
             for p in self.authors.all()
         )
+
+    @property
+    def accordion(self):
+        """Dict for django-dsfr's {% dsfr_accordion %} tag."""
+        return {
+            "id": f"faq-{self.pk or 'preview'}",
+            "title": self.question,
+            "content": render_to_string(
+                "sites_conformes_faq/question.html", {"question": self}
+            ),
+        }
 
     def get_preview_template(self, request, mode_name):
         return "sites_conformes_faq/preview.html"

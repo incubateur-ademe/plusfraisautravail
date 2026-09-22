@@ -1,5 +1,5 @@
 {% load wagtailcore_tags %}
-{% comment %}Body of one question's DSFR accordion. Included by the preview and, later, by the page block.{% endcomment %}
+{% comment %}Body of one question's DSFR accordion, rendered into Question.accordion for {% dsfr_accordion %}.{% endcomment %}
 {% if question.authors_line %}
   <p class="fr-text--sm fr-mb-2w"><em>{{ question.authors_line }}</em></p>
 {% endif %}

@@ -1,7 +1,7 @@
 # sites-conformes-faq
 
-Questions / réponses gérées une seule fois dans le CMS (fragments Wagtail)
-et réutilisables sur plusieurs pages (webinaire, solution, espace dédié…).
+Système de FAQ (questions / réponses) centralisées, gérées au sein de Sites
+Conformes.
 
 Fragments exposés dans le menu **Questions / réponses** de l'admin :
 

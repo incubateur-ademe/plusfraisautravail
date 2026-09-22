@@ -1,21 +1,11 @@
 {% extends "sites_conformes_core/base.html" %}
+{% load dsfr_tags %}
 {% block title %}<title>{{ object.question }}</title>{% endblock %}
 {% block content %}
   <div class="fr-container fr-py-3w cmsfr-block-accordions">
     <div class="fr-grid-row fr-grid-row--gutters">
       <div class="fr-col-12 fr-col-offset-md-2 fr-col-md-8">
-        <div class="fr-accordions-group">
-          <section class="fr-accordion">
-            <h3 class="fr-accordion__title">
-              <button type="button" class="fr-accordion__btn" aria-expanded="true" aria-controls="faq-preview">
-                {{ object.question }}
-              </button>
-            </h3>
-            <div class="fr-collapse fr-collapse--expanded" id="faq-preview">
-              {% include "sites_conformes_faq/question.html" with question=object %}
-            </div>
-          </section>
-        </div>
+        {% dsfr_accordion object.accordion %}
       </div>
     </div>
   </div>
