@@ -6,7 +6,7 @@ from django.core.exceptions import ImproperlyConfigured
 from .base import *  # noqa: F403
 from .base import MEDIA_CACHE_CONTROL, STORAGES, WAGTAILADMIN_BASE_URL
 
-# ponytail: base.py already reads DEBUG from env; removed the hardcoded
+# base.py already reads DEBUG from env; removed the hardcoded
 # False here so it can be flipped on prod (DEBUG=true) without a redeploy.
 
 STORAGES["staticfiles"]["BACKEND"] = "whitenoise.storage.CompressedManifestStaticFilesStorage"

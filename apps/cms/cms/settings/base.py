@@ -250,6 +250,7 @@ INSTALLED_APPS.extend(
         "cms.media_tools",
         "wagtail_notion_form",
         "sites_conformes_rgaa",
+        "sites_conformes_faq",
     ]
 )
 

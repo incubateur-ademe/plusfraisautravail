@@ -18,6 +18,7 @@ dependencies = [
     "sites-conformes-header-logo",
     "sites-conformes-posthog",
     "sites-conformes-rgaa",
+    "sites-conformes-faq",
 ]
 
 [tool.uv.sources]
@@ -26,6 +27,7 @@ sites-conformes-footer-partners = { path = "../../packages/sites-conformes-foote
 sites-conformes-header-logo = { path = "../../packages/sites-conformes-header-logo", editable = true }
 sites-conformes-posthog = { path = "../../packages/sites-conformes-posthog", editable = true }
 sites-conformes-rgaa = { path = "../../packages/sites-conformes-rgaa", editable = true }
+sites-conformes-faq = { path = "../../packages/sites-conformes-faq", editable = true }
 
 [project.optional-dependencies]
 dev = [

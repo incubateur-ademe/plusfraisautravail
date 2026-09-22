@@ -1,0 +1,12 @@
+{% extends "sites_conformes_core/base.html" %}
+{% load dsfr_tags %}
+{% block title %}<title>{{ object.question }}</title>{% endblock %}
+{% block content %}
+  <div class="fr-container fr-py-3w cmsfr-block-accordions">
+    <div class="fr-grid-row fr-grid-row--gutters">
+      <div class="fr-col-12 fr-col-offset-md-2 fr-col-md-8">
+        {% dsfr_accordion object.accordion %}
+      </div>
+    </div>
+  </div>
+{% endblock %}

@@ -44,7 +44,7 @@ def wrap_emojis_on_page(page) -> bool:
 
 @receiver(page_published)
 def wrap_emojis_on_publish(sender, instance, revision, **kwargs):
-    # ponytail: disabled by default until the wrapper stops injecting HTML into
+    # disabled by default until the wrapper stops injecting HTML into
     # plain-text blocks (CharBlock titles, tag names) where it renders escaped.
     if not getattr(settings, "SITES_CONFORMES_RGAA_WRAP_EMOJIS", False):
         return
