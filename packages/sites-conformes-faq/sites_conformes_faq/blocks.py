@@ -3,7 +3,6 @@ accordion group, with schema.org FAQPage markup for the questions this page
 is the SEO holder of (see ``seo_holder`` for the rule)."""
 
 import json
-from uuid import uuid4
 
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
@@ -38,8 +37,7 @@ class FaqBlock(blocks.ListBlock):
         context = super().get_context(value, parent_context=parent_context)
         page = (parent_context or {}).get("page")
         items = [item for item in value if item["question"] is not None]
-        context["items"] = items
-        context["uid"] = uuid4().hex[:6]
+        context["accordions"] = [item["question"].accordion for item in items]
         seo = [item["question"] for item in items if is_seo_holder(item, page)]
         context["seo_json"] = faq_jsonld(seo) if seo else ""
         return context

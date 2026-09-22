@@ -95,12 +95,12 @@ class Question(PreviewableMixin, index.Indexed, ClusterableModel):
     @property
     def accordion(self):
         """Dict for django-dsfr's {% dsfr_accordion %} tag."""
+        # id is per question, so the same question listed twice on
+        # one page would share an id - pass a prefix if that ever happens.
         return {
             "id": f"faq-{self.pk or 'preview'}",
             "title": self.question,
-            "content": render_to_string(
-                "sites_conformes_faq/question.html", {"question": self}
-            ),
+            "content": render_to_string("sites_conformes_faq/question.html", {"question": self}),
         }
 
     def get_preview_template(self, request, mode_name):
