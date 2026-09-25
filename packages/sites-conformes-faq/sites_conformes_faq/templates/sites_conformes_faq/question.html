@@ -1,11 +1,17 @@
-{% load wagtailcore_tags %}
+{% load wagtailcore_tags faq_tags %}
 {% comment %}Body of one question's DSFR accordion, rendered into Question.accordion for {% dsfr_accordion %}.{% endcomment %}
-{% if question.authors_line %}
+{% if question.show_authors and question.authors_line %}
   <p class="fr-text--sm fr-mb-2w"><em>{{ question.authors_line }}</em></p>
 {% endif %}
-{{ question.answer|richtext }}
+{{ question.answer|richtext|external_links_blank }}
 {% if question.link %}
   <p class="fr-mt-2w fr-mb-0">
-    <a class="fr-btn fr-btn--secondary fr-btn--sm fr-icon-arrow-right-line fr-btn--icon-right" href="{{ question.link }}">En savoir plus</a>
+    {% with text=question.link_text|default:"En savoir plus" %}
+    {% if question.link_is_external %}
+      <a class="fr-btn fr-btn--secondary fr-btn--sm fr-icon-external-link-line fr-btn--icon-right" href="{{ question.link }}" target="_blank" rel="noopener external" title="{{ text }} - nouvelle fenêtre">{{ text }}</a>
+    {% else %}
+      <a class="fr-btn fr-btn--secondary fr-btn--sm fr-icon-arrow-right-line fr-btn--icon-right" href="{{ question.link }}">{{ text }}</a>
+    {% endif %}
+    {% endwith %}
   </p>
 {% endif %}

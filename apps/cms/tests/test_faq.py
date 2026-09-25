@@ -1,3 +1,4 @@
+import datetime
 import json
 
 import pytest
@@ -5,6 +6,7 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 from sites_conformes.blog.models import Organization, Person
 from sites_conformes_faq.models import Question, Theme
+from wagtail.models import Site
 
 
 @pytest.fixture
@@ -15,7 +17,10 @@ def question():
     )
     q = Question.objects.create(
         question="Quelles températures sont atteintes dans les ateliers ?",
-        answer="<p>Environ 40 °C en été.</p>",
+        answer=(
+            '<p>Environ 40 °C en été. <a href="https://inrs.fr/">INRS</a> '
+            'et <a href="/solutions/">nos solutions</a>.</p>'
+        ),
         theme=Theme.objects.create(name="Bâtiments et équipements"),
         link_url="https://example.org/plus",
     )
@@ -44,6 +49,47 @@ def admin(client):
 def test_authors_line_and_link(question):
     assert question.authors_line == "Retour d'expérience - Marion Paris - Com'Inject"
     assert question.link == "https://example.org/plus"
+
+
+@pytest.mark.django_db
+def test_link_text_defaults_to_en_savoir_plus(question):
+    html = question.accordion["content"]
+    assert ">En savoir plus</a>" in html
+    question.link_text = "Consulter l'ouvrage"
+    assert ">Consulter l&#x27;ouvrage</a>" in question.accordion["content"]
+
+
+@pytest.mark.django_db
+def test_external_links_open_in_new_tab(question):
+    html = question.accordion["content"]
+    assert (
+        'href="https://inrs.fr/"' in html
+        and 'target="_blank" rel="noopener external" href="https://inrs.fr/"' in html
+    )
+    assert 'target="_blank" rel="noopener external" href="/solutions/"' not in html
+    assert "fr-icon-external-link-line" in html and "nouvelle fenêtre" in html
+    question.link_url = ""
+    question.link_page = Site.objects.get(is_default_site=True).root_page
+    internal = question.accordion["content"]
+    assert (
+        "fr-icon-arrow-right-line" in internal
+        and 'target="_blank" rel="noopener external" href="/"' not in internal
+    )
+
+
+@pytest.mark.django_db
+def test_authors_hidden_unless_asked(question):
+    assert "Marion Paris" not in question.accordion["content"]
+    question.show_authors = True
+    assert (
+        "<em>Retour d&#x27;expérience - Marion Paris - Com&#x27;Inject</em>"
+        in question.accordion["content"]
+    )
+
+
+@pytest.mark.django_db
+def test_date_defaults_to_today():
+    assert Question(question="?", answer="").date == datetime.date.today()
 
 
 @pytest.mark.django_db

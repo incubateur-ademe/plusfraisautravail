@@ -225,6 +225,9 @@ TEMPLATES[0]["OPTIONS"]["context_processors"].extend(
 
 INSTALLED_APPS.extend(
     [
+        # Swapped-in ContentPage (SF_CONTENTPAGE_MODEL): first, so its migrations
+        # run before the sites_conformes.core ones that depend on it.
+        "cms.pages",
         "dsfr",
         # Override sites_conformes_core/blocks/footer.html and header.html - must come
         # before "sites_conformes" (which ships those same template paths) so Django's
@@ -242,7 +245,6 @@ INSTALLED_APPS.extend(
         "wagtail.contrib.settings",
         "wagtail.contrib.typed_table_block",
         "wagtail.contrib.routable_page",
-        "wagtail_modeladmin",
         "wagtail_honeypot",
         "wagtailmenus",
         "wagtailmarkdown",
@@ -253,6 +255,8 @@ INSTALLED_APPS.extend(
         "sites_conformes_faq",
     ]
 )
+
+SF_CONTENTPAGE_MODEL = "cms_pages.ContentPage"
 
 HOST_URL = "localhost"
 # PostHog project key (public by nature - it ships in every page). Empty
