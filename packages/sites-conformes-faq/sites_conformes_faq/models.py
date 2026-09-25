@@ -63,13 +63,20 @@ class Question(PreviewableMixin, index.Indexed, ClusterableModel):
         default="",
         help_text="Ignoré si un lien interne est renseigné.",
     )
+    link_text = models.CharField(
+        "Texte du lien",
+        max_length=255,
+        blank=True,
+        default="",
+        help_text="« En savoir plus » si vide.",
+    )
 
     panels = [
         FieldPanel("question"),
         FieldPanel("answer"),
         FieldPanel("authors", widget=forms.CheckboxSelectMultiple),
         MultiFieldPanel(
-            [FieldPanel("link_page"), FieldPanel("link_url")],
+            [FieldPanel("link_page"), FieldPanel("link_url"), FieldPanel("link_text")],
             heading="En savoir plus",
         ),
         MultiFieldPanel([FieldPanel("theme"), FieldPanel("date")], heading="Organisation"),

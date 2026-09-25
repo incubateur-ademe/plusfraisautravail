@@ -47,6 +47,14 @@ def test_authors_line_and_link(question):
 
 
 @pytest.mark.django_db
+def test_link_text_defaults_to_en_savoir_plus(question):
+    html = question.accordion["content"]
+    assert ">En savoir plus</a>" in html
+    question.link_text = "Consulter l'ouvrage"
+    assert ">Consulter l&#x27;ouvrage</a>" in question.accordion["content"]
+
+
+@pytest.mark.django_db
 def test_admin_listing_shows_question(admin, question):
     response = admin.get(reverse("wagtailsnippets_sites_conformes_faq_question:list"))
     assert response.status_code == 200

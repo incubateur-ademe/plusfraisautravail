@@ -6,6 +6,6 @@
 {{ question.answer|richtext }}
 {% if question.link %}
   <p class="fr-mt-2w fr-mb-0">
-    <a class="fr-btn fr-btn--secondary fr-btn--sm fr-icon-arrow-right-line fr-btn--icon-right" href="{{ question.link }}">En savoir plus</a>
+    <a class="fr-btn fr-btn--secondary fr-btn--sm fr-icon-arrow-right-line fr-btn--icon-right" href="{{ question.link }}">{{ question.link_text|default:"En savoir plus" }}</a>
   </p>
 {% endif %}
