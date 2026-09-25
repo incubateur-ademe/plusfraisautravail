@@ -1,6 +1,7 @@
 """FAQ block for page bodies: a list of Question snippets rendered as a DSFR
-accordion group, with schema.org FAQPage markup for the questions this page
-is the SEO holder of (see ``seo_holder`` for the rule)."""
+accordion group, with schema.org FAQPage markup for the questions whose
+« Page de référence SEO » box is checked here. Checked by default; only one
+live page may have it checked for a given question (``seo_holder``)."""
 
 import json
 
@@ -17,9 +18,9 @@ class FaqItemBlock(blocks.StructBlock):
     seo = blocks.BooleanBlock(
         label="Page de référence SEO",
         required=False,
-        help_text="Une question affichée sur une seule page porte automatiquement le balisage "
-        "schema.org FAQPage. Si elle est affichée sur plusieurs pages, cochez cette case sur "
-        "une seule d'entre elles.",
+        default=True,
+        help_text="Cette page porte le balisage schema.org FAQPage de la question. Une seule "
+        "page par question : décochez si la question est déjà référencée sur une autre page.",
     )
 
 
@@ -38,18 +39,9 @@ class FaqBlock(blocks.ListBlock):
         page = (parent_context or {}).get("page")
         items = [item for item in value if item["question"] is not None]
         context["accordions"] = [item["question"].accordion for item in items]
-        seo = [item["question"] for item in items if is_seo_holder(item, page)]
+        seo = [item["question"] for item in items if item["seo"]]
         context["seo_json"] = faq_jsonld(seo) if seo else ""
         return context
-
-
-def is_seo_holder(item, page):
-    """Automatic when the question is published nowhere else, opt-in otherwise."""
-    if item["seo"]:
-        return True
-    if page is None:
-        return False
-    return not pages_using(item["question"]).exclude(pk=page.pk).exists()
 
 
 def pages_using(question):

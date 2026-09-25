@@ -30,8 +30,8 @@ INSTALLED_APPS = [..., "sites_conformes.blog", ..., "sites_conformes_faq"]
 une liste de questions (fragment + case « Page de référence SEO ») rendue en
 groupe d'accordéons DSFR.
 
-Balisage schema.org `FAQPage` : une question publiée sur une seule page est
-balisée automatiquement sur cette page. Une question affichée sur plusieurs
-pages n'est balisée que sur la page où la case est cochée, et une seule page
-peut la cocher - `seo_holder()` sert à le valider dans le `clean()` de la page
+Balisage schema.org `FAQPage` : la case « Page de référence SEO » est cochée
+par défaut et une seule page publiée peut la cocher pour une question donnée.
+Quand la question est réutilisée ailleurs, on la décoche sur les pages
+secondaires - `seo_holder()` sert à le valider dans le `clean()` de la page
 (voir `cms.pages.models.ContentPage` dans ce dépôt).
