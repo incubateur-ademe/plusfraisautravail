@@ -63,9 +63,10 @@ def test_unchecked_page_has_no_markup(client, question):
 
 
 def test_second_holder_is_rejected(question):
-    make_page("Page B", question)
+    b = make_page("Page B", question)
     a = ContentPage(title="Page A", slug="page-a")
     a.body = [("faq", [{"question": question, "seo": True}])]
     # Page.save() runs full_clean(), so the rejection happens on insert.
-    with pytest.raises(ValidationError, match="Page B"):
+    with pytest.raises(ValidationError) as err:
         Site.objects.get(is_default_site=True).root_page.add_child(instance=a)
+    assert f'<a href="/cms-admin/pages/{b.pk}/edit/">Page B</a>' in str(err.value)

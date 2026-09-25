@@ -2,6 +2,8 @@
 ``SF_CONTENTPAGE_MODEL`` so the body can carry the FAQ block."""
 
 from django.core.exceptions import ValidationError
+from django.urls import reverse
+from django.utils.html import format_html
 from modelcluster.contrib.taggit import ClusterTaggableManager
 from modelcluster.fields import ParentalKey
 from sites_conformes.core.blocks.core import STREAMFIELD_COMMON_BLOCKS
@@ -33,8 +35,13 @@ class ContentPage(AbstractContentPage):
         for question, seo in faq_items(self.body):
             if seo and (holder := seo_holder(question, self)):
                 raise ValidationError(
-                    f"La question « {question} » a déjà sa page de référence SEO : "
-                    f"« {holder.title} ». Décochez-la ici ou là-bas."
+                    format_html(
+                        "La question « {} » a déjà sa page de référence SEO : "
+                        '<a href="{}">{}</a>. Décochez-la ici ou là-bas.',
+                        question,
+                        reverse("wagtailadmin_pages:edit", args=[holder.pk]),
+                        holder.title,
+                    )
                 )
 
 
