@@ -5,6 +5,7 @@ import pytest
 from django.core.exceptions import ValidationError
 from sites_conformes_faq.blocks import FaqItemBlock
 from sites_conformes_faq.models import Question
+from wagtail.blocks.base import get_error_json_data
 from wagtail.models import Site, get_page_models
 
 from cms.pages.models import ContentPage
@@ -76,4 +77,14 @@ def test_second_holder_is_rejected(question):
     # Page.save() runs full_clean(), so the rejection happens on insert.
     with pytest.raises(ValidationError) as err:
         Site.objects.get(is_default_site=True).root_page.add_child(instance=a)
-    assert f"« Page B » /cms-admin/pages/{b.pk}/edit/" in str(err.value)
+    assert f"« Page B » /cms-admin/pages/{b.pk}/edit/" in str(err.value.error_dict["__all__"])
+    # Block-level error, so the admin highlights the item's checkbox.
+    assert get_error_json_data(err.value.error_dict["body"][0]) == {
+        "blockErrors": {
+            0: {
+                "blockErrors": {
+                    0: {"blockErrors": {"seo": {"messages": ["Déjà cochée sur « Page B »."]}}}
+                }
+            }
+        }
+    }
