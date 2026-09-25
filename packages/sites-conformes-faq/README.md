@@ -11,7 +11,8 @@ Fragments exposés dans le menu **Questions / réponses** de l'admin :
 
 Les auteurs réutilisent les **Personnes** de sites-conformes
 (Fragments → Personnes) : le rôle, le nom et l'organisation de la personne
-composent la ligne d'auteur affichée au-dessus de la réponse.
+composent la ligne d'auteur, affichée au-dessus de la réponse seulement si
+« Afficher les auteurs » est coché (sinon information interne).
 
 ## Installation
 

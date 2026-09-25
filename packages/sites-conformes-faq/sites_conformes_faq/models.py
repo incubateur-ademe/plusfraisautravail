@@ -1,3 +1,5 @@
+import datetime
+
 from django import forms
 from django.db import models
 from django.template.loader import render_to_string
@@ -30,13 +32,19 @@ class Question(PreviewableMixin, index.Indexed, ClusterableModel):
         "sites_conformes_blog.Person",
         verbose_name="Auteurs",
         blank=True,
-        help_text="Les auteurs se créent dans Fragments > Personnes. "
-        "Affichés en italique au-dessus de la réponse (rôle - nom - organisation).",
+        help_text="Les auteurs se créent dans Fragments > Personnes.",
+    )
+    show_authors = models.BooleanField(
+        "Afficher les auteurs",
+        default=False,
+        help_text="En italique au-dessus de la réponse (rôle - nom - organisation). "
+        "Sinon les auteurs restent une information interne.",
     )
     date = models.DateField(
         "Date",
         null=True,
         blank=True,
+        default=datetime.date.today,
         help_text="Date de la réponse ou de sa dernière mise à jour (non affichée).",
     )
     theme = models.ForeignKey(
@@ -75,6 +83,7 @@ class Question(PreviewableMixin, index.Indexed, ClusterableModel):
         FieldPanel("question"),
         FieldPanel("answer"),
         FieldPanel("authors", widget=forms.CheckboxSelectMultiple),
+        FieldPanel("show_authors"),
         MultiFieldPanel(
             [FieldPanel("link_page"), FieldPanel("link_url"), FieldPanel("link_text")],
             heading="En savoir plus",
@@ -91,6 +100,10 @@ class Question(PreviewableMixin, index.Indexed, ClusterableModel):
     @property
     def link(self):
         return self.link_page.url if self.link_page else self.link_url
+
+    @property
+    def link_is_external(self):
+        return bool(self.link_url) and not self.link_page
 
     @property
     def authors_line(self):
