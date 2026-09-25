@@ -62,6 +62,13 @@ def test_unchecked_page_has_no_markup(client, question):
     assert '"@type": "FAQPage"' in client.get(b.url).content.decode()
 
 
+def test_admin_linkifies_error_urls(client):
+    from django.contrib.auth import get_user_model
+
+    client.force_login(get_user_model().objects.create_superuser("admin", "a@example.org", "pw"))
+    assert ".messages .errorlist li" in client.get("/cms-admin/").content.decode()
+
+
 def test_second_holder_is_rejected(question):
     b = make_page("Page B", question)
     a = ContentPage(title="Page A", slug="page-a")
@@ -69,4 +76,4 @@ def test_second_holder_is_rejected(question):
     # Page.save() runs full_clean(), so the rejection happens on insert.
     with pytest.raises(ValidationError) as err:
         Site.objects.get(is_default_site=True).root_page.add_child(instance=a)
-    assert f'<a href="/cms-admin/pages/{b.pk}/edit/">Page B</a>' in str(err.value)
+    assert f"« Page B » /cms-admin/pages/{b.pk}/edit/" in str(err.value)
