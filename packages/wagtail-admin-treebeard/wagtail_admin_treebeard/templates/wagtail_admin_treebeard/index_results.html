@@ -1,0 +1,21 @@
+{% extends "wagtailsnippets/snippets/index_results.html" %}
+{% load i18n %}
+
+{% block results %}
+  {% if tree_roots is not None %}
+    <div class="nice-padding tb-tree"
+         data-controller="tb-tree"
+         data-tb-tree-move-url-value="{{ move_url }}"
+         data-action="dragstart->tb-tree#start dragend->tb-tree#end dragover->tb-tree#over drop->tb-tree#drop">
+      <p class="help-block help-info">{% translate "Drag an item onto another one to nest it under it, or onto the zone below to bring it back to the root." %}</p>
+      <ul class="tb-tree__list">
+        {% for node in tree_roots %}
+          {% include node_template_name %}
+        {% endfor %}
+      </ul>
+      <div class="tb-tree__root-zone" data-root-zone>{% translate "Root level" %}</div>
+    </div>
+  {% else %}
+    {{ block.super }}
+  {% endif %}
+{% endblock results %}

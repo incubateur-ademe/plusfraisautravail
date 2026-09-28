@@ -1,0 +1,16 @@
+{% load wagtailadmin_tags %}
+<li data-node="{{ node.pk }}">
+  <div class="tb-tree__row" draggable="true">
+    <span class="tb-tree__handle" aria-hidden="true">{% icon name="grip" %}</span>
+    <a href="{% url view.edit_url_name node.pk %}">{{ node }}</a>
+  </div>
+  {% with children=node.get_children %}
+    {% if children %}
+      <ul class="tb-tree__list">
+        {% for node in children %}
+          {% include node_template_name %}
+        {% endfor %}
+      </ul>
+    {% endif %}
+  {% endwith %}
+</li>
