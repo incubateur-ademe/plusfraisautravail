@@ -242,6 +242,8 @@ INSTALLED_APPS.extend(
         "sites_conformes.events",
         "sites_conformes.forms",
         "sites_conformes.menus",
+        "treebeard",  # translations of the category tree form
+        "wagtail_admin_treebeard",  # category tree listing in the admin
         "wagtail.contrib.settings",
         "wagtail.contrib.typed_table_block",
         "wagtail.contrib.routable_page",
