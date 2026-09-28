@@ -11,7 +11,8 @@ Fragments exposés dans le menu **Questions / réponses** de l'admin :
 
 Les auteurs réutilisent les **Personnes** de sites-conformes
 (Fragments → Personnes) : le rôle, le nom et l'organisation de la personne
-composent la ligne d'auteur affichée au-dessus de la réponse.
+composent la ligne d'auteur, affichée au-dessus de la réponse seulement si
+« Afficher les auteurs » est coché (sinon information interne).
 
 ## Installation
 
@@ -23,5 +24,14 @@ uv add --editable ../../packages/sites-conformes-faq
 INSTALLED_APPS = [..., "sites_conformes.blog", ..., "sites_conformes_faq"]
 ```
 
-L'insertion des questions dans les pages (bloc StreamField) et le balisage
-SEO `FAQPage` sont hors de ce package pour l'instant.
+## Bloc de page
+
+`sites_conformes_faq.blocks.FaqBlock` s'ajoute au `body` d'un modèle de page :
+une liste de questions (fragment + case « Page de référence SEO ») rendue en
+groupe d'accordéons DSFR.
+
+Balisage schema.org `FAQPage` : la case « Page de référence SEO » est cochée
+par défaut et une seule page publiée peut la cocher pour une question donnée.
+Quand la question est réutilisée ailleurs, on la décoche sur les pages
+secondaires - `seo_holder()` sert à le valider dans le `clean()` de la page
+(voir `cms.pages.models.ContentPage` dans ce dépôt).

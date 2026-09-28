@@ -1,0 +1,7 @@
+{% load dsfr_tags %}
+<div class="fr-grid-row fr-grid-row--gutters fr-py-3w">
+  <div class="fr-col-12 fr-col-offset-md-2 fr-col-md-8">
+    {% dsfr_accordion_group accordions %}
+  </div>
+</div>
+{% if seo_json %}<script type="application/ld+json">{{ seo_json }}</script>{% endif %}

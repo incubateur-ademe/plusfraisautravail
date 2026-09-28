@@ -1,3 +1,5 @@
+import datetime
+
 from django import forms
 from django.db import models
 from django.template.loader import render_to_string
@@ -30,13 +32,19 @@ class Question(PreviewableMixin, index.Indexed, ClusterableModel):
         "sites_conformes_blog.Person",
         verbose_name="Auteurs",
         blank=True,
-        help_text="Les auteurs se créent dans Fragments > Personnes. "
-        "Affichés en italique au-dessus de la réponse (rôle - nom - organisation).",
+        help_text="Les auteurs se créent dans Fragments > Personnes.",
+    )
+    show_authors = models.BooleanField(
+        "Afficher les auteurs",
+        default=False,
+        help_text="En italique au-dessus de la réponse (rôle - nom - organisation). "
+        "Sinon les auteurs restent une information interne.",
     )
     date = models.DateField(
         "Date",
         null=True,
         blank=True,
+        default=datetime.date.today,
         help_text="Date de la réponse ou de sa dernière mise à jour (non affichée).",
     )
     theme = models.ForeignKey(
@@ -63,13 +71,21 @@ class Question(PreviewableMixin, index.Indexed, ClusterableModel):
         default="",
         help_text="Ignoré si un lien interne est renseigné.",
     )
+    link_text = models.CharField(
+        "Texte du lien",
+        max_length=255,
+        blank=True,
+        default="",
+        help_text="« En savoir plus » si vide.",
+    )
 
     panels = [
         FieldPanel("question"),
         FieldPanel("answer"),
         FieldPanel("authors", widget=forms.CheckboxSelectMultiple),
+        FieldPanel("show_authors"),
         MultiFieldPanel(
-            [FieldPanel("link_page"), FieldPanel("link_url")],
+            [FieldPanel("link_page"), FieldPanel("link_url"), FieldPanel("link_text")],
             heading="En savoir plus",
         ),
         MultiFieldPanel([FieldPanel("theme"), FieldPanel("date")], heading="Organisation"),
@@ -86,6 +102,10 @@ class Question(PreviewableMixin, index.Indexed, ClusterableModel):
         return self.link_page.url if self.link_page else self.link_url
 
     @property
+    def link_is_external(self):
+        return bool(self.link_url) and not self.link_page
+
+    @property
     def authors_line(self):
         return ", ".join(
             " - ".join(filter(None, [p.role, p.name, str(p.organization or "")]))
@@ -95,12 +115,12 @@ class Question(PreviewableMixin, index.Indexed, ClusterableModel):
     @property
     def accordion(self):
         """Dict for django-dsfr's {% dsfr_accordion %} tag."""
+        # id is per question, so the same question listed twice on
+        # one page would share an id - pass a prefix if that ever happens.
         return {
             "id": f"faq-{self.pk or 'preview'}",
             "title": self.question,
-            "content": render_to_string(
-                "sites_conformes_faq/question.html", {"question": self}
-            ),
+            "content": render_to_string("sites_conformes_faq/question.html", {"question": self}),
         }
 
     def get_preview_template(self, request, mode_name):
