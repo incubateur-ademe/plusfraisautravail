@@ -31,7 +31,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         page_model = apps.get_model("cms_pages", "ContentPage")
         tag_model = apps.get_model("cms_pages", "TagContentPage")
-        legacy_tag_model = apps.get_model("sites_conformes_core", "TagContentPage")
         tables = set(connection.introspection.table_names())
 
         if page_model._meta.db_table in tables:
@@ -44,9 +43,6 @@ class Command(BaseCommand):
         with transaction.atomic(), connection.schema_editor(atomic=False) as editor:
             editor.alter_db_table(page_model, LEGACY_PAGE_TABLE, page_model._meta.db_table)
             editor.alter_db_table(tag_model, LEGACY_TAG_TABLE, tag_model._meta.db_table)
-            # Upstream keeps a (now empty) TagContentPage pointing at the swapped-in
-            # model, and modelcluster queries it on every page save. Recreate it.
-            editor.create_model(legacy_tag_model)
 
             # The running site may already have created the new content type
             # lazily (get_for_model on first use). It holds no pages: drop it so

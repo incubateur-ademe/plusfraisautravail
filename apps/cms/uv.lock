@@ -523,14 +523,14 @@ wheels = [
 
 [[package]]
 name = "django-treebeard"
-version = "5.3.0"
+version = "5.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "django" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/cc/b4/d63da0e36e42fa0cf355d5692ee70066922ff9e8f54b30f69605d43cc9c5/django_treebeard-5.3.0.tar.gz", hash = "sha256:8606cefd3a65689e99d2a493e5af8a8ece450b96915c949b5c72f6f302cfbe19", size = 312630, upload-time = "2026-06-24T05:34:50.545Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/23/99/40621d8279c89cee6a06f4d3bd3e4850de29f920bfcde24bc98855464bba/django_treebeard-5.3.1.tar.gz", hash = "sha256:9c3828f5c3130c57fb5c34412ba8ac9b6cefffe98757a284feb02e55776d1d25", size = 313309, upload-time = "2026-08-19T04:29:07.672Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/50/5a/7b9fa8374e3da778109d1135c6d0131cc3ad27ba3d5436ef3a3ae3f55e7d/django_treebeard-5.3.0-py3-none-any.whl", hash = "sha256:ae9e570fa74b4c882bc08def1f0c97d27f163b6285a19f3383027d074882e9f4", size = 82023, upload-time = "2026-06-24T05:34:49.133Z" },
+    { url = "https://files.pythonhosted.org/packages/fd/1c/456d2ad36c10d7b5d3f5633b795ef6d5273f1084ad0d3ca8163857ace827/django_treebeard-5.3.1-py3-none-any.whl", hash = "sha256:0f93f55fcb8b4acb09b6cfc2e93a9451b33db1ff14a22e2563f5bb555fcb9c4b", size = 82087, upload-time = "2026-08-19T04:29:06.346Z" },
 ]
 
 [[package]]
@@ -1414,7 +1414,7 @@ django = [
 [[package]]
 name = "sites-conformes"
 version = "4.2.0"
-source = { url = "https://github.com/numerique-gouv/sites-conformes/archive/66b36a12849fcfdb88c33a52f0c05a10cc991bf0.tar.gz" }
+source = { url = "https://github.com/numerique-gouv/sites-conformes/archive/115c13fd5da4467732c86273a20b55b0242a188a.tar.gz" }
 dependencies = [
     { name = "beautifulsoup4" },
     { name = "boto3" },
@@ -1426,6 +1426,7 @@ dependencies = [
     { name = "django-otp" },
     { name = "django-storages", extra = ["s3"] },
     { name = "django-taggit" },
+    { name = "django-treebeard" },
     { name = "djangorestframework" },
     { name = "faker" },
     { name = "gunicorn" },
@@ -1440,6 +1441,7 @@ dependencies = [
     { name = "unidecode" },
     { name = "wagtail" },
     { name = "wagtail-2fa" },
+    { name = "wagtail-admin-treebeard" },
     { name = "wagtail-honeypot" },
     { name = "wagtail-localize" },
     { name = "wagtail-markdown" },
@@ -1447,7 +1449,7 @@ dependencies = [
     { name = "wand" },
     { name = "whitenoise" },
 ]
-sdist = { hash = "sha256:c18ad73fa75e7891aae3d7cd83e2fc09b60714c9d521772c7de51c06d60dc28e" }
+sdist = { hash = "sha256:cdb9a78a4ebdd447ec716cf00366482da2972c11a171d5bc236c6b35634685e2" }
 
 [package.metadata]
 requires-dist = [
@@ -1461,6 +1463,7 @@ requires-dist = [
     { name = "django-otp", specifier = ">=1.7.0" },
     { name = "django-storages", extras = ["s3"], specifier = ">=1.14.6" },
     { name = "django-taggit", specifier = ">=6.1.0" },
+    { name = "django-treebeard", specifier = ">=5.3.1" },
     { name = "djangorestframework", specifier = ">=3.18.0" },
     { name = "faker", specifier = ">=37.4.0" },
     { name = "gunicorn", specifier = ">=23.0.0" },
@@ -1475,6 +1478,7 @@ requires-dist = [
     { name = "unidecode", specifier = ">=1.4.0" },
     { name = "wagtail", specifier = ">=7.2.0,<8.0.0" },
     { name = "wagtail-2fa", specifier = "==1.8.0" },
+    { name = "wagtail-admin-treebeard", url = "https://github.com/incubateur-ademe/plusfraisautravail/archive/593a25895082b3b190dfbf7ba9c6964de9936677.tar.gz", subdirectory = "packages/wagtail-admin-treebeard" },
     { name = "wagtail-honeypot", specifier = ">=1.2.1" },
     { name = "wagtail-localize", specifier = ">=1.12.1" },
     { name = "wagtail-markdown", specifier = ">=0.12.1" },
@@ -1526,7 +1530,7 @@ requires-dist = [
     { name = "pytest-django", marker = "extra == 'dev'", specifier = ">=4.9" },
     { name = "python-dotenv", specifier = ">=1.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.7" },
-    { name = "sites-conformes", url = "https://github.com/numerique-gouv/sites-conformes/archive/66b36a12849fcfdb88c33a52f0c05a10cc991bf0.tar.gz" },
+    { name = "sites-conformes", url = "https://github.com/numerique-gouv/sites-conformes/archive/115c13fd5da4467732c86273a20b55b0242a188a.tar.gz" },
     { name = "sites-conformes-faq", editable = "../../packages/sites-conformes-faq" },
     { name = "sites-conformes-footer-partners", editable = "../../packages/sites-conformes-footer-partners" },
     { name = "sites-conformes-header-logo", editable = "../../packages/sites-conformes-header-logo" },
@@ -1781,6 +1785,29 @@ sdist = { url = "https://files.pythonhosted.org/packages/12/9a/b7166a0f7cee7121f
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c1/bb/6f14801cacee011c696b4f12de5ff28e11556ae996ab46d06dbc3f72d915/wagtail_2fa-1.8.0-py3-none-any.whl", hash = "sha256:cfd3d2678c53f16f3af4b0f7587c1fd0508488cbf70bc0176151bcf2369a093f", size = 41064, upload-time = "2026-03-02T15:38:10.039Z" },
 ]
+
+[[package]]
+name = "wagtail-admin-treebeard"
+version = "0.1.0"
+source = { url = "https://github.com/incubateur-ademe/plusfraisautravail/archive/593a25895082b3b190dfbf7ba9c6964de9936677.tar.gz", subdirectory = "packages/wagtail-admin-treebeard" }
+dependencies = [
+    { name = "django" },
+    { name = "django-treebeard" },
+    { name = "wagtail" },
+]
+sdist = { hash = "sha256:53b0d82add602e630f588cc9f589dff833dd5753a051731d18c02ea015cdc3e2" }
+
+[package.metadata]
+requires-dist = [
+    { name = "beautifulsoup4", marker = "extra == 'dev'", specifier = ">=4.12" },
+    { name = "django", specifier = ">=5.0" },
+    { name = "django-treebeard", specifier = ">=5.0" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3" },
+    { name = "pytest-django", marker = "extra == 'dev'", specifier = ">=4.9" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.7" },
+    { name = "wagtail", specifier = ">=7.0" },
+]
+provides-extras = ["dev"]
 
 [[package]]
 name = "wagtail-honeypot"
