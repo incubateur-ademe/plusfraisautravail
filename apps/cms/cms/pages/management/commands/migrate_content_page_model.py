@@ -1,7 +1,8 @@
 """Move existing content pages from sites_conformes_core.ContentPage to the
 swapped-in cms_pages.ContentPage, without copying a row.
 
-Run before ``migrate`` (see manage_jobs.sh): once SF_CONTENTPAGE_MODEL is set,
+Run once, by hand, before ``migrate`` on any database that predates the
+swap (prod: 2026-09-28). Once SF_CONTENTPAGE_MODEL is set,
 the core migrations depend on cms_pages.0001_initial, and Django refuses to
 migrate a database where the former are applied and the latter is not.
 
