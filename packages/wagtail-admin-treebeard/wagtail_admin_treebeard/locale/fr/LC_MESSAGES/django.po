@@ -25,19 +25,26 @@ msgid "Place in the tree"
 msgstr "Place dans l’arborescence"
 
 msgid ""
-"Drag an item onto another one to nest it under it, or onto the zone below to "
-"bring it back to the root."
+"Drag an item onto another one to nest it under it, or between two items to "
+"move it there."
 msgstr ""
-"Glissez un élément sur un autre pour l’imbriquer dessous, ou sur la zone "
-"ci-dessous pour le ramener à la racine."
+"Glissez un élément sur un autre pour l’imbriquer dessous, ou entre deux "
+"éléments pour le déplacer à cet endroit."
 
-msgid "Root level"
-msgstr "Racine"
+#, python-format
+msgid ""
+"Drag an item onto another one to nest it under it, or outside the list to "
+"bring it back to the root. Items are sorted by %(fields)s and cannot be "
+"reordered by hand."
+msgstr ""
+"Glissez un élément sur un autre pour l’imbriquer dessous, ou en dehors de la "
+"liste pour le ramener à la racine. Les éléments sont triés par %(fields)s et "
+"ne peuvent pas être réordonnés à la main."
 
 #, python-format
 msgid "“%(node)s” moved under “%(target)s”."
 msgstr "« %(node)s » déplacé sous « %(target)s »."
 
 #, python-format
-msgid "“%(node)s” moved to the root."
-msgstr "« %(node)s » déplacé à la racine."
+msgid "“%(node)s” moved next to “%(target)s”."
+msgstr "« %(node)s » déplacé au même niveau que « %(target)s »."

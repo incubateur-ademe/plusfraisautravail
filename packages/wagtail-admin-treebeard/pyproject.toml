@@ -1,7 +1,7 @@
 [project]
 name = "wagtail-admin-treebeard"
 version = "0.1.0"
-description = "Manage a django-treebeard tree as a Wagtail snippet: nested listing with drag and drop, and treebeard's move fields in the edit form."
+description = "Manage a django-treebeard tree as a Wagtail snippet: the standard listing in tree order with drag and drop, and treebeard's move fields in the edit form."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
