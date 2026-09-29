@@ -3,13 +3,14 @@
 Manage a [django-treebeard](https://django-treebeard.readthedocs.io/) tree
 (AL, MP or NS) as a Wagtail snippet:
 
-- the listing shows nodes nested under their parent, with drag and drop to
-  move a node under another one or bring it back to the root;
+- the standard snippet listing is shown in tree order, rows indented by depth,
+  with drag and drop: drop a row on another one to nest it, or between two rows
+  to move it there (reordering siblings on unsorted models). Everything else in
+  the listing works as usual;
 - the edit form gets treebeard's `MoveNodeForm` fields ("Relative to" /
   "Position"), which also serves as the keyboard alternative to drag and drop.
 
-Searching, filtering and sorting by column fall back to Wagtail's standard
-flat table.
+Searching, filtering and sorting by column give the plain paginated listing.
 
 ## Installation
 
@@ -38,7 +39,7 @@ from wagtail_admin_treebeard.forms import TreeNodeForm, tree_panel
 class Category(AL_Node):
     name = models.CharField(max_length=80)
     parent = models.ForeignKey("self", null=True, blank=True, related_name="children_set", on_delete=models.CASCADE)
-    node_order_by = ["name"]
+    sib_order = models.PositiveIntegerField()  # AL_Node only; not needed with node_order_by
 
     base_form_class = TreeNodeForm
     panels = [FieldPanel("name"), tree_panel()]
@@ -60,6 +61,10 @@ class CategoryViewSet(TreeSnippetViewSet):
 
 register_snippet(CategoryViewSet)
 ```
+
+Leave `node_order_by` undefined to let editors order siblings by drag and drop.
+With `node_order_by` set, treebeard keeps siblings sorted: rows can only be
+nested or brought back to the root, and the listing says so.
 
 `TranslatableMixin` models are supported: the tree is filtered on the locale
 selected in the listing.

@@ -1,43 +1,33 @@
-.tb-tree__list {
-  list-style: none;
-  margin: 0;
-  padding-inline-start: 1.5rem;
+.tb-tree {
+  position: relative;
 }
 
-.tb-tree > .tb-tree__list {
-  padding-inline-start: 0;
-}
-
-.tb-tree__row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.25rem;
+.tb-tree tr[data-node] {
   cursor: grab;
 }
 
-.tb-tree__handle .icon {
-  width: 1rem;
-  height: 1rem;
-  opacity: 0.5;
+.tb-tree tr[data-node] .title-wrapper {
+  padding-inline-start: calc(var(--tb-depth, 0) * 1.5rem);
 }
 
-.tb-tree__root-zone {
-  margin-top: 1rem;
-  padding: 0.75rem;
-  border: 2px dashed var(--w-color-border-furniture);
-  border-radius: 0.25rem;
-  color: var(--w-color-text-meta);
-  text-align: center;
-}
-
-.is-dragging > .tb-tree__row {
+.tb-tree tr.is-dragging {
   opacity: 0.4;
 }
 
-.is-drop-target > .tb-tree__row,
-.tb-tree__root-zone.is-drop-target {
-  outline: 2px solid var(--w-color-border-interactive);
-  background: var(--w-color-surface-button-outline-hover, transparent);
+.tb-tree tr.is-drop-target {
+  outline: 2px solid var(--w-color-secondary);
+  background: var(--w-color-info-50);
+}
+
+/* Insertion bar: --tb-x is the title column's left edge in px, --tb-depth the target's depth. */
+.tb-tree__bar {
+  position: absolute;
+  inset-inline-start: calc(var(--tb-x, 0) * 1px + var(--tb-depth, 0) * 1.5rem);
+  inset-inline-end: 1rem;
+  height: 3px;
+  margin-top: -1.5px;
+  border-radius: 2px;
+  background: var(--w-color-secondary);
+  pointer-events: none;
+  z-index: 1;
 }

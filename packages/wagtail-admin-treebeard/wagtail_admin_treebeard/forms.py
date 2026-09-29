@@ -6,11 +6,11 @@ from wagtail.admin.panels import FieldPanel, MultiFieldPanel
 INVALID_MOVE_MESSAGE = _("An item cannot be moved under itself or one of its descendants.")
 
 
-def tree_panel(heading=None):
+def tree_panel():
     """The two treebeard fields ("Relative to" and "Position") as a Wagtail panel."""
     return MultiFieldPanel(
         [FieldPanel("treebeard_ref_node"), FieldPanel("treebeard_position")],
-        heading=heading or _("Place in the tree"),
+        heading=_("Place in the tree"),
     )
 
 
