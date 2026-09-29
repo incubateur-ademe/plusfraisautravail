@@ -10,6 +10,7 @@ from django.core.management import call_command
 from django.db import connection
 from django.db.migrations.loader import MigrationLoader
 from django.db.migrations.recorder import MigrationRecorder
+from sites_conformes.core.models import Tag
 from wagtail.models import Page, Site
 
 from cms.pages.models import ContentPage
@@ -20,10 +21,9 @@ pytestmark = pytest.mark.django_db
 def make_legacy_state(page):
     """Put the database back the way a pre-swap deployment left it."""
     with connection.cursor() as cur:
-        cur.execute("DROP TABLE sites_conformes_core_tagcontentpage")
-        # Upstream's migrations do not flag the historical model as swappable,
-        # so a fresh database also carries this empty table.
-        cur.execute("DROP TABLE sites_conformes_core_contentpage")
+        # Older upstream versions created the swapped-out tables on a fresh database too.
+        cur.execute("DROP TABLE IF EXISTS sites_conformes_core_tagcontentpage")
+        cur.execute("DROP TABLE IF EXISTS sites_conformes_core_contentpage")
         cur.execute(
             "ALTER TABLE cms_pages_tagcontentpage RENAME TO sites_conformes_core_tagcontentpage"
         )
@@ -63,9 +63,10 @@ def test_pages_tags_and_revisions_survive(legacy_page):
     page = Page.objects.get(pk=legacy_page.pk).specific
     assert isinstance(page, ContentPage)
     assert [t.name for t in page.tags.all()] == ["chaleur"]
+    # Catalog filters count usage through the swapped-in through table, not upstream's empty one.
+    assert [t.name for t in Tag.objects.tags_with_usecount(1)] == ["chaleur"]
     assert page.revisions.count() == 1
     assert page.revisions.first().as_object().title == "Page héritée"
-    # Saving still works: the phantom upstream tag table is back.
     page.save_revision().publish()
 
 
