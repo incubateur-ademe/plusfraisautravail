@@ -20,15 +20,19 @@ class Named(models.Model):
 
 
 class ALCategory(AL_Node, Named):
+    """Unsorted: siblings keep the order given by drag and drop."""
+
     parent = models.ForeignKey(
         "self", null=True, blank=True, related_name="children_set", on_delete=models.CASCADE
     )
-    node_order_by = ["name"]
+    sib_order = models.PositiveIntegerField()
 
 
 class MPCategory(MP_Node, Named):
-    node_order_by = ["name"]
+    """Unsorted: siblings keep the order given by drag and drop."""
 
 
 class NSCategory(NS_Node, Named):
-    """Unsorted: exercises the first-child / last-child positions."""
+    """Sorted by name: drag and drop only changes the parent, treebeard keeps siblings sorted."""
+
+    node_order_by = ["name"]

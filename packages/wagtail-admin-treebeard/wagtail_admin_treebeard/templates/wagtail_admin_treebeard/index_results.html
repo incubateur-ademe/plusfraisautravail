@@ -2,18 +2,24 @@
 {% load i18n %}
 
 {% block results %}
-  {% if tree_roots is not None %}
-    <div class="nice-padding tb-tree"
+  {% if view.is_tree_mode %}
+    <div class="tb-tree"
          data-controller="tb-tree"
-         data-tb-tree-move-url-value="{{ move_url }}"
-         data-action="dragstart->tb-tree#start dragend->tb-tree#end dragover->tb-tree#over drop->tb-tree#drop">
-      <p class="help-block help-info">{% translate "Drag an item onto another one to nest it under it, or onto the zone below to bring it back to the root." %}</p>
-      <ul class="tb-tree__list">
-        {% for node in tree_roots %}
-          {% include node_template_name %}
-        {% endfor %}
-      </ul>
-      <div class="tb-tree__root-zone" data-root-zone>{% translate "Root level" %}</div>
+         data-tb-tree-move-url-value="{% url view.move_url_name %}"
+         data-tb-tree-sorted-value="{{ view.sort_labels|yesno:'true,false' }}"
+         data-action="dragstart->tb-tree#start dragend->tb-tree#end dragover@document->tb-tree#over drop@document->tb-tree#drop">
+      <p class="help-block help-info nice-padding">
+        {% if view.sort_labels %}
+          {% blocktranslate trimmed with fields=view.sort_labels|join:", " %}
+            Drag an item onto another one to nest it under it, or outside the list to bring it back to the root.
+            Items are sorted by {{ fields }} and cannot be reordered by hand.
+          {% endblocktranslate %}
+        {% else %}
+          {% translate "Drag an item onto another one to nest it under it, or between two items to move it there." %}
+        {% endif %}
+      </p>
+      {{ block.super }}
+      <div class="tb-tree__bar" data-tb-tree-target="bar" hidden></div>
     </div>
   {% else %}
     {{ block.super }}
