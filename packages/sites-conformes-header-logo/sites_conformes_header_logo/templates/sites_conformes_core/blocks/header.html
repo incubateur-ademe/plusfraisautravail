@@ -12,10 +12,9 @@
        title="{{ home_page }} — {{ settings.sites_conformes_core.CmsDsfrConfig.site_title }}">
       {% if header_logo.logo %}
         {% image header_logo.logo original as header_logo_img %}
-        <img class="fr-responsive-img"
-             src="{{ header_logo_img.url }}"
+        <img src="{{ header_logo_img.url }}"
              alt="{{ header_logo.alt }}"
-             style="max-height: 2.5rem;" />
+             style="max-height: 2.5rem; max-width: 100%; height: auto; width: auto;" />
       {% else %}
         <p class="fr-header__service-title">
           {% if settings.sites_conformes_core.CmsDsfrConfig.site_title|slice:"-2:" == "fr" %}
