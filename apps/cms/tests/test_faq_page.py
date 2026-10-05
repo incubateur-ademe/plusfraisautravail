@@ -1,14 +1,15 @@
-"""The FAQ block on the swapped ContentPage: rendering, schema.org FAQPage
+"""The FAQ block on the swapped ContentPage and BlogEntryPage: rendering, schema.org FAQPage
 markup (checkbox checked by default) and the one-SEO-holder-per-question rule."""
 
 import pytest
 from django.core.exceptions import ValidationError
+from sites_conformes.blog.models import BlogIndexPage
 from sites_conformes_faq.blocks import FaqItemBlock
 from sites_conformes_faq.models import Question
 from wagtail.blocks.base import get_error_json_data
 from wagtail.models import Site, get_page_models
 
-from cms.pages.models import ContentPage
+from cms.pages.models import BlogEntryPage, ContentPage
 
 pytestmark = pytest.mark.django_db
 
@@ -88,3 +89,35 @@ def test_second_holder_is_rejected(question):
             }
         }
     }
+
+
+def make_blog_entry(title, question):
+    root = Site.objects.get(is_default_site=True).root_page
+    blog = root.add_child(instance=BlogIndexPage(title="Actualités", slug="actualites"))
+    entry = BlogEntryPage(title=title, slug="article")
+    entry.body = [("faq", [{"question": question, "seo": True}])]
+    blog.add_child(instance=entry)
+    entry.save_revision().publish()
+    return entry
+
+
+def test_swapped_model_is_the_only_blog_entry_page():
+    labels = {m._meta.label for m in get_page_models()}
+    assert "cms_pages.BlogEntryPage" in labels
+    assert "sites_conformes_blog.BlogEntryPage" not in labels
+
+
+def test_blog_entry_gets_faqpage_markup(client, question):
+    entry = make_blog_entry("Article", question)
+    html = client.get(entry.url).content.decode()
+    assert "fr-accordion" in html
+    assert '"@type": "FAQPage"' in html
+
+
+def test_blog_entry_holder_blocks_a_content_page(question):
+    entry = make_blog_entry("Article", question)
+    page = ContentPage(title="Page A", slug="page-a")
+    page.body = [("faq", [{"question": question, "seo": True}])]
+    with pytest.raises(ValidationError) as err:
+        Site.objects.get(is_default_site=True).root_page.add_child(instance=page)
+    assert f"« Article » /cms-admin/pages/{entry.pk}/edit/" in str(err.value.error_dict["__all__"])
