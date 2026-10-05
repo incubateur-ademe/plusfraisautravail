@@ -16,6 +16,11 @@ python manage.py migrate_from_sites_faciles --no-input
 # A database that predates the ContentPage swap needs
 # `python manage.py migrate_content_page_model` here, before `migrate`.
 # Prod is done (2026-09-28); the command and its tests stay for other DBs.
+# Idempotent too: moves sites_conformes_blog.BlogEntryPage rows to the swapped-in
+# cms_pages.BlogEntryPage. Must run before `migrate`, which would otherwise create
+# empty cms_pages tables and orphan the existing blog entries. Drop this call
+# once prod is done, as for the content pages.
+python manage.py migrate_blog_entry_page_model
 python manage.py migrate --noinput
 # python manage.py wagtail_update_image_renditions
 # python manage.py set_s3_cache_control

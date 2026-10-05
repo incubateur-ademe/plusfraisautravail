@@ -22,9 +22,10 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-# numerique-gouv/sites-conformes#606 (swappable ContentPage), pinned to its head
-# commit. Source archive rather than a git source: the CMS image has no git.
-sites-conformes = { url = "https://github.com/numerique-gouv/sites-conformes/archive/625bd28ebbca2e5fba73a81b32bee90c92e8d8d3.tar.gz" }
+# numerique-gouv/sites-conformes branch abstract-blog-model (swappable page models,
+# on top of #606), pinned to its head commit. Source archive rather than a git
+# source: the CMS image has no git.
+sites-conformes = { url = "https://github.com/numerique-gouv/sites-conformes/archive/510e81e34824321d1376b42d498b1a4328c78d0d.tar.gz" }
 wagtail-notion-form = { path = "../../packages/wagtail-notion-form", editable = true }
 sites-conformes-footer-partners = { path = "../../packages/sites-conformes-footer-partners", editable = true }
 sites-conformes-header-logo = { path = "../../packages/sites-conformes-header-logo", editable = true }

@@ -225,7 +225,7 @@ TEMPLATES[0]["OPTIONS"]["context_processors"].extend(
 
 INSTALLED_APPS.extend(
     [
-        # Swapped-in ContentPage (SF_CONTENTPAGE_MODEL): first, so its migrations
+        # Swapped-in ContentPage and BlogEntryPage (SF_*_MODEL): first, so its migrations
         # run before the sites_conformes.core ones that depend on it.
         "cms.pages",
         "dsfr",
@@ -257,6 +257,7 @@ INSTALLED_APPS.extend(
 )
 
 SF_CONTENTPAGE_MODEL = "cms_pages.ContentPage"
+SF_BLOGENTRYPAGE_MODEL = "cms_pages.BlogEntryPage"
 
 HOST_URL = "localhost"
 # PostHog project key (public by nature - it ships in every page). Empty
