@@ -47,7 +47,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app/apps/cms
 
 COPY --from=builder /app /app
-COPY apps/cms/entrypoint.sh apps/cms/manage_jobs.sh ./
+COPY apps/cms/entrypoint.sh apps/cms/manage_jobs.sh apps/cms/gunicorn.conf.py ./
 RUN chmod +x entrypoint.sh manage_jobs.sh
 
 EXPOSE 8080
