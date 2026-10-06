@@ -161,6 +161,12 @@ module "cms" {
   secret_environment_variables = local.cms_secret_env
   custom_domain                = var.base_domain
   private_network_id           = module.cms_db.private_network_id
+  # Probe a real Wagtail render, not just SELECT 1: a container that answers
+  # /healthz/ but can't serve pages should still get restarted.
+  health_check_path = "/"
+  # First failure + 2 retries: restart after ~90s of a stuck container
+  # instead of ~2.5 min.
+  liveness_failure_threshold = 3
 }
 
 # One-shot management-command runner, reusing the same image and env/secrets

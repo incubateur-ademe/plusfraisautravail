@@ -35,7 +35,7 @@ resource "scaleway_container" "this" {
     http {
       path = var.health_check_path
     }
-    failure_threshold = 5
+    failure_threshold = var.liveness_failure_threshold
     interval          = "30s"
     timeout           = "10s"
   }

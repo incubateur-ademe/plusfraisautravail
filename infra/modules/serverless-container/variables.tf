@@ -84,6 +84,12 @@ variable "health_check_path" {
   description = "HTTP path for liveness and startup probes."
 }
 
+variable "liveness_failure_threshold" {
+  type        = number
+  default     = 5
+  description = "Consecutive failed liveness probes (30s apart, 10s timeout each) before the container is restarted."
+}
+
 variable "custom_domain" {
   type        = string
   default     = ""
