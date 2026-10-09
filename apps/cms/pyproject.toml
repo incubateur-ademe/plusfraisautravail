@@ -19,13 +19,14 @@ dependencies = [
     "sites-conformes-posthog",
     "sites-conformes-rgaa",
     "sites-conformes-faq",
+    "wagtail-in-a-tree>=0.1.0",
 ]
 
 [tool.uv.sources]
-# numerique-gouv/sites-conformes#607 (categories stack, rebased on #606 swappable
-# ContentPage), pinned to its head commit. Source archive rather than a git
-# source: the CMS image has no git.
-sites-conformes = { url = "https://github.com/numerique-gouv/sites-conformes/archive/115c13fd5da4467732c86273a20b55b0242a188a.tar.gz" }
+# numerique-gouv/sites-conformes categories stack (admin tree view with
+# wagtail-in-a-tree), pinned to its head commit. Source archive rather than
+# a git source: the CMS image has no git.
+sites-conformes = { url = "https://github.com/numerique-gouv/sites-conformes/archive/2b5fc830f3ee89ebdb2d07fca6afebafec3433b0.tar.gz" }
 wagtail-notion-form = { path = "../../packages/wagtail-notion-form", editable = true }
 sites-conformes-footer-partners = { path = "../../packages/sites-conformes-footer-partners", editable = true }
 sites-conformes-header-logo = { path = "../../packages/sites-conformes-header-logo", editable = true }
