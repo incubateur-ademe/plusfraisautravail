@@ -8,7 +8,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.management import call_command
 from django.db import connection
 from django.db.migrations.recorder import MigrationRecorder
-from sites_conformes.blog.models import BlogIndexPage, Category, Person
+from sites_conformes.blog.models import BlogIndexPage, Person
+from sites_conformes.core.models import Category
 from wagtail.models import Page, Site
 
 from cms.pages.models import BlogEntryPage
@@ -38,7 +39,7 @@ def legacy_entry():
     blog = root.add_child(instance=BlogIndexPage(title="Actualités", slug="actualites"))
     entry = blog.add_child(instance=BlogEntryPage(title="Article hérité", slug="article-herite"))
     entry.tags.add("chaleur")
-    entry.blog_categories.add(Category.objects.create(name="Canicule", slug="canicule"))
+    entry.categories.add(Category.objects.create(name="Canicule", slug="canicule"))
     entry.authors.add(Person.objects.create(name="Ada", role="Autrice"))
     entry.save_revision().publish()
     make_legacy_state()
@@ -51,7 +52,7 @@ def test_entries_relations_and_revisions_survive(legacy_entry):
     entry = Page.objects.get(pk=legacy_entry.pk).specific
     assert isinstance(entry, BlogEntryPage)
     assert [t.name for t in entry.tags.all()] == ["chaleur"]
-    assert [c.name for c in entry.blog_categories.all()] == ["Canicule"]
+    assert [c.name for c in entry.categories.all()] == ["Canicule"]
     assert [a.name for a in entry.authors.all()] == ["Ada"]
     assert list(entry.get_parent().specific.posts) == [entry]
     assert entry.revisions.first().as_object().title == "Article hérité"

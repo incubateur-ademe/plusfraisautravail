@@ -7,7 +7,6 @@ import django.utils.timezone
 import modelcluster.contrib.taggit
 import modelcluster.fields
 import re
-import sites_conformes.core.abstract
 import sites_conformes.core.validators
 import wagtail.fields
 from django.conf import settings
@@ -47,7 +46,7 @@ class Migration(migrations.Migration):
             options={
                 'verbose_name': 'Page de blog',
             },
-            bases=(cms.pages.models.FaqSeoMixin, sites_conformes.core.abstract.DefaultTemplateMixin, 'wagtailcore.page'),
+            bases=(cms.pages.models.FaqSeoMixin, 'wagtailcore.page'),
         ),
         migrations.CreateModel(
             name='CategoryEntryPage',

@@ -19,13 +19,14 @@ dependencies = [
     "sites-conformes-posthog",
     "sites-conformes-rgaa",
     "sites-conformes-faq",
+    "wagtail-in-a-tree>=0.1.0",
 ]
 
 [tool.uv.sources]
-# numerique-gouv/sites-conformes branch abstract-blog-model (swappable page models,
-# on top of #606), pinned to its head commit. Source archive rather than a git
-# source: the CMS image has no git.
-sites-conformes = { url = "https://github.com/numerique-gouv/sites-conformes/archive/510e81e34824321d1376b42d498b1a4328c78d0d.tar.gz" }
+# numerique-gouv/sites-conformes#630 (swappable BlogEntryPage, on top of the
+# categories stack #598→#629 and #606), pinned to its head commit. Source archive
+# rather than a git source: the CMS image has no git.
+sites-conformes = { url = "https://github.com/numerique-gouv/sites-conformes/archive/4bd0f00987617db9abbd4c0ea1bba7d0861840a3.tar.gz" }
 wagtail-notion-form = { path = "../../packages/wagtail-notion-form", editable = true }
 sites-conformes-footer-partners = { path = "../../packages/sites-conformes-footer-partners", editable = true }
 sites-conformes-header-logo = { path = "../../packages/sites-conformes-header-logo", editable = true }
