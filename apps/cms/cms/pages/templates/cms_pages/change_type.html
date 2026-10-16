@@ -1,0 +1,61 @@
+{% extends "wagtailadmin/base.html" %}
+{% load wagtailadmin_tags %}
+{% block titletag %}Changer le type de {{ page.get_admin_display_title }}{% endblock %}
+{% block content %}
+    {% include "wagtailadmin/shared/header.html" with title="Changer le type" subtitle=page.get_admin_display_title icon="doc-empty-inverse" %}
+
+    <div class="nice-padding">
+        <p>Type actuel : <strong>{{ page.specific_verbose_name }}</strong>.
+           La page garde son adresse, sa place dans l'arborescence et son historique.
+           Les champs communs aux deux types (titre, en-tête, contenu, mots-clés…) sont conservés.</p>
+
+        <div class="help-block help-info">
+            <p><strong>Le changement est impossible dans les cas suivants :</strong></p>
+            <ul>
+                <li><strong>Modifications en brouillon</strong> : la page est publiée et a des modifications
+                    non publiées. Publiez-les ou annulez-les d'abord.</li>
+                <li><strong>Sous-pages incompatibles</strong> : un type n'est proposé que s'il accepte toutes
+                    les sous-pages actuelles. Déplacez-les d'abord, par exemple pour transformer une page
+                    qui a des enfants en article de blog, qui n'en accepte aucun.</li>
+                <li><strong>Type unique déjà utilisé</strong> : les types limités en nombre (page d'accueil…)
+                    ne sont plus proposés une fois la limite atteinte.</li>
+                <li><strong>Type non créable</strong> : les types qu'on ne peut pas créer dans l'admin ne sont
+                    pas proposés.</li>
+                <li><strong>Type à structure particulière</strong> : seuls les types stockés directement sur
+                    la page Wagtail de base peuvent être échangés. Si la page actuelle n'en fait pas partie,
+                    aucun type n'est proposé.</li>
+                <li><strong>Contenu lié qui bloque la suppression</strong> : un élément rattaché à l'ancien
+                    type empêche de le retirer (le message d'erreur indique lequel).</li>
+                <li><strong>Page invalide pour le nouveau type</strong> : un champ obligatoire du nouveau type
+                    est vide, ou une question FAQ cochée « SEO » l'est déjà sur une autre page. Rien n'est
+                    modifié et l'erreur s'affiche ici.</li>
+                <li><strong>Droits insuffisants</strong> : il faut pouvoir publier la page. Sinon le bouton
+                    n'apparaît pas.</li>
+            </ul>
+            <p>Si l'emplacement actuel n'accepte pas le nouveau type (un article de blog transformé en page
+               de contenu, par exemple), le changement est quand même fait. Vous êtes ensuite envoyé sur
+               l'écran de déplacement pour choisir où ranger la page.</p>
+        </div>
+
+        {% if form.fields.target.choices %}
+            <ul>
+                {% for choice_key, choice_label in form.fields.target.choices %}
+                    {% for key, fields in lost.items %}
+                        {% if key == choice_key and fields %}
+                            <li>Vers « {{ choice_label }} », perdus : {{ fields|join:", " }}.</li>
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
+            </ul>
+            <form action="{{ action_url }}" method="POST" novalidate>
+                {% csrf_token %}
+                <ul class="fields">
+                    <li>{% formattedfield form.target %}</li>
+                </ul>
+                <input type="submit" value="Changer le type" class="button">
+            </form>
+        {% else %}
+            <p>Aucun autre type n'est possible pour cette page.</p>
+        {% endif %}
+    </div>
+{% endblock %}
