@@ -237,6 +237,7 @@ INSTALLED_APPS.extend(
         "sites_conformes_header_logo",
         "sites_conformes_posthog",
         "sites_conformes",
+        "sites_conformes.customimages",
         "sites_conformes.blog",
         "sites_conformes.core",
         "sites_conformes.events",
@@ -260,6 +261,10 @@ INSTALLED_APPS.extend(
 
 SF_CONTENTPAGE_MODEL = "cms_pages.ContentPage"
 SF_BLOGENTRYPAGE_MODEL = "cms_pages.BlogEntryPage"
+
+# Image model shipped by sites-conformes (alt text not prefilled with the title).
+# Required: its migrations depend on it.
+WAGTAILIMAGES_IMAGE_MODEL = "sites_conformes_customimages.CustomImage"
 
 HOST_URL = "localhost"
 # PostHog project key (public by nature - it ships in every page). Empty
