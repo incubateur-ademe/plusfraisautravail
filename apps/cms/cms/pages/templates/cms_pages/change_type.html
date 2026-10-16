@@ -1,0 +1,33 @@
+{% extends "wagtailadmin/base.html" %}
+{% load wagtailadmin_tags %}
+{% block titletag %}Changer le type de {{ page.get_admin_display_title }}{% endblock %}
+{% block content %}
+    {% include "wagtailadmin/shared/header.html" with title="Changer le type" subtitle=page.get_admin_display_title icon="doc-empty-inverse" %}
+
+    <div class="nice-padding">
+        <p>Type actuel : <strong>{{ page.specific_verbose_name }}</strong>.
+           La page garde son adresse, sa place dans l'arborescence et son historique.
+           Les champs communs aux deux types (titre, en-tête, contenu, mots-clés…) sont conservés.</p>
+
+        {% if form.fields.target.choices %}
+            <ul>
+                {% for choice_key, choice_label in form.fields.target.choices %}
+                    {% for key, fields in lost.items %}
+                        {% if key == choice_key and fields %}
+                            <li>Vers « {{ choice_label }} », perdus : {{ fields|join:", " }}.</li>
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
+            </ul>
+            <form action="{{ action_url }}" method="POST" novalidate>
+                {% csrf_token %}
+                <ul class="fields">
+                    <li>{% formattedfield form.target %}</li>
+                </ul>
+                <input type="submit" value="Changer le type" class="button">
+            </form>
+        {% else %}
+            <p>Aucun autre type n'est possible pour cette page.</p>
+        {% endif %}
+    </div>
+{% endblock %}
