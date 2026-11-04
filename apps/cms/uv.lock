@@ -1414,7 +1414,7 @@ django = [
 [[package]]
 name = "sites-conformes"
 version = "4.3.1"
-source = { url = "https://github.com/numerique-gouv/sites-conformes/archive/4c2b4dc45bb9da45f0d41387ab9284e9ab1d685c.tar.gz" }
+source = { url = "https://github.com/numerique-gouv/sites-conformes/archive/b3b7baeebe2cd919e5b33b1fae1285a3136bf644.tar.gz" }
 dependencies = [
     { name = "beautifulsoup4" },
     { name = "boto3" },
@@ -1450,7 +1450,7 @@ dependencies = [
     { name = "wand" },
     { name = "whitenoise" },
 ]
-sdist = { hash = "sha256:3c4dd92b5537dbf731098a5c7bcf25d46fe8f0acf2b7a38e7497263f4ede368e" }
+sdist = { hash = "sha256:ff6b99a25e69f7a373c58d384e18507b87d7ffda4a411b48f3086559db8af778" }
 
 [package.metadata]
 requires-dist = [
@@ -1533,7 +1533,7 @@ requires-dist = [
     { name = "pytest-django", marker = "extra == 'dev'", specifier = ">=4.9" },
     { name = "python-dotenv", specifier = ">=1.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.7" },
-    { name = "sites-conformes", url = "https://github.com/numerique-gouv/sites-conformes/archive/4c2b4dc45bb9da45f0d41387ab9284e9ab1d685c.tar.gz" },
+    { name = "sites-conformes", url = "https://github.com/numerique-gouv/sites-conformes/archive/b3b7baeebe2cd919e5b33b1fae1285a3136bf644.tar.gz" },
     { name = "sites-conformes-faq", editable = "../../packages/sites-conformes-faq" },
     { name = "sites-conformes-footer-partners", editable = "../../packages/sites-conformes-footer-partners" },
     { name = "sites-conformes-header-logo", editable = "../../packages/sites-conformes-header-logo" },

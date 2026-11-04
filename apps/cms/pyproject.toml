@@ -26,7 +26,7 @@ dependencies = [
 # numerique-gouv/sites-conformes#630 (swappable BlogEntryPage, on top of the
 # categories stack #598→#629 and #606), pinned to its head commit. Source archive
 # rather than a git source: the CMS image has no git.
-sites-conformes = { url = "https://github.com/numerique-gouv/sites-conformes/archive/4c2b4dc45bb9da45f0d41387ab9284e9ab1d685c.tar.gz" }
+sites-conformes = { url = "https://github.com/numerique-gouv/sites-conformes/archive/b3b7baeebe2cd919e5b33b1fae1285a3136bf644.tar.gz" }
 wagtail-notion-form = { path = "../../packages/wagtail-notion-form", editable = true }
 sites-conformes-footer-partners = { path = "../../packages/sites-conformes-footer-partners", editable = true }
 sites-conformes-header-logo = { path = "../../packages/sites-conformes-header-logo", editable = true }
