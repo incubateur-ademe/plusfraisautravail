@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('cms_pages', '0003_blog_categories_to_core'),
-        ('sites_conformes_core', '0092_category_sib_order'),
+        ('sites_conformes_core', '0091_category_tree'),
         ('sites_conformes_customimages', '0002_copy_wagtail_images'),
     ]
 
