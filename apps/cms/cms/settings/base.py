@@ -164,9 +164,9 @@ mimetypes.add_type("image/webp", ".webp")
 
 WAGTAIL_SITE_NAME = "Plus Frais Au Travail"
 # Public origin of the site. Every absolute URL Django/Wagtail emits derives
-# from it: media (AWS_S3_CUSTOM_DOMAIN), image.full_url, admin emails,
-# canonical scheme. Override it while the site is reachable on a temporary
-# host (e.g. the Scalingo proxy URL before the DNS cutover).
+# from it: media (AWS_S3_CUSTOM_DOMAIN), image.full_url, admin emails.
+# Override it while the site is reachable on a temporary host (e.g. the
+# Scalingo proxy URL before the DNS cutover).
 WAGTAILADMIN_BASE_URL = os.environ.get(
     "WAGTAILADMIN_BASE_URL", "https://plusfraisautravail.beta.gouv.fr"
 )
@@ -272,7 +272,8 @@ HOST_URL = "localhost"
 # disables the loader; see packages/sites-conformes-posthog.
 POSTHOG_KEY = os.environ.get("POSTHOG_KEY", "")
 
-# sites_conformes reads this for {% canonical_url %}.
+# Only read by sites_conformes' own {% canonical_url %}, which cms/pages/canonical.py replaces.
+# Needed again once that override goes.
 HOST_PROTO = urlsplit(WAGTAILADMIN_BASE_URL).scheme
 PROCONNECT_ACTIVATED = False
 

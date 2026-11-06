@@ -6,3 +6,6 @@ class PagesConfig(AppConfig):
     name = "cms.pages"
     label = "cms_pages"
     verbose_name = "Pages"
+
+    def ready(self):
+        from . import canonical  # noqa: F401
