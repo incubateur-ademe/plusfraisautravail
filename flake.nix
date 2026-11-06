@@ -22,6 +22,7 @@
           packages = [
             pkgs.postgresql_17
             pkgs.awscli2
+            pkgs.gettext
           ];
 
           # PGDATA/PGHOST scoped to the repo, not ~/.local or a system

@@ -153,6 +153,7 @@ fmt-api:
 
 # CMS tests.
 test-cms:
+    cd apps/cms && uv run python manage.py compilemessages -l fr
     cd apps/cms && uv run pytest
 
 # sites-conformes-rgaa package tests (not covered by test-cms's testpaths).
