@@ -34,6 +34,14 @@ sites-conformes-posthog = { path = "../../packages/sites-conformes-posthog", edi
 sites-conformes-rgaa = { path = "../../packages/sites-conformes-rgaa", editable = true }
 sites-conformes-faq = { path = "../../packages/sites-conformes-faq", editable = true }
 
+[tool.uv]
+# sites-conformes caps wagtail<8 only because wagtail-2fa 1.8.0 imports the removed
+# UserListingButton (labd/wagtail-2fa#288). Harmless here: neither wagtail_2fa nor
+# sites_conformes.dashboard (its only importer) is in INSTALLED_APPS, so it never loads.
+# Drop this once sites-conformes lifts the cap. Adding either app before then needs a
+# wagtail-2fa release with that fix.
+override-dependencies = ["wagtail>=8.1,<8.2"]
+
 [project.optional-dependencies]
 dev = [
     "pytest>=8.3",
