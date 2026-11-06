@@ -11,6 +11,10 @@ set -euo pipefail
 # migration risked the container being killed as "failed to start" even
 # when the migration itself succeeded (see fea5b49). This job has no such
 # time pressure (1800s timeout, no probe).
+# First, so that a job stopped here leaves the database as it found it: records core
+# 0091_category_tree on a database that ran the chain it folded, does nothing when core
+# never reached it, and stops on any other state. Drop this call once prod is done.
+python manage.py record_core_category_tree
 # Idempotent: no-op unless the DB still carries the legacy Sites Faciles schema.
 python manage.py migrate_from_sites_faciles --no-input
 # A database that predates the ContentPage swap needs
