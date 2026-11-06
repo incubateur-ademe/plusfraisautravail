@@ -4,10 +4,11 @@ from django.conf import settings
 from django.conf.urls.i18n import i18n_patterns
 from django.conf.urls.static import static
 from django.db import connection
-from django.http import HttpResponse
+from django.http import Http404, HttpResponse
 from django.urls import include, path
 from django.views.defaults import page_not_found, server_error
 from django.views.generic.base import RedirectView
+from sites_conformes.core.views import TagsListView, TagView
 from wagtail.admin import urls as wagtailadmin_urls
 from wagtail.api.v2.router import WagtailAPIRouter
 from wagtail.api.v2.views import PagesAPIViewSet
@@ -15,6 +16,8 @@ from wagtail.contrib.sitemaps.views import sitemap
 from wagtail.documents import urls as wagtaildocs_urls
 from wagtail.documents.api.v2.views import DocumentsAPIViewSet
 from wagtail.images.api.v2.views import ImagesAPIViewSet
+
+from cms.pages.models import TagSettings
 
 api_router = WagtailAPIRouter("wagtailapi")
 api_router.register_endpoint("pages", PagesAPIViewSet)
@@ -26,6 +29,15 @@ def healthz(request):
     with connection.cursor() as cursor:
         cursor.execute("SELECT 1")
     return HttpResponse("ok")
+
+
+def unless_tag_links_off(view):
+    def wrapped(request, *args, **kwargs):
+        if not TagSettings.links_on(request):
+            raise Http404
+        return view(request, *args, **kwargs)
+
+    return wrapped
 
 
 urlpatterns = [
@@ -42,6 +54,9 @@ urlpatterns = [
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 urlpatterns += i18n_patterns(
+    # Same paths as sites_conformes.core.urls, which they shadow.
+    path("tags/<str:tag>/", unless_tag_links_off(TagView.as_view())),
+    path("tags/", unless_tag_links_off(TagsListView.as_view())),
     path("", include("sites_conformes.core.urls")),
     prefix_default_language=False,
 )

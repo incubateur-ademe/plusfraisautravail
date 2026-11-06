@@ -2,12 +2,14 @@
 joins them as plain strings), so ContentPage.clean() can't emit a link.
 Turn admin page URLs inside error lists into links client-side instead."""
 
+from django.http import Http404
 from django.urls import path, reverse
 from django.utils.safestring import mark_safe
 from wagtail import hooks
 from wagtail.admin.widgets import Button
 
 from cms.pages.change_type import change_type_view, target_models
+from cms.pages.models import TagSettings
 
 LINKIFY_ERRORLIST_URLS = mark_safe(r"""<script>
 document.addEventListener("DOMContentLoaded", () => {
@@ -39,3 +41,11 @@ def change_page_type_button(page, user, view_name, next_url=None):
             icon_name="doc-empty-inverse",
             priority=25,
         )
+
+
+@hooks.register("before_serve_page")
+def hide_tag_list_subpages(page, request, args, kwargs):
+    """The ``tags/`` route of the blog and catalog pages; cms/urls.py covers the global ones."""
+    match = getattr(request, "routable_resolver_match", None)
+    if match and match.url_name == "tags_list" and not TagSettings.links_on(request):
+        raise Http404

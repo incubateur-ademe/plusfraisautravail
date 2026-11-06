@@ -2,11 +2,15 @@
 BlogEntryPage via ``SF_CONTENTPAGE_MODEL`` and ``SF_BLOGENTRYPAGE_MODEL`` so their
 bodies can carry the FAQ block."""
 
+import logging
+from functools import cache
+
 from django.core.exceptions import NON_FIELD_ERRORS, ValidationError
-from django.db import models
+from django.db import ProgrammingError, models, transaction
 from django.urls import reverse
 from modelcluster.contrib.taggit import ClusterTaggableManager
 from modelcluster.fields import ParentalKey, ParentalManyToManyField
+from psycopg.errors import UndefinedTable
 from sites_conformes.blog.models import AbstractBlogEntryPage
 from sites_conformes.core.blocks.core import STREAMFIELD_COMMON_BLOCKS
 from sites_conformes.core.models import AbstractContentPage, Category
@@ -19,7 +23,18 @@ from wagtail.blocks import (
     StreamBlockValidationError,
     StructBlockValidationError,
 )
+from wagtail.contrib.settings.models import BaseGenericSetting, register_setting
 from wagtail.fields import StreamField
+
+logger = logging.getLogger(__name__)
+
+
+@cache
+def warn_missing_table():
+    """Once per process: tag blocks render by the dozen during the deployment window."""
+    logger.warning(
+        "cms_pages_tagsettings table missing: tag links stay on until migration 0006 runs"
+    )
 
 
 def faq_body():
@@ -106,3 +121,40 @@ class CategoryEntryPage(models.Model):
         Category, related_name="+", verbose_name="Catégorie", on_delete=models.CASCADE
     )
     page = ParentalKey(BlogEntryPage, related_name="entry_categories")
+
+
+@register_setting(icon="tag")
+class TagSettings(BaseGenericSetting):
+    """Generic rather than per site: blocks rendered through ``{{ page.body }}`` have no request
+    to find a site from."""
+
+    links_enabled = models.BooleanField(
+        "Tags cliquables et pages de tags",
+        default=True,
+        help_text=(
+            "Décochez pour afficher les tags en texte simple sur tout le site et rendre les pages "
+            "de tags indisponibles (erreur 404). Les blocs tag perdent aussi leur lien saisi à la "
+            "main, quelle que soit sa cible. Ce réglage ne couvre pas les filtres par tag, à "
+            "régler page par page sur les catalogues, le blog et l'agenda, et bloc par bloc sur "
+            "les derniers billets ou événements. Il ne couvre pas non plus les liens saisis à la "
+            "main vers /tags/ dans les contenus et les menus, qui mèneront à une erreur 404."
+        ),
+    )
+
+    class Meta:
+        verbose_name = "Tags"
+        verbose_name_plural = "Tags"
+
+    @classmethod
+    def links_on(cls, request=None):
+        """The deployment starts the new code before the migrate job: without this, tagged pages
+        would answer 500 until then. Drop the ``try`` once 0006 ran in production."""
+        try:
+            # Savepoint: a failed query inside a transaction, as in Page.save, would break it.
+            with transaction.atomic():
+                return cls.load(request).links_enabled
+        except ProgrammingError as error:
+            if not isinstance(error.__cause__, UndefinedTable):
+                raise
+            warn_missing_table()
+            return True
