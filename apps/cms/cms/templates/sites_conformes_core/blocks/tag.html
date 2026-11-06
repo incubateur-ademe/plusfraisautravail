@@ -1,0 +1,7 @@
+{# Copy of sites-conformes c1d2446e. Difference: a tag block is plain text, whatever its link, when TagSettings turns the tag links off. #}
+{% load i18n tag_links %}
+{% tag_links_enabled as tag_links %}
+
+{# djlint:off #}
+<{% if tag_links and value.link is not None and value.link.url %}a href="{{ value.link.url }}"{% else %}p{% endif %} class="fr-tag{% if value.is_small %} fr-tag--sm{% endif %}{% if value.color %} fr-tag--{{ value.color }}{% endif %}{% if value.icon_class %} {{ value.icon_class }} fr-tag--icon-left{% endif %}">{{ value.label }}</{% if tag_links and value.link is not None and value.link.url %}a{% else %}p{% endif %}>
+{# djlint:on #}

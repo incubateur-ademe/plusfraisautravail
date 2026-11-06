@@ -1,0 +1,44 @@
+{# Copy of sites-conformes c1d2446e. Difference: a filtered listing drops its link to the tag list, which is down, when TagSettings turns the tag links off. #}
+{% load i18n tag_links %}
+
+{% translate "you are here:" as you_are_here %}
+{% if self.get_ancestors|length > 1 %}
+  <nav role="navigation"
+       class="fr-breadcrumb"
+       aria-label="{{ you_are_here }}">
+    <button class="fr-breadcrumb__button"
+            type="button"
+            aria-expanded="false"
+            aria-controls="page-breadcrumb">{% translate "See breadcrumb" %}</button>
+    <div class="fr-collapse" id="page-breadcrumb">
+      <ol class="fr-breadcrumb__list">
+        {% for p in self.get_ancestors %}
+          {% if p.is_site_root %}
+            <li>
+              <a class="fr-breadcrumb__link" href="{{ p.url }}">{% translate "Home page" %}</a>
+            </li>
+          {% elif p.is_root == False %}
+            <li>
+              <a class="fr-breadcrumb__link" href="{{ p.url }}">{{ p.title|truncatewords:4 }}</a>
+            </li>
+          {% endif %}
+        {% endfor %}
+        {% if extra_breadcrumbs %}
+          {% breadcrumb_links as links %}
+          {% for link in links %}
+            <li>
+              <a class="fr-breadcrumb__link" href="{{ link.url }}">{{ link.title|truncatewords:4 }}</a>
+            </li>
+          {% endfor %}
+          <li>
+            <a class="fr-breadcrumb__link" aria-current="page">{{ extra_breadcrumbs.current|truncatewords:6 }}</a>
+          </li>
+        {% else %}
+          <li>
+            <a class="fr-breadcrumb__link" aria-current="page">{{ self.title|truncatewords:6 }}</a>
+          </li>
+        {% endif %}
+      </ol>
+    </div>
+  </nav>
+{% endif %}
