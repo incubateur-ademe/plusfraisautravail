@@ -7,6 +7,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 COPY --from=ghcr.io/astral-sh/uv:0.5 /uv /usr/local/bin/uv
 
+# msgfmt, for compilemessages below. Builder stage only.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends gettext \
+    && rm -rf /var/lib/apt/lists/*
+
 # Build context is the repo root (see deploy-cms.yml / .dockerignore), not
 # apps/cms - needed so the editable path dependencies in pyproject.toml's
 # [tool.uv.sources] (../../packages/*) resolve to real files inside the
@@ -31,6 +36,11 @@ ENV DJANGO_SECRET_KEY=build-time-placeholder \
     DATABASE_URL=sqlite:///build.sqlite3 \
     ALLOWED_HOSTS=[] \
     PATH="/app/apps/cms/.venv/bin:$PATH"
+# sites-conformes ships its .po files without their .mo: without this step the site
+# falls back to English, including its translated URLs (/recherche/, /plan-du-site/).
+# The assertion fails the build, hence the deploy, as the CI does not compile them.
+RUN python manage.py compilemessages -l fr \
+    && python manage.py shell -c "from django.utils.translation import activate, gettext; activate('fr'); assert gettext('Filters') == 'Filtres'"
 RUN python manage.py collectstatic --noinput
 
 FROM python:3.12-slim AS runtime
