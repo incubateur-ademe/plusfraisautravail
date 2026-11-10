@@ -6,8 +6,8 @@ from django.conf.urls.static import static
 from django.db import connection
 from django.http import HttpResponse
 from django.urls import include, path
-from django.views.defaults import page_not_found, server_error
-from django.views.generic.base import RedirectView
+from django.views.defaults import page_not_found, permission_denied, server_error
+from django.views.generic.base import RedirectView, TemplateView
 from wagtail.admin import urls as wagtailadmin_urls
 from wagtail.api.v2.router import WagtailAPIRouter
 from wagtail.api.v2.views import PagesAPIViewSet
@@ -38,6 +38,13 @@ urlpatterns = [
         "favicon.ico",
         RedirectView.as_view(url="/static/dsfr/dist/favicon/favicon.ico", permanent=True),
     ),
+    # Upstream wires this in its project config/urls.py, which the package doesn't ship.
+    path(
+        "robots.txt",
+        TemplateView.as_view(
+            template_name="sites_conformes_core/robots.txt", content_type="text/plain"
+        ),
+    ),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
@@ -49,5 +56,6 @@ urlpatterns += i18n_patterns(
 # Django only auto-loads a root-level 404.html/500.html; sites-conformes ships its
 # DSFR error pages under sites_conformes_core/, so they must be wired explicitly
 # (mirrors upstream config/urls.py).
+handler403 = partial(permission_denied, template_name="sites_conformes_core/403.html")
 handler404 = partial(page_not_found, template_name="sites_conformes_core/404.html")
 handler500 = partial(server_error, template_name="sites_conformes_core/500.html")
