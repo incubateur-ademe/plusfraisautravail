@@ -1,7 +1,11 @@
-name: OpenTofu destroy
+name: 💥 Infrastructure destroy
 
+# Manual only: destroys every resource of infra/envs/prod.
 on:
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 env:
   TOFU_VERSION: "1.8.5"
@@ -12,7 +16,9 @@ concurrency:
 
 jobs:
   destroy:
+    name: 💥 Destroy
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     environment:
       name: tofu-apply
     defaults:
@@ -35,9 +41,9 @@ jobs:
       TF_VAR_cms_deploy: "true"
       TF_VAR_cms_image: "rg.fr-par.scw.cloud/pfat/cms:latest"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7.0.1
 
-      - uses: opentofu/setup-opentofu@v1
+      - uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
         with:
           tofu_version: ${{ env.TOFU_VERSION }}
           tofu_wrapper: false

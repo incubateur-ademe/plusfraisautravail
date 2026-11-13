@@ -223,7 +223,7 @@ bootstrap-tfvars:
     fi
     "${EDITOR:-vi}" terraform.tfvars
 
-# Push repo-level secrets used by terraform-plan.yml (which runs on PRs from
+# Push repo-level secrets used by the infrastructure plan (runs on PRs from
 # any branch and can't read environment-scoped secrets). For the deploy
 # workflows, use `just bootstrap-environments` instead - those secrets live
 # on the cms / autodiag / alert-widget / climadiag GitHub Environments.
@@ -246,7 +246,7 @@ bootstrap-secrets:
     }
 
     echo "Repo: $(gh repo view --json nameWithOwner --jq '.nameWithOwner')"
-    echo "Scope: repository (used by terraform-plan.yml on PRs)."
+    echo "Scope: repository (used by the infrastructure plan on PRs)."
     read -r -p "Push repo-level secrets? [y/N] " ans
     [[ "$ans" =~ ^[Yy]$ ]] || { echo "Aborted."; exit 1; }
 
@@ -389,7 +389,7 @@ bootstrap-environments:
 
     echo
     echo "── tofu-apply environment ───────────────────────────────────"
-    # Used by terraform-apply.yml. Needs the full set of Scaleway creds
+    # Used by the infrastructure apply (infrastructure.yml). Needs the full set of Scaleway creds
     # plus the TF_VAR_* secrets that drive the runtime configuration.
     create_env_main_only tofu-apply
     set_env_secret   tofu-apply SCW_ACCESS_KEY              "${SCW_ACCESS_KEY:-}"
@@ -437,43 +437,21 @@ deploy-cms-bootstrap:
     echo "  cms_deploy = true"
     echo "Then run: just tf-apply"
 
-# Trigger the CMS deploy workflow on GitHub.
-deploy-cms:
+# Check and deploy one product (or all) with the cd.yml workflow on GitHub.
+deploy product="all":
     #!/usr/bin/env bash
     set -euo pipefail
-    gh workflow run deploy-cms.yml
+    gh workflow run cd.yml -f only={{product}}
     sleep 2
-    URL=$(gh run list --workflow=deploy-cms.yml --limit 1 --json url --jq '.[0].url')
+    URL=$(gh run list --workflow=cd.yml --limit 1 --json url --jq '.[0].url')
     echo "Triggered: $URL"
 
-# Trigger the autodiag deploy workflow on GitHub.
-deploy-autodiag:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    gh workflow run deploy-autodiag.yml
-    sleep 2
-    URL=$(gh run list --workflow=deploy-autodiag.yml --limit 1 --json url --jq '.[0].url')
-    echo "Triggered: $URL"
+deploy-cms: (deploy "cms")
+deploy-autodiag: (deploy "autodiag")
+deploy-alert-widget: (deploy "alert-widget")
+deploy-climadiag: (deploy "climadiag")
 
-# Trigger the alert-widget deploy workflow on GitHub.
-deploy-alert-widget:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    gh workflow run deploy-alert-widget.yml
-    sleep 2
-    URL=$(gh run list --workflow=deploy-alert-widget.yml --limit 1 --json url --jq '.[0].url')
-    echo "Triggered: $URL"
-
-# Trigger the climadiag deploy workflow on GitHub.
-deploy-climadiag:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    gh workflow run deploy-climadiag.yml
-    sleep 2
-    URL=$(gh run list --workflow=deploy-climadiag.yml --limit 1 --json url --jq '.[0].url')
-    echo "Triggered: $URL"
-
-# Show tofu outputs + last-deploy timestamps for each workflow.
+# Show tofu outputs + the last production runs.
 status:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -481,13 +459,10 @@ status:
     (cd infra/envs/prod && tofu output) || echo "(tofu output failed - did you run \`just tf-init\` + \`just tf-apply\`?)"
     echo
     echo "── last GitHub Actions runs ───────────────────────────────────"
-    for wf in deploy-cms.yml deploy-autodiag.yml deploy-alert-widget.yml deploy-climadiag.yml; do
-      printf '%-30s ' "$wf"
-      gh run list --workflow="$wf" --limit 1 \
-        --json status,conclusion,createdAt,url \
-        --jq '.[] | "\(.status)/\(.conclusion // " - ")  \(.createdAt)  \(.url)"' \
-        2>/dev/null || echo "(no runs yet)"
-    done
+    gh run list --workflow=cd.yml --limit 5 \
+      --json status,conclusion,createdAt,url \
+      --jq '.[] | "\(.status)/\(.conclusion // " - ")  \(.createdAt)  \(.url)"' \
+      2>/dev/null || echo "(no runs yet)"
 
 # Render infra/scalingo-proxy/servers.conf.erb and run `nginx -t` on it (nginx via nix).
 proxy-check:

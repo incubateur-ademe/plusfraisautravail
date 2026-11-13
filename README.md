@@ -59,12 +59,20 @@ Les conventions de code sont celles des outils standards, configurés à la raci
 - **Python** : [ruff](https://docs.astral.sh/ruff/) (lint + format), config dans [`ruff.toml`](ruff.toml) ;
 - **TypeScript / React** : [ESLint](https://eslint.org/) avec les règles recommandées de typescript-eslint et React Hooks, config dans [`eslint.config.js`](eslint.config.js).
 
-## Modèle de déploiement
+## CI/CD
 
-- **autodiag** - bucket Scaleway, déployé par `deploy-autodiag.yml` lors d'un push sur `main`.
-- **alert-widget** - bucket Scaleway, déployé par `deploy-alert-widget.yml` lors d'un push sur `main`.
-- **cms** (et l'API qu'il sert) - image construite et poussée sur le Container Registry Scaleway, puis le Serverless Container est redéployé par `deploy-cms.yml`.
-- **infra** - `tofu plan` s'exécute en CI sur les PR touchant `infra/**`. `tofu apply` est lancé via le workflow `terraform-apply.yml` lors d'un push sur `main`.
+Deux workflows d'entrée, un groupe par produit dans la barre latérale de chaque run :
+
+- **💣 Pull request** (`review.yml`) : lint, tests et build des produits touchés par la PR. Le check à exiger est **✅ CI**.
+- **🚀 Production** (`cd.yml`) : sur `main`, mêmes vérifications puis déploiement des produits touchés. Se lance aussi à la main pour un produit (`just deploy cms`) ou pour tous.
+
+Le découpage par produit est dans [`.github/ci-areas.yml`](.github/ci-areas.yml) :
+
+- **📰 CMS** (et l'API qu'il sert) - `cms.yml` : ruff, pytest avec couverture, puis image Docker poussée sur le registre Scaleway et Serverless Container redéployé.
+- **🩺 Autodiag**, **🚨 Alert widget**, **🌡️ Climadiag** - `frontend.yml` : ESLint et build, puis synchronisation vers leur bucket Scaleway.
+- **🏗️ Infrastructure** - `infrastructure.yml` : `tofu plan`, puis `tofu apply` sur `main`.
+
+Le taux de couverture Python s'affiche en haut de chaque run (annotation **📊 Python coverage**) et dans le résumé du job ✅ CI.
 
 Voir [`DEPLOY.md`](./DEPLOY.md) pour la procédure de bootstrap initiale.
 

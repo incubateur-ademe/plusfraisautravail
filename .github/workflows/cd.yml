@@ -1,0 +1,81 @@
+name: 🚀 Production
+
+# On main, runs the CI of each product the push touches and deploys it once its
+# own checks pass (see .github/ci-areas.yml). A manual run checks and deploys the
+# chosen product, or all of them.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      only:
+        description: "Product to check and deploy"
+        type: choice
+        default: all
+        options: [all, cms, autodiag, alert-widget, climadiag, infrastructure]
+
+# Deployments run one at a time and are never cancelled halfway.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  scope:
+    name: 🔎 Scope
+    permissions:
+      contents: read
+      pull-requests: read
+    uses: ./.github/workflows/_scope.yml
+    with:
+      only: ${{ inputs.only }}
+
+  cms:
+    name: 📰 CMS
+    needs: scope
+    if: ${{ needs.scope.outputs.cms != 'false' || needs.scope.outputs.ci == 'true' }}
+    uses: ./.github/workflows/cms.yml
+    secrets: inherit # pragma: allowlist secret
+    with:
+      deploy: ${{ needs.scope.outputs.cms != 'false' }}
+
+  autodiag:
+    name: 🩺 Autodiag
+    needs: scope
+    if: ${{ needs.scope.outputs.autodiag != 'false' || needs.scope.outputs.ci == 'true' }}
+    uses: ./.github/workflows/frontend.yml
+    secrets: inherit # pragma: allowlist secret
+    with:
+      app: autodiag
+      deploy: ${{ needs.scope.outputs.autodiag != 'false' }}
+
+  alert_widget:
+    name: 🚨 Alert widget
+    needs: scope
+    if: ${{ needs.scope.outputs.alert-widget != 'false' || needs.scope.outputs.ci == 'true' }}
+    uses: ./.github/workflows/frontend.yml
+    secrets: inherit # pragma: allowlist secret
+    with:
+      app: alert-widget
+      deploy: ${{ needs.scope.outputs.alert-widget != 'false' }}
+
+  climadiag:
+    name: 🌡️ Climadiag
+    needs: scope
+    if: ${{ needs.scope.outputs.climadiag != 'false' || needs.scope.outputs.ci == 'true' }}
+    uses: ./.github/workflows/frontend.yml
+    secrets: inherit # pragma: allowlist secret
+    with:
+      app: climadiag
+      deploy: ${{ needs.scope.outputs.climadiag != 'false' }}
+
+  infrastructure:
+    name: 🏗️ Infrastructure
+    needs: scope
+    if: ${{ needs.scope.outputs.infrastructure != 'false' || needs.scope.outputs.ci == 'true' }}
+    uses: ./.github/workflows/infrastructure.yml
+    secrets: inherit # pragma: allowlist secret
+    with:
+      apply: ${{ needs.scope.outputs.infrastructure != 'false' }}

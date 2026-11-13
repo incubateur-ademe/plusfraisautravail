@@ -12,7 +12,7 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends gettext \
     && rm -rf /var/lib/apt/lists/*
 
-# Build context is the repo root (see deploy-cms.yml / .dockerignore), not
+# Build context is the repo root (see .github/workflows/cms.yml / .dockerignore), not
 # apps/cms - needed so the editable path dependencies in pyproject.toml's
 # [tool.uv.sources] (../../packages/*) resolve to real files inside the
 # build. WORKDIR mirrors apps/cms's real position in the repo so those

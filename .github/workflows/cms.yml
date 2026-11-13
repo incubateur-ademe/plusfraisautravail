@@ -1,0 +1,213 @@
+name: 📰 CMS
+
+# The CMS, the alert API it serves (packages/pfat-api) and its local packages.
+# Lint and tests always run; `deploy` builds the image and ships it once they pass.
+on:
+  workflow_call:
+    inputs:
+      deploy:
+        description: "Build, push and deploy the image after the checks"
+        type: boolean
+        default: false
+    outputs:
+      coverage:
+        description: "Total Python coverage, in percent"
+        value: ${{ jobs.tests.outputs.coverage }}
+
+permissions:
+  contents: read
+
+env:
+  UV_VERSION: "0.13.x"
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  lint:
+    name: 📝 Lint + format Python
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: ${{ env.UV_VERSION }}
+          python-version: ${{ env.PYTHON_VERSION }}
+          enable-cache: true
+      # Config in the root ruff.toml, shared by apps/cms and packages/*.
+      - working-directory: apps/cms
+        run: uv sync --extra dev
+      - working-directory: apps/cms
+        run: uv run ruff check ../../apps ../../packages
+      - working-directory: apps/cms
+        run: uv run ruff format --check ../../apps ../../packages
+
+  tests:
+    name: ✅ Tests + coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: apps/cms
+    # Postgres, not SQLite: sites-conformes ships a migration with
+    # PostgreSQL-only SQL (forms/0004, UPDATE ... FROM). Same major as production
+    # (infra/modules/managed-postgres).
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: cms
+          POSTGRES_PASSWORD: cms
+          POSTGRES_DB: cms
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U cms"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DJANGO_SECRET_KEY: test
+      DATABASE_URL: "postgresql://cms:cms@localhost:5432/cms"
+      ALLOWED_HOSTS: '["testserver","localhost"]'
+    outputs:
+      coverage: ${{ steps.coverage.outputs.total }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: ${{ env.UV_VERSION }}
+          python-version: ${{ env.PYTHON_VERSION }}
+          enable-cache: true
+      - run: uv sync --extra dev
+
+      # Coverage is measured by pytest-cov and fails the run under the
+      # fail_under threshold set in apps/cms/pyproject.toml.
+      - id: pytest
+        run: uv run pytest
+
+      - name: Report coverage
+        id: coverage
+        if: ${{ !cancelled() && steps.pytest.outcome != 'skipped' }}
+        run: |
+          # --fail-under=0: pytest already failed the run under the threshold;
+          # this step must still print the figure.
+          total=$(uv run coverage report --format=total --fail-under=0)
+          threshold=$(uv run python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['tool']['coverage']['report']['fail_under'])")
+          echo "total=$total" >> "$GITHUB_OUTPUT"
+          # A notice shows at the top of the run page, above every job.
+          echo "::notice title=📊 Python coverage::${total} % (threshold ${threshold} %)"
+          {
+            echo "## 📊 Python coverage: ${total} %"
+            echo
+            echo "Threshold: ${threshold} %, set in \`apps/cms/pyproject.toml\`."
+            echo
+            echo "<details><summary>Files below 100 %</summary>"
+            echo
+            # The packages live outside apps/cms, so coverage prints them with absolute paths.
+            uv run coverage report --format=markdown --skip-covered --fail-under=0 | sed "s|$GITHUB_WORKSPACE/||"
+            echo
+            echo "</details>"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  build:
+    name: 🐳 Build + push image
+    if: ${{ inputs.deploy }}
+    needs: [lint, tests]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: cms
+    env:
+      REGISTRY: rg.fr-par.scw.cloud
+      REGISTRY_NAMESPACE: pfat
+      IMAGE_NAME: cms
+    outputs:
+      image: ${{ steps.meta.outputs.image }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Log in to Scaleway Container Registry
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: nologin
+          password: ${{ secrets.SCW_SECRET_KEY }}
+
+      - name: Compute image reference
+        id: meta
+        run: |
+          IMAGE="$REGISTRY/$REGISTRY_NAMESPACE/$IMAGE_NAME:sha-${GITHUB_SHA::12}"
+          echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
+
+      - name: Build & push
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          # Repo root, not apps/cms: the Dockerfile needs to COPY packages/*,
+          # which apps/cms/pyproject.toml depends on via editable path sources
+          # (../../packages/*) and which live outside apps/cms's own tree.
+          context: .
+          file: apps/cms/Dockerfile
+          push: true
+          # Scaleway Serverless Containers only run amd64.
+          platforms: linux/amd64
+          build-args: |
+            BUILD_SHA=sha-${{ github.sha }}
+          tags: |
+            ${{ steps.meta.outputs.image }}
+            ${{ env.REGISTRY }}/${{ env.REGISTRY_NAMESPACE }}/${{ env.IMAGE_NAME }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: 🚀 Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: cms
+      url: ${{ vars.CMS_URL }}
+    env:
+      REGION: fr-par
+    steps:
+      - name: Trigger Scaleway container redeploy
+        env:
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          CONTAINER_ID: ${{ vars.SCW_CMS_CONTAINER_ID }}
+          IMAGE: ${{ needs.build.outputs.image }}
+        run: |
+          # Tofu's `output cms_container_id` is "fr-par/<uuid>"; the Scaleway REST API
+          # expects just the UUID. Strip any leading "<region>/" defensively.
+          CONTAINER_ID="${CONTAINER_ID##*/}"
+          curl --fail-with-body -X PATCH \
+            "https://api.scaleway.com/containers/v1/regions/$REGION/containers/$CONTAINER_ID" \
+            -H "X-Auth-Token: $SCW_SECRET_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{\"image\": \"$IMAGE\", \"redeploy\": true}"
+
+      - name: Run cms_manage job (migrations, image renditions, cache-control)
+        env:
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          JOB_DEFINITION_ID: ${{ vars.SCW_CMS_MANAGE_JOB_ID }}
+          IMAGE: ${{ needs.build.outputs.image }}
+        run: |
+          if [ -z "$JOB_DEFINITION_ID" ]; then
+            echo "SCW_CMS_MANAGE_JOB_ID is not set - skipping (run 'just bootstrap-environments' to set it)."
+            exit 0
+          fi
+          JOB_DEFINITION_ID="${JOB_DEFINITION_ID##*/}"
+          # Tofu never re-applies this job definition from CI (this workflow only
+          # PATCHes the container), so its image_uri would stay pinned to the
+          # image of the last manual `tofu apply`. PATCH it to the image we just
+          # pushed, so migrate always runs against the code being deployed.
+          curl --fail-with-body -X PATCH \
+            "https://api.scaleway.com/serverless-jobs/v1alpha1/regions/$REGION/job-definitions/$JOB_DEFINITION_ID" \
+            -H "X-Auth-Token: $SCW_SECRET_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{\"image_uri\": \"$IMAGE\"}"
+          # manage_jobs.sh (baked into the image) leads with `manage.py migrate --noinput`.
+          curl --fail-with-body -X POST \
+            "https://api.scaleway.com/serverless-jobs/v1alpha1/regions/$REGION/job-definitions/$JOB_DEFINITION_ID/start" \
+            -H "X-Auth-Token: $SCW_SECRET_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{}"
