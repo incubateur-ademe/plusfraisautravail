@@ -80,9 +80,15 @@ jobs:
     with:
       apply: ${{ needs.scope.outputs.infrastructure != 'false' }}
 
+  # Beside the deployments, not before them: informative on main.
+  e2e:
+    name: 🎭 E2E
+    uses: ./.github/workflows/e2e.yml
+    secrets: inherit # pragma: allowlist secret
+
   report:
     name: 📋 Report
-    needs: [scope, cms, autodiag, alert_widget, climadiag, infrastructure]
+    needs: [scope, cms, autodiag, alert_widget, climadiag, infrastructure, e2e]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
