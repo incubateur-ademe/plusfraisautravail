@@ -2,11 +2,6 @@ output "container_id" {
   value = scaleway_container.this.id
 }
 
-output "domain_name" {
-  value       = scaleway_container.this.domain_name
-  description = "Public domain name of the container. Deprecated by the Scaleway provider in favor of public_endpoint - kept for backward compatibility with existing references."
-}
-
 output "public_endpoint" {
   value       = scaleway_container.this.public_endpoint
   description = "Full public URL of the container (scheme + domain)."

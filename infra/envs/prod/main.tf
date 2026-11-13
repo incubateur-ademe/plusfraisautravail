@@ -33,7 +33,7 @@ locals {
   )
 
   cms_env = {
-    # Can't include module.cms.domain_name here - it's only known after the
+    # Can't include module.cms.public_endpoint here - it's only known after the
     # container is created, and the container's env vars are set at create
     # time, so referencing it back would be a dependency cycle. Add the
     # Scaleway-assigned domain to cms_extra_allowed_hosts once you have it
