@@ -583,7 +583,7 @@ proxy-check:
     #!/usr/bin/env bash
     set -euo pipefail
     tmp=$(mktemp -d)
-    (cd infra/scalingo-proxy && PORT=8080 CMS_HOST=cms.example API_HOST=api.example erb servers.conf.erb) > "$tmp/servers.conf"
+    (cd infra/scalingo-proxy && PORT=8080 CMS_HOST=cms.example erb servers.conf.erb) > "$tmp/servers.conf"
     printf 'pid %s/nginx.pid;\nerror_log stderr;\nevents {}\nhttp { access_log off; include %s/servers.conf; }\n' "$tmp" "$tmp" > "$tmp/nginx.conf"
     nix run nixpkgs#nginx -- -t -c "$tmp/nginx.conf" -p "$tmp" 2>&1 | grep -v 'could not open error log'
     rm -rf "$tmp"
