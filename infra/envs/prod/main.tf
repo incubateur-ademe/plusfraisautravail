@@ -19,7 +19,11 @@ locals {
     { DATABASE_URL = module.cms_db.private_database_url },
     var.django_secret_key == "" ? {} : { DJANGO_SECRET_KEY = var.django_secret_key },
     var.notion_token == "" ? {} : { NOTION_TOKEN = var.notion_token },
-    var.email_host_password == "" ? {} : { EMAIL_HOST_PASSWORD = var.email_host_password },
+    # Scaleway TEM takes an API secret key as SMTP password: the same
+    # account-wide key as below unless a dedicated one is set (same caveat).
+    var.email_host_password == "" && var.s3_bucket_scw_secret_key == "" ? {} : {
+      EMAIL_HOST_PASSWORD = var.email_host_password != "" ? var.email_host_password : var.s3_bucket_scw_secret_key #gitleaks:allow
+    },
     # reusing the same account-wide Scaleway key already used for
     # tofu apply, rather than a bucket-scoped IAM application/key - the
     # deploying key doesn't have IAM write permission yet. Narrow this once
@@ -52,7 +56,6 @@ locals {
     EMAIL_HOST           = var.email_host
     EMAIL_PORT           = var.email_port
     EMAIL_HOST_USER      = var.email_host_user
-    EMAIL_USE_TLS        = "true"
     # The alert and Climadiag API (packages/pfat-api), served under /api/.
     RTE_USE_SANDBOX   = var.rte_use_sandbox ? "true" : "false"
     CLIMADIAG_API_URL = var.climadiag_api_url

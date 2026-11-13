@@ -140,26 +140,26 @@ variable "notion_token" {
   description = "Notion internal-integration token for wagtail-notion-form (contact form -> Notion database). Empty disables the sync."
 }
 
-# Outgoing mail for the CMS (contact form). Defaults mirror the Brevo relay
-# the old Scalingo app used; only the password is a secret.
+# Outgoing mail for the CMS (contact form), through Scaleway Transactional
+# Email. Only the password is a secret (see cms_secret_env in main.tf).
 variable "default_from_email" {
   type    = string
-  default = "sites-faciles-saas@incubateur.ademe.fr"
+  default = "ne-pas-repondre@plusfraisautravail.beta.gouv.fr" # a sender on the domain verified in Scaleway TEM
 }
 
 variable "email_host" {
   type    = string
-  default = "smtp-relay.brevo.com"
+  default = "smtp.tem.scaleway.com"
 }
 
 variable "email_port" {
   type    = string
-  default = "587"
+  default = "465" # implicit TLS; TEM also listens on 2465
 }
 
 variable "email_host_user" {
   type    = string
-  default = "6b4297001@smtp-brevo.com"
+  default = "cedd1f6a-9bfa-4e3f-b6c8-2ce17e63874a" # TEM: the Scaleway project ID
 }
 
 variable "email_host_password" {
