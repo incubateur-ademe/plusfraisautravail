@@ -6,7 +6,6 @@ from django.conf.urls.static import static
 from django.db import connection
 from django.http import HttpResponse
 from django.urls import include, path
-from django.views.decorators.cache import never_cache
 from django.views.defaults import page_not_found, permission_denied, server_error
 from django.views.generic.base import RedirectView, TemplateView
 from wagtail.admin import urls as wagtailadmin_urls
@@ -16,10 +15,7 @@ from wagtail.contrib.sitemaps.views import sitemap
 from wagtail.documents import urls as wagtaildocs_urls
 from wagtail.documents.api.v2.views import DocumentsAPIViewSet
 from wagtail.images.api.v2.views import ImagesAPIViewSet
-from wagtail.models import Page
-from wagtail.utils.urlpatterns import decorate_urlpatterns
 
-from cms.cache import public_cache
 from pfat_api.api import api as pfat_api
 
 api_router = WagtailAPIRouter("wagtailapi")
@@ -34,17 +30,11 @@ def healthz(request):
     return HttpResponse("ok")
 
 
-# Never cached: the admin, the documents (served behind their own permission
-# checks) and the health check.
-private_urlpatterns = [
-    path("healthz/", never_cache(healthz), name="healthz"),
-    path(settings.WAGTAILADMIN_PATH, include(wagtailadmin_urls)),
-    *decorate_urlpatterns([path("documents/", include(wagtaildocs_urls))], never_cache),
-]
-
-# Cached by the proxy, see cms/cache.py.
-public_urlpatterns = [
+urlpatterns = [
+    path("healthz/", healthz, name="healthz"),
     path("sitemap.xml", sitemap, name="xml_sitemap"),
+    path(settings.WAGTAILADMIN_PATH, include(wagtailadmin_urls)),
+    path("documents/", include(wagtaildocs_urls)),
     path("api/v2/", api_router.urls),
     # After Wagtail's api/v2/: the alert and Climadiag API (packages/pfat-api).
     path("api/", pfat_api.urls),
@@ -60,14 +50,6 @@ public_urlpatterns = [
         ),
     ),
 ]
-
-urlpatterns = private_urlpatterns + decorate_urlpatterns(public_urlpatterns, public_cache)
-
-# Wagtail pages are cached through their serve method rather than the URL: the
-# Wagtail URLs also answer with password forms and login redirects for private
-# pages, which must not be shared. Page subclasses that override serve() without
-# calling super() stay uncached.
-Page.serve = public_cache(Page.serve)
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 urlpatterns += i18n_patterns(

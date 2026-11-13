@@ -15,8 +15,9 @@
 # - /ph/               PostHog EU, first-party analytics path, never cached
 # - /cms-admin/        Wagtail admin, never cached
 # - /                  Wagtail pages and /api/: cached only when the CMS says
-#                      `public, s-maxage` (apps/cms/cms/cache.py), never for a
-#                      logged-in editor
+#                      `public` (sites-conformes' PublicCacheMiddleware), never
+#                      for a logged-in editor; revalidated with the CMS's ETag
+#                      (apps/cms/cms/site_version.py) once expired
 #
 # Cache lives in /tmp: wiped on each container restart, which is fine.
 
@@ -179,8 +180,10 @@ server {
     }
 
     # ── Everything else: Wagtail pages and the APIs. The CMS decides what is
-    # shared (apps/cms/cms/cache.py): `public, s-maxage=300,
-    # stale-while-revalidate=30` on public pages, nothing or `private` otherwise.
+    # shared: `public, max-age=60` for anonymous visitors, nothing or `private`
+    # otherwise. Once a page expires, nginx revalidates it with its ETag: while
+    # the site has not changed, the CMS answers 304 without rendering it, and
+    # nginx keeps serving its copy (the stale one, meanwhile, in the background).
     location / {
         set $up $cms;
         proxy_pass https://cms;
@@ -188,6 +191,7 @@ server {
 
         proxy_cache pfat;
         proxy_cache_key $host$request_uri;
+        proxy_cache_revalidate on;
         # Only what the CMS marks cacheable, plus 404s for a minute (scanners);
         # this replaces the http-level defaults, which would keep any 200.
         proxy_cache_valid 404 1m;

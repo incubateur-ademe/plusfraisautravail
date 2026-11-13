@@ -59,6 +59,10 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    # First: answers 304 to a revalidation before any other work (cms/site_version.py).
+    "cms.site_version.SiteVersionMiddleware",
+    # Outside the session and CSRF middlewares, to see the cookies they set.
+    "sites_conformes.core.middleware.PublicCacheMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -68,8 +72,6 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "wagtail.contrib.redirects.middleware.RedirectMiddleware",
-    # After CsrfViewMiddleware and AuthenticationMiddleware, see cms/cache.py.
-    "cms.cache.PrivateResponseMiddleware",
 ]
 
 ROOT_URLCONF = "cms.urls"
@@ -101,13 +103,11 @@ DATABASES = {
 }
 CONN_HEALTH_CHECKS = True
 
-# Shared-cache lifetime of public pages, honoured by the nginx proxy (cms/cache.py).
-# No purge on publish: a change shows within CACHE_CONTROL_S_MAXAGE seconds.
-CACHE_CONTROL_S_MAXAGE = int(os.environ.get("CACHE_CONTROL_S_MAXAGE", 300))
-# Then serve the stale copy while the proxy refreshes it in the background.
-CACHE_CONTROL_STALE_WHILE_REVALIDATE = int(
-    os.environ.get("CACHE_CONTROL_STALE_WHILE_REVALIDATE", 30)
-)
+# Pages for anonymous visitors get `Cache-Control: public, max-age=…`
+# (sites-conformes' PublicCacheMiddleware). Once that expires, the nginx proxy
+# and browsers revalidate with the ETag of SiteVersionMiddleware: a 304 costs
+# two small queries, so a short lifetime keeps pages fresh at almost no cost.
+SF_PUBLIC_CACHE_MAX_AGE = int(os.environ.get("SF_PUBLIC_CACHE_MAX_AGE", 60))
 
 # Wagtail looks image renditions up in the "renditions" cache alias when one
 # exists; without it every {% image %} is a query (10 of the 61 on the home
