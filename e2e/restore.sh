@@ -16,6 +16,21 @@ case "$db_name" in
     *e2e*) ;;
     *) echo "Refusing to empty '$db_name': the e2e database name must contain 'e2e'." >&2; exit 1 ;;
 esac
+# pg_restore of the server's major version (16, as in production): a newer
+# one sends settings the server does not know.
+major="$(psql -At "$db_url" -c 'SHOW server_version_num' | cut -c1-2)"
+pg_restore=""
+for candidate in pg_restore "/usr/lib/postgresql/$major/bin/pg_restore" \
+    "/opt/homebrew/opt/postgresql@$major/bin/pg_restore" "/usr/local/opt/postgresql@$major/bin/pg_restore"; do
+    if [[ "$("$candidate" --version 2>/dev/null)" == *" $major."* ]]; then
+        pg_restore=$candidate
+        break
+    fi
+done
+[ -n "$pg_restore" ] || {
+    echo "No pg_restore $major found: install the PostgreSQL $major client (brew install postgresql@$major, apt install postgresql-client-$major)." >&2
+    exit 1
+}
 root="$(cd "$(dirname "$0")/.." && pwd)"
 cache="$root/e2e/.cache"
 dump="${E2E_DUMP_FILE:-$cache/latest.dump}"
@@ -45,11 +60,7 @@ echo "Restoring $dump"
 # Empty schema rather than pg_restore --clean: tables left by another
 # branch's migrations would otherwise survive and break `migrate`.
 psql -q -v ON_ERROR_STOP=1 "$db_url" -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'
-# Through psql rather than straight into the database: a pg_restore newer than
-# the server (17+ against Postgres 16, as in production) sets a parameter the
-# server does not know.
-pg_restore --no-owner --no-privileges -f - "$dump" | grep -v '^SET transaction_timeout' \
-    | psql -q -v ON_ERROR_STOP=1 "$db_url" > /dev/null
+"$pg_restore" --no-owner --no-privileges --exit-on-error -d "$db_url" "$dump"
 
 echo "Running the post-deploy steps"
 cd "$root/apps/cms"

@@ -73,6 +73,8 @@ jobs:
       # compilemessages needs msgfmt.
       - run: command -v msgfmt || (sudo apt-get update -q && sudo apt-get install -yq gettext)
 
+      # Same major as the database service and production: restore.sh needs it.
+      - run: sudo apt-get install -y --no-install-recommends postgresql-client-16
       - name: Restore the anonymised prod dump, then migrate
         env:
           SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
