@@ -168,3 +168,38 @@ module "cms_manage" {
   # public load-balancer endpoint instead of the container's private DSN.
   environment_variables = merge(local.cms_env, local.cms_secret_env, { DATABASE_URL = module.cms_db.database_url })
 }
+
+# ── e2e fixtures ─────────────────────────────────────────────────────────
+# Nightly anonymised dump of the CMS database, used by the e2e tests (CI and
+# local). Single fixed key: s3://pfat-e2e-fixtures/cms/latest.dump.
+# Private: no public_read. Only an *anonymised* dump ever lands here - the
+# raw dump stays inside the Scaleway job that anonymises it.
+module "e2e_fixtures" {
+  source      = "../../modules/object-bucket"
+  app_name    = "e2e"
+  environment = local.environment
+  bucket_name = "pfat-e2e-fixtures"
+}
+
+# Read-only user the dump job connects with: it can read the CMS database,
+# never write to it.
+resource "random_password" "e2e_dump" {
+  length = 32
+  # Same DSN-safe set as module.cms_db's password (see modules/managed-postgres).
+  special          = true
+  override_special = "!$%&*()-_=+{}<>"
+}
+
+resource "scaleway_rdb_user" "e2e_dump" {
+  instance_id = module.cms_db.instance_id
+  name        = "e2e_dump"
+  password    = random_password.e2e_dump.result
+  is_admin    = false
+}
+
+resource "scaleway_rdb_privilege" "e2e_dump" {
+  instance_id   = module.cms_db.instance_id
+  user_name     = scaleway_rdb_user.e2e_dump.name
+  database_name = module.cms_db.database_name
+  permission    = "readonly"
+}
