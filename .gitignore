@@ -50,7 +50,6 @@ venv/
 *.tfplan
 *.tfvars
 !*.tfvars.example
-.terraform.lock.hcl
 
 # Claude
 .claude/

@@ -27,7 +27,7 @@ output "cms_registry" {
 }
 
 output "cms_url" {
-  value = "https://${module.cms.domain_name}"
+  value = trimsuffix(module.cms.public_endpoint, "/")
 }
 
 output "cms_container_id" {

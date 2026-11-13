@@ -16,16 +16,16 @@ resource "scaleway_container_namespace" "this" {
 resource "scaleway_container" "this" {
   name                         = "${var.app_name}-${var.environment}"
   namespace_id                 = scaleway_container_namespace.this.id
-  registry_image               = var.registry_image
+  image                        = var.registry_image
   port                         = var.port
   cpu_limit                    = var.cpu_limit
-  memory_limit                 = var.memory_limit
+  memory_limit_bytes           = var.memory_limit * 1000000 # the API counts in MB
   min_scale                    = var.min_scale
   max_scale                    = var.max_scale
   timeout                      = var.timeout_seconds
   privacy                      = var.privacy
   protocol                     = "http1"
-  http_option                  = "enabled"
+  https_connections_only       = false
   deploy                       = var.deploy
   private_network_id           = var.private_network_id != "" ? var.private_network_id : null
   environment_variables        = var.environment_variables
@@ -59,7 +59,7 @@ resource "scaleway_container" "this" {
   # revert the running image to whatever bootstrap reference is in
   # terraform.tfvars.
   lifecycle {
-    ignore_changes = [registry_image]
+    ignore_changes = [image]
   }
 }
 

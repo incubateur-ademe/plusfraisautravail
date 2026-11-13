@@ -40,7 +40,7 @@ variable "cpu_limit" {
 
 variable "memory_limit" {
   type        = number
-  description = "Memory limit (MiB)."
+  description = "Memory limit (MB)."
   default     = 512
 }
 
