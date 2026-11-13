@@ -3,6 +3,7 @@ import globals from 'globals'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
+import creedengo from '@creedengo/eslint-plugin'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 // Shared lint config for every JS/TS workspace (apps/* and packages/*).
@@ -16,6 +17,8 @@ export default defineConfig([
       tseslint.configs.recommended,
       reactHooks.configs.flat.recommended,
       reactRefresh.configs.vite,
+      // Éco-conception (Green Code Initiative), standard de l'incubateur ADEME.
+      creedengo.configs.recommended,
     ],
     languageOptions: {
       ecmaVersion: 2022,
