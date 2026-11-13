@@ -143,30 +143,70 @@ module "cms" {
   liveness_failure_threshold = 3
 }
 
-# One-shot management-command runner, reusing the same image and env/secrets
-# as module.cms. Not run on apply - trigger manually:
-#   scw jobs definition start $(tofu output -raw cms_manage_job_id)
-#
-# Scaleway Jobs' `command` field isn't run through a shell - `&&`/`;` in one
-# string fails (confirmed against Scaleway's own troubleshooting docs, which
-# point at Secret Manager script references as the workaround for anything
-# beyond a single command). Simpler here since we already control the
-# image: chain the actual commands in apps/cms/manage_jobs.sh and just call
-# that one script - no quoting/splitting to get wrong.
+# Management commands (apps/cms/manage_jobs.sh: migrate, createcachetable),
+# run by cms.yml at each deploy, before the CMS rollout, with POST /run. Same image and env as
+# module.cms, started with manage_server.py instead of gunicorn. A private
+# container rather than a Serverless Job: Jobs cannot join the database's
+# Private Network, and the database has no public endpoint.
 module "cms_manage" {
-  source          = "../../modules/serverless-job"
-  app_name        = "cms-manage"
-  environment     = local.environment
-  registry_image  = var.cms_image
-  startup_command = ["./manage_jobs.sh"]
-  cpu_limit       = 560
-  memory_limit    = 1024
-  # Full bucket scan (list + head + copy per object) can run past the
-  # module default (300s) once there are enough media objects.
+  source             = "../../modules/serverless-container"
+  app_name           = "cms-manage"
+  environment        = local.environment
+  registry_image     = var.cms_image
+  deploy             = var.cms_deploy
+  command            = ["python", "manage_server.py"]
+  privacy            = "private"
+  private_network_id = module.cms_db.private_network_id
+  health_check_path  = "/"
+  min_scale          = 0
+  max_scale          = 1
+  cpu_limit          = 560
+  memory_limit       = 1024
+  # A deploy's migrations.
   timeout_seconds = 1800
-  # Serverless Jobs don't attach to a Private Network: reach the DB over its
-  # public load-balancer endpoint instead of the container's private DSN.
-  environment_variables = merge(local.cms_env, local.cms_secret_env, { DATABASE_URL = module.cms_db.database_url })
+  # No Sentry here: a failed migration can quote a row in its error.
+  environment_variables        = merge(local.cms_env, { SENTRY_DSN = "" })
+  secret_environment_variables = local.cms_secret_env # no API secrets: no API here
+}
+
+# ── SSH bastion, on demand ───────────────────────────────────────────────
+# The database is reachable from its Private Network only. For an occasional
+# admin session (just cms-shell-prod, pg_dump...), `just bastion-up` creates a
+# Public Gateway with an SSH bastion on that network, `just bastion-down`
+# removes it (about EUR 0.03/hour while it exists). Any apply from main also
+# removes it, bastion_enabled being false there. SSH keys: those of the
+# Scaleway project.
+resource "scaleway_vpc_public_gateway_ip" "bastion" {
+  count = var.bastion_enabled ? 1 : 0
+}
+
+resource "scaleway_vpc_public_gateway" "bastion" {
+  count           = var.bastion_enabled ? 1 : 0
+  name            = "bastion-${local.environment}"
+  type            = "VPC-GW-S"
+  ip_id           = scaleway_vpc_public_gateway_ip.bastion[0].id
+  bastion_enabled = true
+  bastion_port    = 61000
+  # Scaleway's default is 0.0.0.0/0.
+  allowed_ip_ranges = var.bastion_allowed_ip_ranges
+
+  lifecycle {
+    precondition {
+      condition     = length(var.bastion_allowed_ip_ranges) > 0
+      error_message = "Set bastion_allowed_ip_ranges (terraform.tfvars, or `just bastion-up <your IP>`)."
+    }
+  }
+}
+
+resource "scaleway_vpc_gateway_network" "bastion" {
+  count              = var.bastion_enabled ? 1 : 0
+  gateway_id         = scaleway_vpc_public_gateway.bastion[0].id
+  private_network_id = module.cms_db.private_network_id
+  # SSH access only: no NAT, and no default route pushed to the containers.
+  enable_masquerade = false
+  ipam_config {
+    push_default_route = false
+  }
 }
 
 # ── e2e fixtures ─────────────────────────────────────────────────────────

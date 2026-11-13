@@ -43,12 +43,13 @@ resource "scaleway_rdb_instance" "this" {
   user_name         = var.db_user
   password          = random_password.db.result
 
+  # Private Network only, no load_balancer (public endpoint): the CMS
+  # containers reach it there, people through the on-demand SSH bastion.
+  # An endpoint created before survives without it: see DEPLOY.md.
   private_network {
     pn_id       = scaleway_vpc_private_network.this.id
     enable_ipam = true
   }
-
-  load_balancer {}
 }
 
 resource "scaleway_rdb_database" "this" {

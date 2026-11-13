@@ -32,7 +32,7 @@ output "cms_url" {
 
 output "cms_container_id" {
   value       = module.cms.container_id
-  description = "Scaleway serverless container ID (set as GitHub variable SCW_CMS_CONTAINER_ID)."
+  description = "Scaleway serverless container ID."
 }
 
 output "cms_db_host" {
@@ -45,19 +45,30 @@ output "cms_db_password" {
   description = "cms RDB password. Use `tofu output -raw cms_db_password` for one-off pg_restore/psql access."
 }
 
-output "cms_db_public_url" {
-  value       = module.cms_db.database_url
-  sensitive   = true
-  description = "Full DSN over the public load-balancer endpoint. Use `tofu output -raw cms_db_public_url`."
+output "cms_db_port" {
+  value = module.cms_db.port
+}
+
+output "cms_db_name" {
+  value = module.cms_db.database_name
+}
+
+output "bastion_ip" {
+  value       = try(scaleway_vpc_public_gateway_ip.bastion[0].address, null)
+  description = "SSH bastion to the database's Private Network, while `just bastion-up` keeps it (port 61000)."
 }
 
 output "cms_media_bucket" {
   value = module.cms_media.bucket_name
 }
 
-output "cms_manage_job_id" {
-  value       = module.cms_manage.job_definition_id
-  description = "Run with `scw jobs definition start $(tofu output -raw cms_manage_job_id)`."
+output "cms_manage_container_id" {
+  value = module.cms_manage.container_id
+}
+
+output "cms_manage_url" {
+  value       = module.cms_manage.public_endpoint
+  description = "Private container: POST /run with an X-Auth-Token header (Scaleway IAM secret key) runs manage_jobs.sh."
 }
 
 # DNS records to create manually in OVH (the zone isn't managed by

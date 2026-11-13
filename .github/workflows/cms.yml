@@ -182,57 +182,34 @@ jobs:
     name: 🚀 Deploy
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Includes the migrations, which may take up to 30 min (cms-manage).
+    timeout-minutes: 75
     environment:
       name: cms
       url: ${{ vars.CMS_URL }}
-    env:
-      REGION: fr-par
     steps:
       - uses: actions/checkout@v7.0.1
         with:
           sparse-checkout: .github/scripts
-      - name: Trigger Scaleway container redeploy
+      # Before the CMS rollout: the new code never runs on an unmigrated
+      # database, and a failed migration leaves the current CMS in place.
+      # Same image as the CMS, so migrate runs the code being deployed. The
+      # step waits until the container serves this build, then until
+      # manage_jobs.sh is over.
+      - name: Run the migrations (private cms-manage container)
         env:
           SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
-          CONTAINER_ID: ${{ vars.SCW_CMS_CONTAINER_ID }}
           IMAGE: ${{ needs.build.outputs.image }}
+          BUILD: sha-${{ github.sha }}
         run: |
-          # Tofu's `output cms_container_id` is "fr-par/<uuid>"; the Scaleway REST API
-          # expects just the UUID. Strip any leading "<region>/" defensively.
-          CONTAINER_ID="${CONTAINER_ID##*/}"
-          curl --fail-with-body -X PATCH \
-            "https://api.scaleway.com/containers/v1/regions/$REGION/containers/$CONTAINER_ID" \
-            -H "X-Auth-Token: $SCW_SECRET_KEY" \
-            -H "Content-Type: application/json" \
-            -d "{\"image\": \"$IMAGE\", \"redeploy\": true}"
+          .github/scripts/scw-container.sh redeploy cms-manage-prod "$IMAGE" # module.cms_manage, infra/envs/prod
+          .github/scripts/scw-container.sh run cms-manage-prod "$BUILD"
 
-      - name: Run cms_manage job (migrations, image renditions, cache-control)
+      - name: Roll the CMS out
         env:
           SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
-          JOB_DEFINITION_ID: ${{ vars.SCW_CMS_MANAGE_JOB_ID }}
           IMAGE: ${{ needs.build.outputs.image }}
-        run: |
-          if [ -z "$JOB_DEFINITION_ID" ]; then
-            echo "SCW_CMS_MANAGE_JOB_ID is not set - skipping (run 'just bootstrap-environments' to set it)."
-            exit 0
-          fi
-          JOB_DEFINITION_ID="${JOB_DEFINITION_ID##*/}"
-          # Tofu never re-applies this job definition from CI (this workflow only
-          # PATCHes the container), so its image_uri would stay pinned to the
-          # image of the last manual `tofu apply`. PATCH it to the image we just
-          # pushed, so migrate always runs against the code being deployed.
-          curl --fail-with-body -X PATCH \
-            "https://api.scaleway.com/serverless-jobs/v1alpha1/regions/$REGION/job-definitions/$JOB_DEFINITION_ID" \
-            -H "X-Auth-Token: $SCW_SECRET_KEY" \
-            -H "Content-Type: application/json" \
-            -d "{\"image_uri\": \"$IMAGE\"}"
-          # manage_jobs.sh (baked into the image) leads with `manage.py migrate --noinput`.
-          curl --fail-with-body -X POST \
-            "https://api.scaleway.com/serverless-jobs/v1alpha1/regions/$REGION/job-definitions/$JOB_DEFINITION_ID/start" \
-            -H "X-Auth-Token: $SCW_SECRET_KEY" \
-            -H "Content-Type: application/json" \
-            -d "{}"
+        run: .github/scripts/scw-container.sh redeploy cms-prod "$IMAGE" # module.cms, infra/envs/prod
 
       # Not run here: e2e-dump.yml calls it every night. The dump itself
       # refuses to upload if rules.sql misses a column of the schema.

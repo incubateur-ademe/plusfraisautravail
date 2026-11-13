@@ -21,7 +21,7 @@ CI/CD lives under `.github/workflows/`:
 
 - `review.yml` (💣 Pull request) - on PRs, runs the checks of each product the PR touches (`.github/ci-areas.yml`). Require its `✅ CI` job.
 - `cd.yml` (🚀 Production) - on `main`, runs the same checks and deploys each product it touches. Manual runs pick one product or all.
-- `cms.yml` - ruff, pytest with coverage; on deploy, Docker build, push to registry, `PATCH redeploy=true`, then the `cms_manage` job (migrations).
+- `cms.yml` - ruff, pytest with coverage; on deploy, Docker build, push to registry, then the migrations: the image is rolled out on the private `cms-manage` container and `POST /run` runs `manage_jobs.sh`. Only then is the CMS container rolled out (`PATCH redeploy=true`): a failed migration fails the deploy and leaves the current CMS in place. Containers are found by name (`.github/scripts/scw-container.sh`).
 - `frontend.yml` - ESLint and Vite build of one SPA; on deploy, `aws s3 sync` to its bucket.
 - `infrastructure.yml` - `tofu plan`; on `main` (or a manual run), `tofu apply`.
 - `infrastructure-destroy.yml` - manual `tofu destroy`.
@@ -146,7 +146,7 @@ After this, note the `cms_url` output and add it to `cms_extra_allowed_hosts` in
 just status
 ```
 
-Note the `cms_container_id` and `cms_url` outputs - you need them for the next step.
+Note the `cms_url` output - you need it for the next step.
 
 ### 2.10 Set GitHub secrets and environments
 
@@ -157,7 +157,7 @@ just bootstrap-secrets        # repo-level secrets (used only by the infrastruct
 just bootstrap-environments   # creates cms / autodiag / alert-widget / climadiag envs + their secrets
 ```
 
-`bootstrap-environments` reads `SCW_*`, `VIGILANCE_APP_ID`, `RTE_*`, `DJANGO_SECRET_KEY` from your shell and `cms_url` / `cms_container_id` / bucket URLs from `tofu output`. The SPAs get `API_BASE_URL=/api`: same origin, the proxy sends `/api/` to the CMS. It creates each environment with a `branch=main` policy so only main-branch deploys can read those secrets.
+`bootstrap-environments` reads `SCW_*`, `VIGILANCE_APP_ID`, `RTE_*`, `DJANGO_SECRET_KEY` from your shell and `cms_url` / bucket URLs from `tofu output`. The SPAs get `API_BASE_URL=/api`: same origin, the proxy sends `/api/` to the CMS. It creates each environment with a `branch=main` policy so only main-branch deploys can read those secrets.
 
 **Why two scopes:** the infrastructure plan runs on PRs from any branch; environment-scoped secrets aren't readable from non-main refs, so its credentials live at repo level. The deploy jobs live in their respective environments - the GitHub UI shows a deployment history per environment with a clickable URL.
 
@@ -272,7 +272,12 @@ RTE creds are missing or wrong. Set `rte_client_id` / `rte_client_secret` in `te
 Check Scaleway dashboard -> Containers -> `cms-prod` -> Logs. Most common causes: missing/wrong `DATABASE_URL` or `DJANGO_SECRET_KEY`, or the container can't reach Postgres over the Private Network (verify `module.cms` and `module.cms_db` ended up on the same `private_network_id` - check `tofu output cms_db_host` is a private `10.x`/`172.x` address, not a public one).
 
 **CMS migrations don't seem to have run.**
-Migrations are *not* run automatically on deploy or container cold start - `entrypoint.sh` only starts gunicorn, to stay within the container's startup probe budget (a slow migration there previously got the container killed as "failed to start" even when the migration itself succeeded). Run them manually after any deploy with schema changes, via the `cms_manage` Serverless Job (`manage_jobs.sh`, which now includes `migrate --noinput`): `scw jobs definition start $(tofu output -raw cms_manage_job_id)`. If that job itself fails on "Still creating" style output for Postgres, the RDB instance may still be provisioning (can take several minutes on first apply).
+Migrations are *not* run on container cold start - `entrypoint.sh` only starts gunicorn, to stay within the container's startup probe budget (a slow migration there previously got the container killed as "failed to start" even when the migration itself succeeded). Each CMS deploy runs them in the private `cms-manage` container (same image, `manage_server.py`, `POST /run` runs `manage_jobs.sh`); its stdout is in the deploy job's log, its errors in the container logs (Cockpit): they can quote a row. To run them by hand: `curl -X POST "$(tofu output -raw cms_manage_url)/run" -H "X-Auth-Token: $SCW_SECRET_KEY"`.
+
+**Reaching the database by hand.**
+The database has no public endpoint: only its Private Network reaches it (the CMS, cms-manage and e2e-dump containers). For an admin session, `just bastion-up <your public IP>` (or `bastion_allowed_ip_ranges` in `terraform.tfvars`: only those addresses reach it) creates a Public Gateway with an SSH bastion on that network (SSH keys: those of the Scaleway project), `just cms-shell-prod` then opens a Django shell through an SSH tunnel, and `just bastion-down` removes the gateway. For psql or pg_dump: `ssh -N -p 61000 -L 15432:$(tofu output -raw cms_db_host):$(tofu output -raw cms_db_port) bastion@$(tofu output -raw bastion_ip)`, then connect to `127.0.0.1:15432`. Any infrastructure apply from `main` removes the bastion.
+
+The public endpoint of an instance created before this change survives the apply (the provider keeps it): delete it once with `scw rdb endpoint delete <endpoint_id> instance-id=<instance_id> region=fr-par`, the IDs coming from `tofu state show module.cms_db.scaleway_rdb_instance.this` (its `load_balancer` block).
 
 **CMS media uploads fail with 403.**
 `pfat-cms-media` has a bucket policy (public-read for objects). A Scaleway bucket policy denies everything it doesn't list, including the project's own keys, so the policy's first statement must keep `s3:*` for the project - see `infra/modules/object-bucket/main.tf`. If uploads 403, check that statement survived and that the S3 key the container uses belongs to this project. The key is a `secret_environment_variable`, so it won't show in `tofu output` - check the container's env in the Scaleway dashboard.

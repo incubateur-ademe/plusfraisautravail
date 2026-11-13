@@ -58,15 +58,26 @@ cms-shell-prod *ARGS:
     # prod recipes - without it `tofu output` 403s on state load.
     cd "{{justfile_directory()}}/infra/envs/prod"
     set -a && source ../../../.env && set +a
-    dsn="$(tofu output -raw cms_db_public_url)"
+    # The database has no public endpoint: tunnel through the SSH bastion.
+    bastion="$(tofu output -raw bastion_ip 2>/dev/null || true)"
+    if [ -z "$bastion" ] || [ "$bastion" = null ]; then
+      echo "No SSH bastion: run 'just bastion-up' first (and 'just bastion-down' after)." >&2
+      exit 1
+    fi
+    host="$(tofu output -raw cms_db_host)"
+    port="$(tofu output -raw cms_db_port)"
+    name="$(tofu output -raw cms_db_name)"
     pw="$(tofu output -raw cms_db_password)"
     # The RDB password contains % ) + < = - dj_database_url parses
     # DATABASE_URL as a URI, so the raw password can't be interpolated
     # (% starts an escape, + decodes to a space). Percent-encode it.
     pw_enc="$(python3 -c 'import sys,urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "$pw")"
-    # Rebuild the DSN with the encoded password; cms_db_public_url carries
-    # the host/port/dbname and ?sslmode=require already.
-    url="${dsn%%://*}://cms:${pw_enc}@${dsn##*@}"
+    # Local end of the tunnel to the database's private address, closed on exit.
+    socket="$(mktemp -u)"
+    ssh -f -N -M -S "$socket" -o ExitOnForwardFailure=yes -p 61000 \
+      -L 15432:"$host":"$port" bastion@"$bastion"
+    trap 'ssh -S "$socket" -O exit bastion@"$bastion" 2>/dev/null' EXIT
+    url="postgresql://cms:${pw_enc}@127.0.0.1:15432/${name}?sslmode=require"
     cd "{{justfile_directory()}}/apps/cms"
     # "$@" via just's positional args, so a multi-line -c "..." script stays
     # one argument instead of being word-split.
@@ -216,6 +227,18 @@ tf-plan:
 tf-apply:
     cd infra/envs/prod && tofu apply
 
+# About EUR 0.03/hour, SSH keys of the Scaleway project. Only `ip` (or the
+# bastion_allowed_ip_ranges of terraform.tfvars) can reach it: `just bastion-up 203.0.113.7`.
+# Remove it after the session: `just bastion-down`.
+# Create the SSH bastion to the database's Private Network (occasional admin session).
+bastion-up ip="":
+    cd infra/envs/prod && tofu apply -var bastion_enabled=true {{ if ip != "" { "-var 'bastion_allowed_ip_ranges=[\"" + ip + "/32\"]'" } else { "" } }} -target=scaleway_vpc_gateway_network.bastion
+    @echo "Bastion: ssh -p 61000 bastion@$(cd infra/envs/prod && tofu output -raw bastion_ip) (just cms-shell-prod uses it)"
+
+# Remove the SSH bastion. Any infrastructure apply from main removes it too.
+bastion-down:
+    cd infra/envs/prod && tofu destroy -target=scaleway_vpc_public_gateway_ip.bastion
+
 # ── bootstrap (one-time, run from a fresh Scaleway account) ──────────────
 #
 # Order is documented in DEPLOY.md. Each recipe is idempotent / safe to
@@ -302,7 +325,7 @@ bootstrap-secrets:
 # Create (or update) the cms / autodiag / alert-widget / climadiag
 # GitHub Environments and push the right secrets and variables to each. Reads
 # SCW_*, S3_BUCKET_SCW_*, VIGILANCE_APP_ID, RTE_*, CLIMADIAG_API_TOKEN,
-# DJANGO_SECRET_KEY from your shell and cms_url / cms_container_id / *_url
+# DJANGO_SECRET_KEY from your shell and cms_url / *_url
 # from `tofu output`.
 # Restricts each environment to the `main` branch so only main-branch deploys
 # can read them. Idempotent.
@@ -360,8 +383,6 @@ bootstrap-environments:
 
     # Capture tofu outputs once. Empty strings are OK - set_env_variable skips.
     cms_url=""
-    cms_container_id=""
-    cms_manage_job_id=""
     autodiag_url=""
     alert_widget_url=""
     climadiag_url=""
@@ -375,14 +396,8 @@ bootstrap-environments:
     fi
     if (cd infra/envs/prod && tofu output -raw cms_url) >/dev/null 2>&1; then
       cms_url=$(cd infra/envs/prod && tofu output -raw cms_url)
-      # Scaleway REST API expects the bare UUID, not the "fr-par/<uuid>" form
-      # that `tofu output` returns.
-      cms_container_id=$(cd infra/envs/prod && tofu output -raw cms_container_id)
-      cms_container_id="${cms_container_id##*/}"
-      cms_manage_job_id=$(cd infra/envs/prod && tofu output -raw cms_manage_job_id)
-      cms_manage_job_id="${cms_manage_job_id##*/}"
     else
-      echo "  warn   tofu output unavailable - CMS_URL / SCW_CMS_CONTAINER_ID / SCW_CMS_MANAGE_JOB_ID will be skipped."
+      echo "  warn   tofu output unavailable - CMS_URL will be skipped."
       echo "         Run \`just tf-apply\` (with cms_deploy=true), then re-run this."
     fi
 
@@ -393,8 +408,6 @@ bootstrap-environments:
     set_env_secret   cms SCW_SECRET_KEY         "${SCW_SECRET_KEY:-}"
     set_env_secret   cms SCW_DEFAULT_PROJECT_ID "${SCW_DEFAULT_PROJECT_ID:-}"
     set_env_secret   cms DJANGO_SECRET_KEY      "${DJANGO_SECRET_KEY:-}"
-    set_env_variable cms SCW_CMS_CONTAINER_ID   "$cms_container_id"
-    set_env_variable cms SCW_CMS_MANAGE_JOB_ID  "$cms_manage_job_id"
     set_env_variable cms CMS_URL                "$cms_url"
 
     echo

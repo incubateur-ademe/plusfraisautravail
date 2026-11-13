@@ -109,7 +109,6 @@ Voir [`DEPLOY.md`](./DEPLOY.md) pour la procédure de bootstrap initiale.
 
 **Variables :**
 - `API_BASE_URL` - base de l'API utilisée au build des frontends : `/api` (même origine, le proxy l'envoie au CMS)
-- `SCW_CMS_CONTAINER_ID` - ID du container Scaleway du CMS, sortie de `tofu apply`
 
 ## Sources de données
 
