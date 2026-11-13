@@ -28,7 +28,6 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: tofu-apply
-      url: ${{ vars.API_URL }}
     defaults:
       run:
         working-directory: infra/envs/prod
@@ -51,11 +50,9 @@ jobs:
       TF_VAR_s3_bucket_scw_access_key_id: ${{ secrets.S3_BUCKET_SCW_ACCESS_KEY_ID }}
       TF_VAR_s3_bucket_scw_secret_key: ${{ secrets.S3_BUCKET_SCW_SECRET_KEY }}
       # Pin the image to whatever's currently deployed via the lifecycle ignore.
-      # api_deploy/cms_deploy must be true here; the bootstrap (*_deploy=false)
+      # cms_deploy must be true here; the bootstrap (cms_deploy=false)
       # flow is a one-time local thing.
-      TF_VAR_api_deploy: "true"
       TF_VAR_cms_deploy: "true"
-      TF_VAR_api_image: "rg.fr-par.scw.cloud/pfat/api:latest"
       TF_VAR_cms_image: "rg.fr-par.scw.cloud/pfat/cms:latest"
       # TODO: ALLOWED_HOSTS is wide open ("*") - confirmed root cause of the
       # cms-prod container never passing its Scaleway health check: the

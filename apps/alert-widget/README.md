@@ -9,7 +9,7 @@ Embeddable widget showing the current Météo-France heatwave vigilance for a us
 npm run dev:alert-widget
 ```
 
-Opens http://localhost:5173/alert-widget/. Vite proxies `/api/*` to `http://localhost:8080` (the FastAPI gateway).
+Opens http://localhost:5173/alert-widget/. Vite proxies `/api/*` to `http://localhost:8080`, the CMS (`just cms`), which serves the API.
 
 Set `VITE_API_BASE_URL` to override the API base URL at build time.
 
@@ -28,7 +28,7 @@ Set `VITE_API_BASE_URL` to override the API base URL at build time.
 <script>
   PfatAlertWidget.mount({
     target: '#alert-root',
-    apiBaseUrl: 'https://api.plusfraisautravail.beta.gouv.fr',
+    apiBaseUrl: 'https://plusfraisautravail.beta.gouv.fr/api',
     preventionUrl: 'https://...',
     leversUrl: 'https://...',
   });
@@ -43,7 +43,7 @@ The widget will insert itself right after the existing `fr-notice` that follows 
 <script
   src="https://.../alert-widget-embed.js"
   data-auto
-  data-api-base-url="https://api.plusfraisautravail.beta.gouv.fr"
+  data-api-base-url="https://plusfraisautravail.beta.gouv.fr/api"
   data-prevention-url="https://plusfraisautravail.beta.gouv.fr/risques/vigilances/"
 ></script>
 ```
@@ -54,7 +54,7 @@ Or, if you prefer to call it from JS:
 <script src="https://.../alert-widget-embed.js"></script>
 <script>
   PfatAlertWidget.autoMount({
-    apiBaseUrl: 'https://api.plusfraisautravail.beta.gouv.fr',
+    apiBaseUrl: 'https://plusfraisautravail.beta.gouv.fr/api',
   });
 </script>
 ```
@@ -68,7 +68,7 @@ Bypass the API and render canned fixtures for screenshots, talks, or staging:
 <script
   src="https://.../alert-widget-embed.js"
   data-auto
-  data-api-base-url="https://api.plusfraisautravail.beta.gouv.fr"
+  data-api-base-url="https://plusfraisautravail.beta.gouv.fr/api"
   data-demo="heatwave-rouge"
 ></script>
 ```

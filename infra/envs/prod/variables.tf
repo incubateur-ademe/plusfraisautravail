@@ -11,7 +11,7 @@ variable "zone" {
 variable "base_domain" {
   type        = string
   default     = "plusfraisautravail.beta.gouv.fr"
-  description = "Root domain. cms is served at the root; every other app gets a subdomain of this (e.g. api.<base_domain>)."
+  description = "Root domain. The cms (and its /api/) is served at the root."
 }
 
 # only needed so cms's container can reuse the same account key as
@@ -57,19 +57,7 @@ variable "rte_client_secret" {
 
 variable "rte_use_sandbox" {
   type        = bool
-  description = "If true, the API hits the RTE sandbox endpoint instead of production. Defaults to false (prod)."
-  default     = false
-}
-
-variable "api_image" {
-  type        = string
-  description = "Full image reference for the API container (e.g. rg.fr-par.scw.cloud/pfat/api:sha-abc123). Must already be pushed to the registry - Scaleway validates it at container-create time even on first apply."
-  default     = ""
-}
-
-variable "api_deploy" {
-  type        = bool
-  description = "Set to true once an image has been pushed to the registry."
+  description = "If true, the alert API hits the RTE sandbox endpoint instead of production. Defaults to false (prod)."
   default     = false
 }
 
@@ -88,18 +76,6 @@ variable "climadiag_api_url" {
   # https://plusfraichemaville.fr/api/external-search-climadiag-info once PFMV
   # issues a production token.
   default = "https://staging.plusfraichemaville.fr/api/external-search-climadiag-info"
-}
-
-variable "extra_cors_origins" {
-  type        = list(string)
-  description = "Extra origins to whitelist on the API in addition to the bucket website domains and the canonical Wagtail host. Use for staging or custom domains."
-  default     = []
-}
-
-variable "api_min_scale" {
-  type        = number
-  description = "Minimum number of always-warm API container instances. Set to 1 to eliminate cold-starts (the embed widget is triggered on every page load of the main site, so cold-start latency is user-visible)."
-  default     = 1
 }
 
 variable "django_secret_key" {

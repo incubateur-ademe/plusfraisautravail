@@ -7,21 +7,17 @@ rte_client_secret = ""
 rte_use_sandbox   = false
 
 # PlusFraîcheMaVille Climadiag commune-search API. Leave the token empty to
-# disable /climadiag/search (the API returns 503 instead of crashing).
+# disable /api/climadiag/search (it answers 503 instead of crashing).
 # climadiag_api_url defaults to the staging host in variables.tf until PFMV
 # issues a production token - only override it here if you have one.
 climadiag_api_token = ""
-
-# On first apply, leave api_deploy = false. After pushing an image to the
-# registry, set api_image to the full reference and api_deploy = true.
-api_image  = ""
-api_deploy = false
 
 # Django SECRET_KEY for the cms app.
 # Generate with: python -c "import secrets; print(secrets.token_urlsafe(50))"
 django_secret_key = ""
 
-# Same chicken-and-egg bootstrap shape as api_image/api_deploy above.
+# On first apply, leave cms_deploy = false. After pushing an image to the
+# registry, set cms_image to the full reference and cms_deploy = true.
 cms_image  = ""
 cms_deploy = false
 

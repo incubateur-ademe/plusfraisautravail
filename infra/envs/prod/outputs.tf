@@ -22,19 +22,6 @@ output "climadiag_url" {
   value = "https://${module.climadiag_site.website_endpoint}"
 }
 
-output "api_registry" {
-  value = "${scaleway_registry_namespace.pfat.endpoint}/api"
-}
-
-output "api_url" {
-  value = "https://${module.api.domain_name}"
-}
-
-output "container_id" {
-  value       = module.api.container_id
-  description = "Scaleway serverless container ID (set as GitHub variable SCW_API_CONTAINER_ID)."
-}
-
 output "cms_registry" {
   value = "${scaleway_registry_namespace.pfat.endpoint}/cms"
 }
@@ -78,7 +65,6 @@ output "cms_manage_job_id" {
 # Scaleway side stays "pending" until the matching record exists and
 # resolves, then Scaleway auto-issues the TLS cert.
 #
-# api.<base_domain> is a normal subdomain: a CNAME record works.
 # <base_domain> itself is the zone apex - OVH (like all DNS providers)
 # forbids a plain CNAME there. Use OVH's HTTPS-type DNS record in "Alias
 # Mode" instead: priority 0, target = the cname_target value, settings
@@ -87,8 +73,7 @@ output "cms_manage_job_id" {
 # purpose-built apex-alias mechanism, not a workaround.
 output "dns_records_to_create" {
   value = {
-    (var.base_domain)        = "HTTPS record, priority 0 (Alias Mode) -> ${module.cms.cname_target}"
-    "api.${var.base_domain}" = "CNAME -> ${module.api.cname_target}"
+    (var.base_domain) = "HTTPS record, priority 0 (Alias Mode) -> ${module.cms.cname_target}"
   }
   description = "Hostname -> required DNS record. Create these in the OVH DNS zone for plusfraisautravail.beta.gouv.fr."
 }
