@@ -30,5 +30,8 @@ python manage.py migrate --noinput
 # a no-op once none is left. After `migrate`, it needs the column. Drop this call once
 # prod is done.
 python manage.py move_update_dates_to_field
+# Idempotent: replaces the page tags by categories, a no-op once no page carries a mapped
+# tag. After `migrate`, it needs the category tables. Drop this call once prod is done.
+python manage.py seed_categories_from_tags
 # python manage.py wagtail_update_image_renditions
 # python manage.py set_s3_cache_control
