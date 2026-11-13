@@ -12,7 +12,3 @@ set -euo pipefail
 # when the migration itself succeeded (see fea5b49). This job has no such
 # time pressure (1800s timeout, no probe).
 python manage.py migrate --noinput
-# Idempotent: moves the update dates typed in the page bodies to the update date field,
-# a no-op once none is left. After `migrate`, it needs the column. Drop this call once
-# prod is done.
-python manage.py move_update_dates_to_field
