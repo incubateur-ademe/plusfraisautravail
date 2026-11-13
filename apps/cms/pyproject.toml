@@ -52,6 +52,7 @@ dev = [
     "ruff>=0.7",
     "mypy>=1.13",
     "pre-commit>=4.0",
+    "pytest-cov>=6",
 ]
 
 [build-system]
@@ -63,4 +64,26 @@ packages = ["cms"]
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "cms.settings.production"
-testpaths = ["tests"]
+# The sites-conformes-rgaa tests run here too, so one run (and one coverage
+# report) covers the CMS and its local packages.
+testpaths = ["tests", "../../packages/sites-conformes-rgaa/sites_conformes_rgaa/tests"]
+addopts = "--cov --cov-report=term-missing:skip-covered"
+
+[tool.coverage.run]
+branch = true
+# Import names of the CMS and of the local packages in packages/.
+source_pkgs = [
+    "cms",
+    "pfat_api",
+    "sites_conformes_faq",
+    "sites_conformes_footer_partners",
+    "sites_conformes_header_logo",
+    "sites_conformes_posthog",
+    "sites_conformes_rgaa",
+    "wagtail_notion_form",
+]
+omit = ["*/migrations/*", "*/tests/*", "*/settings/*"]
+
+[tool.coverage.report]
+# Measured at 81% when added. Raise it as tests are added; never lower it.
+fail_under = 80
