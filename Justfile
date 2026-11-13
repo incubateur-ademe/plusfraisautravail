@@ -126,14 +126,10 @@ build-cms:
 # Run all checks: JS build + CMS tests (the API's included) + ruff + ESLint.
 check: build test-cms lint-cms lint-js
 
-# CMS tests.
+# CMS and local packages tests, with coverage (threshold in apps/cms/pyproject.toml).
 test-cms:
     cd apps/cms && uv run python manage.py compilemessages -l fr
     cd apps/cms && uv run pytest
-
-# sites-conformes-rgaa package tests (not covered by test-cms's testpaths).
-test-rgaa:
-    cd packages/sites-conformes-rgaa && DJANGO_SETTINGS_MODULE=cms.settings.dev PYTHONPATH="../../apps/cms:${PYTHONPATH:-}" ../../apps/cms/.venv/bin/python -m pytest sites_conformes_rgaa/tests/
 
 # Python lint (ruff, config in ruff.toml): CMS and every package.
 lint-cms:
