@@ -10,7 +10,7 @@ the others (blog categories, authors, date...) are dropped.
 from django import forms
 from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.exceptions import FieldDoesNotExist, PermissionDenied, ValidationError
 from django.db import connection, models, transaction
 from django.shortcuts import get_object_or_404, redirect
 from django.template.response import TemplateResponse
@@ -95,7 +95,7 @@ def change_page_type(page: Page, target_model: type[Page], user) -> Page:
             continue
         try:
             source_field = source._meta.get_field(field.name)
-        except models.FieldDoesNotExist:
+        except FieldDoesNotExist:
             continue
         if type(source_field) is not type(field):
             continue
