@@ -66,6 +66,8 @@ export default defineConfig(isEmbed
     {
       plugins: [react(), yaml(), publicodesPlugin()],
       base,
+      // Only for the e2e coverage (E2E_COVERAGE=1), never in the deployed build.
+      build: { sourcemap: !!process.env.E2E_COVERAGE },
       server: {
         proxy: {
           '/api': {

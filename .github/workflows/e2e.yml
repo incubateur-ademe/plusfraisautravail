@@ -55,6 +55,7 @@ jobs:
           --health-retries 10
     env:
       E2E_DATABASE_URL: "postgresql://cms:cms@localhost:5432/pfat_e2e"
+      E2E_COVERAGE: "1" # the CMS runs under coverage.py
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: actions/setup-node@v7.1.0
@@ -88,6 +89,17 @@ jobs:
 
       - run: npm run test:e2e
 
+      # Separate from the unit-test coverage (cms.yml): what the e2e tests
+      # exercise on the server, informative only.
+      - name: Server coverage of the e2e tests
+        if: ${{ !cancelled() }}
+        working-directory: apps/cms
+        run: |
+          data=../../e2e/.cache/coverage/server.coverage
+          [ -f "$data" ] || exit 0
+          echo "### Couverture serveur des tests e2e" >> "$GITHUB_STEP_SUMMARY"
+          uv run coverage report --data-file="$data" --fail-under=0 --format=markdown >> "$GITHUB_STEP_SUMMARY"
+
       - name: Upload the Playwright report
         if: failure()
         uses: actions/upload-artifact@v7.0.2
@@ -117,12 +129,17 @@ jobs:
       image: mcr.microsoft.com/playwright:v1.61.1-noble
     env:
       HOME: /root # Firefox/Chromium refuse a HOME owned by another user
+      E2E_COVERAGE: "1" # sourcemaps in the builds, browser coverage (e2e/coverage.ts)
     steps:
       - uses: actions/checkout@v7.0.1
       - run: npm ci
-      - run: npm run build-storybook
-      - run: npm run build --workspace @pfat/autodiag
-      - run: npm run test:spa
+      - run: npm run test:spa # builds the Storybooks and autodiag first (pretest:spa)
+
+      - name: Browser coverage of the e2e tests
+        if: ${{ !cancelled() }}
+        run: |
+          summary=e2e/.cache/coverage/front/coverage-summary.md
+          [ -f "$summary" ] && cat "$summary" >> "$GITHUB_STEP_SUMMARY" || true
 
       - name: Upload the Playwright report
         if: failure()
