@@ -13,8 +13,10 @@
 # - /<spa>/            everything else from the buckets, 5m from the bucket's
 #                      own Cache-Control (set by `aws s3 sync` in CI)
 # - /ph/               PostHog EU, first-party analytics path, never cached
-# - /                  never cached: Wagtail pages and /api/ (Wagtail's API and the
-#                      alert API of packages/pfat-api)
+# - /cms-admin/        Wagtail admin, never cached
+# - /                  Wagtail pages and /api/: cached only when the CMS says
+#                      `public, s-maxage` (apps/cms/cms/cache.py), never for a
+#                      logged-in editor
 #
 # Cache lives in /tmp: wiped on each container restart, which is fine.
 
@@ -168,20 +170,35 @@ server {
         proxy_set_header Referer "";
     }
 
-    # ── Wagtail admin: longer timeouts for imports/uploads.
-    location /admin/ {
+    # ── Wagtail admin (WAGTAILADMIN_PATH): never cached, longer timeouts for
+    # imports and uploads.
+    location /cms-admin/ {
         set $up $cms;
         proxy_pass https://cms;
         proxy_read_timeout 120s;
     }
 
-    # ── Everything else: Wagtail pages, not cached (add a page cache
-    # with a logged-in cookie bypass, as quefairedemesobjets does, if Scalingo's
-    # 50 req/s router limit ever gets close).
+    # ── Everything else: Wagtail pages and the APIs. The CMS decides what is
+    # shared (apps/cms/cms/cache.py): `public, s-maxage=300,
+    # stale-while-revalidate=30` on public pages, nothing or `private` otherwise.
     location / {
         set $up $cms;
         proxy_pass https://cms;
         proxy_read_timeout 30s;
+
+        proxy_cache pfat;
+        proxy_cache_key $host$request_uri;
+        # Only what the CMS marks cacheable, plus 404s for a minute (scanners);
+        # this replaces the http-level defaults, which would keep any 200.
+        proxy_cache_valid 404 1m;
+        # The CMS sends `Vary: Cookie`, and every visitor carries a PostHog
+        # cookie: honouring it would keep one copy per visitor. A logged-in
+        # editor (Django session cookie) skips the cache instead, both ways.
+        proxy_ignore_headers Vary;
+        proxy_cache_bypass $cookie_sessionid;
+        proxy_no_cache $cookie_sessionid;
+        # Responses that set a cookie (CSRF token, session) are never stored:
+        # nginx's default, kept on purpose.
     }
 }
 

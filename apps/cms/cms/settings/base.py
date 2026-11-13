@@ -68,6 +68,8 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "wagtail.contrib.redirects.middleware.RedirectMiddleware",
+    # After CsrfViewMiddleware and AuthenticationMiddleware, see cms/cache.py.
+    "cms.cache.PrivateResponseMiddleware",
 ]
 
 ROOT_URLCONF = "cms.urls"
@@ -98,6 +100,14 @@ DATABASES = {
     "default": dj_database_url.config(default=os.environ.get("DATABASE_URL", ""), conn_max_age=600),
 }
 CONN_HEALTH_CHECKS = True
+
+# Shared-cache lifetime of public pages, honoured by the nginx proxy (cms/cache.py).
+# No purge on publish: a change shows within CACHE_CONTROL_S_MAXAGE seconds.
+CACHE_CONTROL_S_MAXAGE = int(os.environ.get("CACHE_CONTROL_S_MAXAGE", 300))
+# Then serve the stale copy while the proxy refreshes it in the background.
+CACHE_CONTROL_STALE_WHILE_REVALIDATE = int(
+    os.environ.get("CACHE_CONTROL_STALE_WHILE_REVALIDATE", 30)
+)
 
 # Wagtail looks image renditions up in the "renditions" cache alias when one
 # exists; without it every {% image %} is a query (10 of the 61 on the home

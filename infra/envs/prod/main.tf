@@ -110,15 +110,18 @@ module "cms_media" {
 }
 
 module "cms" {
-  source          = "../../modules/serverless-container"
-  app_name        = "cms"
-  environment     = local.environment
-  registry_image  = var.cms_image
-  deploy          = var.cms_deploy
-  port            = 8080
-  min_scale       = var.cms_min_scale
-  max_scale       = 3
-  timeout_seconds = 300
+  source         = "../../modules/serverless-container"
+  app_name       = "cms"
+  environment    = local.environment
+  registry_image = var.cms_image
+  deploy         = var.cms_deploy
+  port           = 8080
+  min_scale      = var.cms_min_scale
+  max_scale      = 3
+  # gunicorn serves 16 requests at once (apps/cms/entrypoint.sh): start another
+  # instance before the queue builds up. Scaleway's default (50) never triggered.
+  concurrent_requests_threshold = 12
+  timeout_seconds               = 300
   # Wagtail + the sites_conformes migration set needs more headroom than the
   # module default (280 mvCPU / 512 MiB) to boot within the startup probe
   # budget. Doubling to 1120 mvCPU was measured and changed nothing: pages
