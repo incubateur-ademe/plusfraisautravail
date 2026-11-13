@@ -20,6 +20,7 @@ dependencies = [
     "sites-conformes-rgaa",
     "sites-conformes-faq",
     "wagtail-in-a-tree>=0.1.0",
+    "pfat-api",
 ]
 
 [tool.uv.sources]
@@ -33,6 +34,7 @@ sites-conformes-header-logo = { path = "../../packages/sites-conformes-header-lo
 sites-conformes-posthog = { path = "../../packages/sites-conformes-posthog", editable = true }
 sites-conformes-rgaa = { path = "../../packages/sites-conformes-rgaa", editable = true }
 sites-conformes-faq = { path = "../../packages/sites-conformes-faq", editable = true }
+pfat-api = { path = "../../packages/pfat-api", editable = true }
 
 [tool.uv]
 # sites-conformes caps wagtail<8 only because wagtail-2fa 1.8.0 imports the removed

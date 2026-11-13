@@ -8,6 +8,7 @@ from django.http import HttpResponse
 from django.urls import include, path
 from django.views.defaults import page_not_found, permission_denied, server_error
 from django.views.generic.base import RedirectView, TemplateView
+from pfat_api.api import api as pfat_api
 from wagtail.admin import urls as wagtailadmin_urls
 from wagtail.api.v2.router import WagtailAPIRouter
 from wagtail.api.v2.views import PagesAPIViewSet
@@ -34,6 +35,8 @@ urlpatterns = [
     path(settings.WAGTAILADMIN_PATH, include(wagtailadmin_urls)),
     path("documents/", include(wagtaildocs_urls)),
     path("api/v2/", api_router.urls),
+    # After Wagtail's api/v2/: the alert and Climadiag API (packages/pfat-api).
+    path("api/", pfat_api.urls),
     path(
         "favicon.ico",
         RedirectView.as_view(url="/static/dsfr/dist/favicon/favicon.ico", permanent=True),
