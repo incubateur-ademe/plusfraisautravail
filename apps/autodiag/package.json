@@ -9,7 +9,6 @@
     "build:embed": "tsc -b && BUILD_TARGET=embed vite build",
     "preview:embed": "npm run build:embed && cp dist/autodiag-embed.js test-embed/ && npx serve test-embed -p 4173",
     "preview": "vite preview",
-    "test:e2e": "playwright test",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build --quiet -o ../../e2e/.cache/storybook/autodiag"
   },
@@ -24,7 +23,6 @@
     "recharts": "^3.7.0"
   },
   "devDependencies": {
-    "@playwright/test": "^1.61.1",
     "@rollup/plugin-yaml": "^4.1.2",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^24.10.1",

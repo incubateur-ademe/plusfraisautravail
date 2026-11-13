@@ -138,9 +138,11 @@ e2e-serve:
     uv run python manage.py compilemessages -l fr >/dev/null
     exec uv run python manage.py runserver "${E2E_PORT:-8765}"
 
-# Check every Storybook story of the SPAs: render, accessibility (axe).
+# Check every Storybook story of the SPAs (render, accessibility with axe)
+# and the autodiag journeys on its build.
 e2e-spa:
     npm run build-storybook
+    npm run build --workspace @pfat/autodiag
     npm run test:spa
 
 # Regenerate the reference screenshots of the stories, in the same Linux
@@ -150,9 +152,10 @@ e2e-spa-update-snapshots:
     set -euo pipefail
     npm run build-storybook
     version=$(node -p "require('@playwright/test/package.json').version")
-    docker run --rm --platform linux/amd64 -v "$PWD":/work -w /work/e2e -e E2E_SNAPSHOTS=1 \
+    docker run --rm --platform linux/amd64 -v "$PWD":/work -w /work/e2e \
+      -e E2E_SNAPSHOTS=1 -e E2E_STORIES_ONLY=1 \
       "mcr.microsoft.com/playwright:v$version-noble" \
-      npx playwright test --config spa.config.ts --update-snapshots
+      npx playwright test --config spa.config.ts spa/stories.spec.ts --update-snapshots=changed
 
 # ── test / lint ──────────────────────────────────────────────────────────
 

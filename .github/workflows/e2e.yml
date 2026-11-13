@@ -2,7 +2,8 @@ name: 🎭 E2E
 
 # Playwright, on pull requests labelled `frontend` and on main:
 # - cms: the CMS restored from the nightly anonymised prod dump (e2e/restore.sh);
-# - spa: every Storybook story of the SPAs (render, axe, screenshots).
+# - spa: every Storybook story of the SPAs (render, axe, screenshots) and
+#   the autodiag journeys on its build.
 # Not a product of .github/ci-areas.yml: it runs on a label, not on the files
 # touched, and adding `labeled` to review.yml would rerun the whole CI on any label.
 on:
@@ -120,6 +121,7 @@ jobs:
       - uses: actions/checkout@v7.0.1
       - run: npm ci
       - run: npm run build-storybook
+      - run: npm run build --workspace @pfat/autodiag
       - run: npm run test:spa
 
       - name: Upload the Playwright report
