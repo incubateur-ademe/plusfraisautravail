@@ -1,0 +1,87 @@
+name: 💣 Pull request
+
+# Runs the CI of each product the pull request touches (see .github/ci-areas.yml),
+# one group per product in the run's sidebar. Deploys nothing: that is cd.yml.
+on:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  scope:
+    name: 🔎 Scope
+    permissions:
+      contents: read
+      pull-requests: read
+    uses: ./.github/workflows/_scope.yml
+
+  cms:
+    name: 📰 CMS
+    needs: scope
+    if: ${{ needs.scope.outputs.cms != 'false' || needs.scope.outputs.ci == 'true' }}
+    uses: ./.github/workflows/cms.yml
+
+  autodiag:
+    name: 🩺 Autodiag
+    needs: scope
+    if: ${{ needs.scope.outputs.autodiag != 'false' || needs.scope.outputs.ci == 'true' }}
+    uses: ./.github/workflows/frontend.yml
+    with:
+      app: autodiag
+
+  alert_widget:
+    name: 🚨 Alert widget
+    needs: scope
+    if: ${{ needs.scope.outputs.alert-widget != 'false' || needs.scope.outputs.ci == 'true' }}
+    uses: ./.github/workflows/frontend.yml
+    with:
+      app: alert-widget
+
+  climadiag:
+    name: 🌡️ Climadiag
+    needs: scope
+    if: ${{ needs.scope.outputs.climadiag != 'false' || needs.scope.outputs.ci == 'true' }}
+    uses: ./.github/workflows/frontend.yml
+    with:
+      app: climadiag
+
+  infrastructure:
+    name: 🏗️ Infrastructure
+    needs: scope
+    if: ${{ needs.scope.outputs.infrastructure != 'false' || needs.scope.outputs.ci == 'true' }}
+    uses: ./.github/workflows/infrastructure.yml
+    # The plan reads the real state, with the repository secrets.
+    secrets: inherit # pragma: allowlist secret
+
+  # The one check to require: a skipped job counts as passed, so requiring the
+  # product jobs themselves would let a pull request merge past a failed one.
+  ci_passed:
+    name: ✅ CI
+    needs: [scope, cms, autodiag, alert_widget, climadiag, infrastructure]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Summary
+        env:
+          COVERAGE: ${{ needs.cms.outputs.coverage }}
+          CMS_RESULT: ${{ needs.cms.result }}
+        run: |
+          if [ -n "$COVERAGE" ]; then
+            line="📊 Python coverage: **${COVERAGE} %**"
+          elif [ "$CMS_RESULT" = "skipped" ]; then
+            line="📊 Python coverage: not measured, this pull request does not touch the CMS."
+          else
+            line="📊 Python coverage: not measured, the CMS tests did not run to the end."
+          fi
+          echo "$line" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Fail if a product failed
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        run: exit 1

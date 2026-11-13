@@ -19,12 +19,12 @@ The stack is provisioned with [OpenTofu](https://opentofu.org/) (`infra/envs/pro
 
 CI/CD lives under `.github/workflows/`:
 
-- `ci.yml` - JS build + Python ruff + pytest (cms, with the API of `packages/pfat-api`) on every PR/push.
-- `terraform-plan.yml` - `tofu plan` on PRs touching `infra/**`.
-- `deploy-cms.yml` - Docker build, push to registry, `PATCH redeploy=true`, then the `cms_manage` job (migrations).
-- `deploy-autodiag.yml` - Vite build, `aws s3 sync` to the bucket.
-- `deploy-alert-widget.yml` - Vite build, `aws s3 sync` to the bucket.
-- `deploy-climadiag.yml` - Vite build (SPA + embed), `aws s3 sync` to the bucket.
+- `review.yml` (💣 Pull request) - on PRs, runs the checks of each product the PR touches (`.github/ci-areas.yml`). Require its `✅ CI` job.
+- `cd.yml` (🚀 Production) - on `main`, runs the same checks and deploys each product it touches. Manual runs pick one product or all.
+- `cms.yml` - ruff, pytest with coverage; on deploy, Docker build, push to registry, `PATCH redeploy=true`, then the `cms_manage` job (migrations).
+- `frontend.yml` - ESLint and Vite build of one SPA; on deploy, `aws s3 sync` to its bucket.
+- `infrastructure.yml` - `tofu plan`; on `main` (or a manual run), `tofu apply`.
+- `infrastructure-destroy.yml` - manual `tofu destroy`.
 
 ---
 
@@ -153,13 +153,13 @@ Note the `cms_container_id` and `cms_url` outputs - you need them for the next s
 Two recipes, both idempotent:
 
 ```bash
-just bootstrap-secrets        # repo-level secrets (used only by terraform-plan.yml on PRs)
+just bootstrap-secrets        # repo-level secrets (used only by the infrastructure plan on PRs)
 just bootstrap-environments   # creates cms / autodiag / alert-widget / climadiag envs + their secrets
 ```
 
 `bootstrap-environments` reads `SCW_*`, `VIGILANCE_APP_ID`, `RTE_*`, `DJANGO_SECRET_KEY` from your shell and `cms_url` / `cms_container_id` / bucket URLs from `tofu output`. The SPAs get `API_BASE_URL=/api`: same origin, the proxy sends `/api/` to the CMS. It creates each environment with a `branch=main` policy so only main-branch deploys can read those secrets.
 
-**Why two scopes:** `terraform-plan.yml` runs on PRs from any branch; environment-scoped secrets aren't readable from non-main refs, so its credentials live at repo level. `deploy-*.yml` workflows live in their respective environments - the GitHub UI shows a deployment history per environment with a clickable URL.
+**Why two scopes:** the infrastructure plan runs on PRs from any branch; environment-scoped secrets aren't readable from non-main refs, so its credentials live at repo level. The deploy jobs live in their respective environments - the GitHub UI shows a deployment history per environment with a clickable URL.
 
 You're done. The next push to `main` touching `apps/cms/**` or `packages/**` will redeploy the CMS container (and the API it serves); `apps/autodiag/**` and `apps/alert-widget/**` will sync to their buckets. The deploy progress is visible at:
 
@@ -173,14 +173,14 @@ https://github.com/incubateur-ademe/plusfraisautravail/deployments
 
 | Trigger | What happens |
 |---|---|
-| Push to `main` touching `apps/cms/**` or `packages/**` | `deploy-cms.yml` builds + pushes a new image, then `PATCH`es the container with `redeploy=true`. |
-| Push to `main` touching `apps/autodiag/**` | `deploy-autodiag.yml` builds and `aws s3 sync`s to `pfat-autodiag`. |
-| Push to `main` touching `apps/alert-widget/**` | `deploy-alert-widget.yml` builds and `aws s3 sync`s to `pfat-alert-widget`. |
-| Push to `main` touching `apps/climadiag/**` | `deploy-climadiag.yml` builds (SPA + embed) and `aws s3 sync`s to `pfat-climadiag`. |
-| PR touching `infra/**` | `terraform-plan.yml` posts a plan as a step summary. |
-| Push to `main` touching `infra/**` | `terraform-apply.yml` runs `tofu apply` against prod. The deployment shows up in the `tofu-apply` GitHub Environment. |
+| Push to `main` touching `apps/cms/**` or `packages/**` | 🚀 Production checks the CMS, builds + pushes a new image, then `PATCH`es the container with `redeploy=true`. |
+| Push to `main` touching `apps/autodiag/**` | 🚀 Production lints, builds and `aws s3 sync`s to `pfat-autodiag`. |
+| Push to `main` touching `apps/alert-widget/**` | 🚀 Production lints, builds and `aws s3 sync`s to `pfat-alert-widget`. |
+| Push to `main` touching `apps/climadiag/**` | 🚀 Production lints, builds (SPA + embed) and `aws s3 sync`s to `pfat-climadiag`. |
+| PR touching `infra/**` | 💣 Pull request runs `tofu plan`. |
+| Push to `main` touching `infra/**` | 🚀 Production runs `tofu apply` against prod. The deployment shows up in the `tofu-apply` GitHub Environment. |
 
-The container has `registry_image` under `lifecycle { ignore_changes = [registry_image] }` so `tofu apply` won't fight the deploy workflow - image rollouts go through `deploy-cms.yml`, infra changes go through Tofu, neither steps on the other.
+The container has `registry_image` under `lifecycle { ignore_changes = [registry_image] }` so `tofu apply` won't fight the deploy workflow - image rollouts go through `cms.yml`, infra changes go through Tofu, neither steps on the other.
 
 Manual triggers from your machine:
 
@@ -207,7 +207,7 @@ All SPAs are built with their default sub-path base (`/autodiag/`, `/alert-widge
 
 The local dev server keeps the historical sub-path (`/autodiag/`, `/alert-widget/`, `/climadiag/`) - only the deployed bundles use root.
 
-`deploy-climadiag.yml` builds both the standalone SPA (`index.html` + assets) **and** the single-file embed (`climadiag-embed.js`) into the same `dist/`, so both land in the bucket. To embed just the blue search widget on another page, drop:
+The climadiag deploy builds both the standalone SPA (`index.html` + assets) **and** the single-file embed (`climadiag-embed.js`) into the same `dist/`, so both land in the bucket. To embed just the blue search widget on another page, drop:
 
 ```html
 <script
@@ -246,7 +246,7 @@ git push scalingo main   # or link the GitHub repo in the Scalingo dashboard
 
 The nginx buildpack needs no Procfile and no APT packages on the `scalingo-26` stack.
 
-**Testing on the proxy hostname before cutover.** Absolute URLs (media, `image.full_url`, admin emails) are built from `WAGTAILADMIN_BASE_URL`, which defaults to the production domain. To test on `https://plusfraisautravail-proxy.osc-fr1.scalingo.io`, set the GitHub repo variable `CMS_BASE_URL` to that URL and re-run `terraform-apply.yml`; delete the variable and re-apply at cutover. The `canonical`/`og:url` tags come from the Wagtail Site record in the database and always name the production domain, which is correct.
+**Testing on the proxy hostname before cutover.** Absolute URLs (media, `image.full_url`, admin emails) are built from `WAGTAILADMIN_BASE_URL`, which defaults to the production domain. To test on `https://plusfraisautravail-proxy.osc-fr1.scalingo.io`, set the GitHub repo variable `CMS_BASE_URL` to that URL and re-run 🏗️ Infrastructure (`infrastructure.yml`); delete the variable and re-apply at cutover. The `canonical`/`og:url` tags come from the Wagtail Site record in the database and always name the production domain, which is correct.
 
 The SPAs must be built with their default sub-path base (`/autodiag/` etc.), not `VITE_BASE_URL=/`, for the proxy's prefix routing to work. Wagtail pages must not use the slugs `static`, `media`, `api`, `autodiag`, `alert-widget` or `climadiag`.
 
@@ -263,7 +263,7 @@ You forgot `cms_deploy=false` for the first pass. Set it, apply, then push the i
 The upstream (Météo-France or RTE) failed and no earlier snapshot is cached. Check the cms container logs (Scaleway dashboard -> Containers -> `cms-prod` -> Logs). Most common cause: a wrong `VIGILANCE_APP_ID`; a missing one answers 503.
 
 **API returns 503 on `/api/alerts/electricity`.**
-RTE creds are missing or wrong. Set `rte_client_id` / `rte_client_secret` in `terraform.tfvars` and re-apply, or set the corresponding GitHub secrets and re-run `terraform-plan.yml` for visibility (the actual variable injection happens at `tofu apply` time, locally).
+RTE creds are missing or wrong. Set `rte_client_id` / `rte_client_secret` in `terraform.tfvars` and re-apply, or set the corresponding GitHub secrets and re-run the infrastructure plan for visibility (the actual variable injection happens at `tofu apply` time, locally).
 
 **API returns 503 on `/api/climadiag/search`.**
 `climadiag_api_token` is missing. Set it in `terraform.tfvars` and re-apply, or set the `CLIMADIAG_API_TOKEN` GitHub secret (repo-level and on the `tofu-apply` environment) and re-run the apply.

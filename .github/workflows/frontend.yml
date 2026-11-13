@@ -1,0 +1,79 @@
+name: 🖥️ Frontend
+
+# One single-page app of the npm workspace (autodiag, alert-widget, climadiag).
+# Lint and build always run; `deploy` syncs the build to the app's bucket.
+on:
+  workflow_call:
+    inputs:
+      app:
+        description: "Directory under apps/, also the workspace name after @pfat/"
+        type: string
+        required: true
+      deploy:
+        description: "Sync the build to the app's Scaleway bucket"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+env:
+  APP: ${{ inputs.app }}
+
+jobs:
+  check:
+    name: 📝 Lint + build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Config in the root eslint.config.js, shared by every workspace.
+      - run: npx eslint "apps/$APP"
+      # The apps import packages/api-client as source, so their `tsc -b` checks it too.
+      - run: npm run build --workspace "@pfat/$APP"
+
+  deploy:
+    name: 🚀 Deploy
+    if: ${{ inputs.deploy }}
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # One GitHub environment per app, named after it, holds its bucket credentials
+    # and SITE_URL (plus API_BASE_URL for the apps that call the API).
+    environment:
+      name: ${{ inputs.app }}
+      url: ${{ vars.SITE_URL }}
+    env:
+      BUCKET: pfat-${{ inputs.app }}
+      REGION: fr-par
+      S3_ENDPOINT: https://s3.fr-par.scw.cloud
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      # The bucket serves the app at its root.
+      - name: Build
+        run: npm run build --workspace "@pfat/$APP"
+        env:
+          VITE_API_BASE_URL: ${{ vars.API_BASE_URL }}
+          VITE_SENTRY_DSN: ${{ vars.SENTRY_DSN }}
+
+      - name: Sync to bucket
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          AWS_DEFAULT_REGION: ${{ env.REGION }}
+        run: |
+          aws --endpoint-url="$S3_ENDPOINT" s3 sync \
+            "apps/$APP/dist/" "s3://$BUCKET/" \
+            --delete \
+            --cache-control "public, max-age=300"

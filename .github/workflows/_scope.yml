@@ -1,0 +1,87 @@
+name: 🔎 Scope
+
+# Which products a push or pull request touches, from .github/ci-areas.yml.
+# Each output is "true" or "false"; an empty one (the filter failed, or a manual
+# run of review.yml) means "run everything", so callers test `!= 'false'`.
+on:
+  workflow_call:
+    inputs:
+      only:
+        description: "Manual run of cd.yml: the product to run, or all. Empty: read the changes."
+        type: string
+        default: ""
+    outputs:
+      cms:
+        value: ${{ jobs.scope.outputs.cms }}
+      autodiag:
+        value: ${{ jobs.scope.outputs.autodiag }}
+      alert-widget:
+        value: ${{ jobs.scope.outputs.alert-widget }}
+      climadiag:
+        value: ${{ jobs.scope.outputs.climadiag }}
+      infrastructure:
+        value: ${{ jobs.scope.outputs.infrastructure }}
+      ci:
+        value: ${{ jobs.scope.outputs.ci }}
+
+permissions:
+  contents: read
+
+jobs:
+  scope:
+    name: 🔎 Scope
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      cms: ${{ steps.products.outputs.cms }}
+      autodiag: ${{ steps.products.outputs.autodiag }}
+      alert-widget: ${{ steps.products.outputs.alert-widget }}
+      climadiag: ${{ steps.products.outputs.climadiag }}
+      infrastructure: ${{ steps.products.outputs.infrastructure }}
+      ci: ${{ steps.products.outputs.ci }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        if: github.event_name != 'workflow_dispatch'
+
+      - name: Find changed products
+        id: areas
+        if: github.event_name != 'workflow_dispatch'
+        continue-on-error: true
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        with:
+          filters: .github/ci-areas.yml
+          predicate-quantifier: some-with-excludes
+
+      - name: Pick products
+        id: products
+        env:
+          ONLY: ${{ inputs.only }}
+          CMS: ${{ steps.areas.outputs.cms }}
+          AUTODIAG: ${{ steps.areas.outputs.autodiag }}
+          ALERT_WIDGET: ${{ steps.areas.outputs.alert-widget }}
+          CLIMADIAG: ${{ steps.areas.outputs.climadiag }}
+          INFRASTRUCTURE: ${{ steps.areas.outputs.infrastructure }}
+          CI: ${{ steps.areas.outputs.ci }}
+        run: |
+          if [ -z "$ONLY" ]; then
+            {
+              echo "cms=$CMS"
+              echo "autodiag=$AUTODIAG"
+              echo "alert-widget=$ALERT_WIDGET"
+              echo "climadiag=$CLIMADIAG"
+              echo "infrastructure=$INFRASTRUCTURE"
+              echo "ci=$CI"
+            } >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          for product in cms autodiag alert-widget climadiag infrastructure; do
+            if [ "$ONLY" = all ] || [ "$ONLY" = "$product" ]; then
+              echo "$product=true"
+            else
+              echo "$product=false"
+            fi
+          done >> "$GITHUB_OUTPUT"
+          echo "ci=false" >> "$GITHUB_OUTPUT"

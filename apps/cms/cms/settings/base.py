@@ -308,7 +308,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Matches upstream sites-conformes' pattern of deriving CSRF_TRUSTED_ORIGINS
 # from ALLOWED_HOSTS. Skipped while ALLOWED_HOSTS is the "*" wildcard (see
-# TODO in .github/workflows/terraform-apply.yml) since "*" isn't a valid
+# TODO in .github/workflows/infrastructure.yml) since "*" isn't a valid
 # origin and Django requires a scheme+host per entry.
 CSRF_TRUSTED_ORIGINS = [
     f"https://{host}" for host in ALLOWED_HOSTS if host not in ("*", "127.0.0.1", "localhost")

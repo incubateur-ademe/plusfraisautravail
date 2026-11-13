@@ -1,33 +1,86 @@
-name: OpenTofu apply
+name: 🏗️ Infrastructure
 
+# OpenTofu, infra/envs/prod. The plan always runs; `apply` applies it. A manual
+# run applies by default, and can force the replacement of one resource.
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - "infra/**"
-      - ".github/workflows/terraform-apply.yml"
+  workflow_call:
+    inputs:
+      apply:
+        description: "Apply the plan"
+        type: boolean
+        default: false
+      tofu_replace:
+        description: "Resource address to force-replace"
+        type: string
+        default: ""
   workflow_dispatch:
     inputs:
+      apply:
+        description: "Apply the plan"
+        type: boolean
+        default: true
       tofu_replace:
         description: "Resource address to force-replace (tofu apply -replace=<address>), e.g. module.cms_db.random_password.db. Leave empty for a normal apply."
         required: false
         type: string
 
+permissions:
+  contents: read
+
 env:
   TOFU_VERSION: "1.8.5"
 
-# Don't run two applies in parallel — Tofu's state lock would just block
-# the second one anyway, and serializing makes the deployment history clearer.
-concurrency:
-  group: tofu-apply
-  cancel-in-progress: false
-
 jobs:
-  apply:
+  plan:
+    name: 📋 Plan
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: infra/envs/prod
+    env:
+      SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+      SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+      SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_DEFAULT_PROJECT_ID }}
+      SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_DEFAULT_ORGANIZATION_ID }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+      TF_VAR_vigilance_app_id: ${{ secrets.VIGILANCE_APP_ID }}
+      TF_VAR_rte_client_id: ${{ secrets.RTE_CLIENT_ID }}
+      TF_VAR_rte_client_secret: ${{ secrets.RTE_CLIENT_SECRET }}
+      TF_VAR_climadiag_api_token: ${{ secrets.CLIMADIAG_API_TOKEN }}
+      TF_VAR_django_secret_key: ${{ secrets.DJANGO_SECRET_KEY }}
+      TF_VAR_sentry_dsn: ${{ vars.SENTRY_DSN }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
+        with:
+          tofu_version: ${{ env.TOFU_VERSION }}
+          tofu_wrapper: false
+
+      - run: tofu fmt -check -recursive
+        working-directory: infra
+
+      - run: tofu init -input=false
+
+      - run: tofu validate
+
+      - run: tofu plan -no-color -input=false
+
+  apply:
+    name: 🧱 Apply
+    if: ${{ inputs.apply }}
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
     environment:
       name: tofu-apply
+    # Never two applies at once (Tofu's state lock would block the second anyway),
+    # and serializing keeps the deployment history clear.
+    concurrency:
+      group: tofu-apply
+      cancel-in-progress: false
     defaults:
       run:
         working-directory: infra/envs/prod
@@ -75,9 +128,9 @@ jobs:
       TF_VAR_posthog_key: ${{ vars.POSTHOG_KEY }}
       TF_VAR_sentry_dsn: ${{ vars.SENTRY_DSN }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7.0.1
 
-      - uses: opentofu/setup-opentofu@v1
+      - uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
         with:
           tofu_version: ${{ env.TOFU_VERSION }}
           tofu_wrapper: false

@@ -1,0 +1,44 @@
+# Which product a change touches, read by dorny/paths-filter in _scope.yml.
+# A pull request runs the CI of the products it touches; main also deploys them.
+# An exclusion is final: no other pattern of the same area can include the file back.
+
+cms:
+  - "apps/cms/**"
+  - "packages/**"
+  - "ruff.toml"
+  - ".github/workflows/cms.yml"
+  - "!packages/api-client/**"
+  - "!**/*.md"
+
+frontend: &frontend
+  - "package.json"
+  - "package-lock.json"
+  - "eslint.config.js"
+  - ".github/workflows/frontend.yml"
+
+autodiag:
+  - *frontend
+  - "apps/autodiag/**"
+  - "!**/*.md"
+
+alert-widget:
+  - *frontend
+  - "apps/alert-widget/**"
+  - "packages/api-client/**"
+  - "!**/*.md"
+
+climadiag:
+  - *frontend
+  - "apps/climadiag/**"
+  - "packages/api-client/**"
+  - "!**/*.md"
+
+infrastructure:
+  - "infra/**"
+  - ".github/workflows/infrastructure.yml"
+  - "!**/*.md"
+
+# A CI change runs the CI of every product, but deploys nothing by itself.
+ci:
+  - ".github/**"
+  - "!**/*.md"
