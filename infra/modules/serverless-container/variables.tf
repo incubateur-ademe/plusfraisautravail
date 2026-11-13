@@ -54,6 +54,12 @@ variable "max_scale" {
   default = 5
 }
 
+variable "concurrent_requests_threshold" {
+  type        = number
+  description = "In-flight requests per instance above which Scaleway starts another one (up to max_scale)."
+  default     = 50
+}
+
 variable "timeout_seconds" {
   type    = number
   default = 300

@@ -31,6 +31,10 @@ resource "scaleway_container" "this" {
   environment_variables        = var.environment_variables
   secret_environment_variables = var.secret_environment_variables
 
+  scaling_option {
+    concurrent_requests_threshold = var.concurrent_requests_threshold
+  }
+
   liveness_probe {
     http {
       path = var.health_check_path

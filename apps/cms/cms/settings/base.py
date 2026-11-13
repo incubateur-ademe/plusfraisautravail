@@ -59,6 +59,10 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    # First: answers 304 to a revalidation before any other work (cms/site_version.py).
+    "cms.site_version.SiteVersionMiddleware",
+    # Outside the session and CSRF middlewares, to see the cookies they set.
+    "sites_conformes.core.middleware.PublicCacheMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -98,6 +102,12 @@ DATABASES = {
     "default": dj_database_url.config(default=os.environ.get("DATABASE_URL", ""), conn_max_age=600),
 }
 CONN_HEALTH_CHECKS = True
+
+# Pages for anonymous visitors get `Cache-Control: public, max-age=…`
+# (sites-conformes' PublicCacheMiddleware). Once that expires, the nginx proxy
+# and browsers revalidate with the ETag of SiteVersionMiddleware: a 304 costs
+# two small queries, so a short lifetime keeps pages fresh at almost no cost.
+SF_PUBLIC_CACHE_MAX_AGE = int(os.environ.get("SF_PUBLIC_CACHE_MAX_AGE", 60))
 
 # Wagtail looks image renditions up in the "renditions" cache alias when one
 # exists; without it every {% image %} is a query (10 of the 61 on the home
@@ -217,7 +227,10 @@ WAGTAILSEARCH_BACKENDS = {
 
 # Matches upstream sites-conformes' default admin path.
 WAGTAILADMIN_PATH = "cms-admin/"
-WAGTAIL_I18N_ENABLED = True
+# The site has one language (the "fr" locale). Upstream enables Wagtail i18n for
+# its fr/en demo; here it only cost a locale query per internal rich-text link
+# (page.localized), 10 of the 62 queries on the home page.
+WAGTAIL_I18N_ENABLED = False
 
 # Upstream disables this by default too: "They can clash with Whitenoise and
 # are normally not useful as we serve the statics from a trusted source."
