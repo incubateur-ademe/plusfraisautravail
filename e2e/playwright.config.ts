@@ -1,34 +1,23 @@
-import { defineConfig, devices } from '@playwright/test'
+import { defineConfig } from '@playwright/test'
+import base, { isCI, reporter } from './base.config'
 
 // The CMS runs on a database restored from the anonymised prod dump
 // (`just e2e-restore`, or e2e/restore.sh in CI).
 const port = Number(process.env.E2E_PORT ?? 8765)
-const isCI = !!process.env.CI
+// E2E_COVERAGE=1: the CMS runs under coverage.py, to measure what the e2e
+// tests exercise on the server (report: see README.md).
+const python = process.env.E2E_COVERAGE
+  ? 'coverage run --data-file=../../e2e/.cache/coverage/server.coverage'
+  : 'python'
 
-export default defineConfig({
+export default defineConfig(base, {
   testDir: './tests',
   outputDir: './.cache/test-results',
-  forbidOnly: isCI,
-  retries: isCI ? 2 : 0,
-  reporter: isCI
-    ? [['github'], ['html', { open: 'never', outputFolder: '.cache/report' }]]
-    : [['list']],
-  use: {
-    baseURL: `http://localhost:${port}`,
-    locale: 'fr-FR',
-    timezoneId: 'Europe/Paris',
-    trace: 'on-first-retry',
-    screenshot: 'only-on-failure',
-  },
-  projects: [
-    {
-      name: 'chromium',
-      // After the device: set at the top level, it does not reach the page.
-      use: { ...devices['Desktop Chrome'], contextOptions: { reducedMotion: 'reduce' } },
-    },
-  ],
+  reporter: reporter('.cache/report'),
+  use: { baseURL: `http://localhost:${port}`, screenshot: 'only-on-failure' },
   webServer: {
-    command: `uv run python manage.py compilemessages -l fr > /dev/null && uv run python manage.py runserver ${port} --noreload`,
+    command: `uv run python manage.py compilemessages -l fr > /dev/null && uv run ${python} manage.py runserver ${port} --noreload`,
+    gracefulShutdown: { signal: 'SIGTERM', timeout: 10_000 },
     cwd: '../apps/cms',
     url: `http://localhost:${port}/healthz/`,
     reuseExistingServer: !isCI,

@@ -15,6 +15,7 @@
     "lint": "eslint . && npm run lint --workspaces --if-present",
     "test:e2e": "npm run test --workspace @pfat/e2e",
     "build-storybook": "npm run build-storybook --workspaces --if-present",
+    "pretest:spa": "npm run build-storybook && npm run build --workspace @pfat/autodiag",
     "test:spa": "npm run test:spa --workspace @pfat/e2e"
   },
   "engines": {

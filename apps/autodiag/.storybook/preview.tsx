@@ -1,14 +1,10 @@
 import type { Preview } from '@storybook/react-vite'
-import { startReactDsfr } from '@codegouvfr/react-dsfr/spa'
 import { MemoryRouter } from 'react-router-dom'
-import '@codegouvfr/react-dsfr/main.css'
+import shared from '../../../e2e/storybook/preview'
 import '../src/styles/index.css'
 
-// Light scheme whatever the OS theme: stable screenshots.
-startReactDsfr({ defaultColorScheme: 'light' })
-
 const preview: Preview = {
-  parameters: { layout: 'padded' },
+  ...shared,
   // Some components navigate (ProgressHeader): give them a router.
   decorators: [
     (Story) => (

@@ -141,8 +141,6 @@ e2e-serve:
 # Check every Storybook story of the SPAs (render, accessibility with axe)
 # and the autodiag journeys on its build.
 e2e-spa:
-    npm run build-storybook
-    npm run build --workspace @pfat/autodiag
     npm run test:spa
 
 # Regenerate the reference screenshots of the stories, in the same Linux

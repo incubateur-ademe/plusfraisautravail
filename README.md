@@ -77,6 +77,8 @@ Chaque SPA (`apps/autodiag`, `apps/alert-widget`, `apps/climadiag`) a son Storyb
 just e2e-spa            # rendu et accessibilité (axe) de chaque story, parcours de l'autodiag
 just e2e-spa-update-snapshots  # régénère les captures de référence (Docker, même image que la CI)
 ```
+`E2E_COVERAGE=1` mesure ce que les tests e2e exercent, à part de la couverture des tests unitaires : côté serveur pour `npm run test:e2e` (rapport : `cd apps/cms && uv run coverage report --data-file=../../e2e/.cache/coverage/server.coverage --fail-under=0`), côté navigateur pour `just e2e-spa` (résumé affiché à la fin). En CI, les deux s'affichent dans le résumé des jobs.
+
 Les captures (320, 768 et 1440 px) ne sont comparées que sous Linux, en CI ou via `just e2e-spa-update-snapshots` : les polices macOS donnent un autre rendu. Relire le diff des PNG avant de committer.
 
 ## CI/CD

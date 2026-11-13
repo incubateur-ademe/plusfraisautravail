@@ -83,6 +83,9 @@ source_pkgs = [
     "wagtail_notion_form",
 ]
 omit = ["*/migrations/*", "*/tests/*", "*/settings/*"]
+# Save the data when stopped with SIGTERM: Playwright stops the CMS this way
+# at the end of the e2e run (E2E_COVERAGE=1, see e2e/playwright.config.ts).
+sigterm = true
 
 [tool.coverage.report]
 # Measured at 81% when added. Raise it as tests are added; never lower it.
