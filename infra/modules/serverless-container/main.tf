@@ -23,13 +23,14 @@ resource "scaleway_container" "this" {
   min_scale                    = var.min_scale
   max_scale                    = var.max_scale
   timeout                      = var.timeout_seconds
-  privacy                      = "public"
+  privacy                      = var.privacy
   protocol                     = "http1"
   http_option                  = "enabled"
   deploy                       = var.deploy
   private_network_id           = var.private_network_id != "" ? var.private_network_id : null
   environment_variables        = var.environment_variables
   secret_environment_variables = var.secret_environment_variables
+  local_storage_limit_bytes    = var.local_storage_limit_bytes
 
   scaling_option {
     concurrent_requests_threshold = var.concurrent_requests_threshold

@@ -1,0 +1,16 @@
+# Tables dumped WITHOUT their rows (pg_dump --exclude-table-data): their data
+# never leaves the production database. One table, or pg_dump pattern
+# (wagtail_*), per line.
+django_session
+wagtailforms_formsubmission
+wagtailadmin_editingsession
+wagtailadmin_formstate
+wagtailcore_apitoken
+# DatabaseCache of pfat_api (cms/settings/base.py), created by createcachetable.
+pfat_api_cache
+# Search index: built from raw content (drafts, masked fields), rebuilt by
+# e2e/restore.sh (update_index).
+wagtailsearch_indexentry
+# Leftovers of wagtail-localize, uninstalled: empty in production and unknown
+# to the code, so the CI test cannot check their columns.
+wagtail_localize_*

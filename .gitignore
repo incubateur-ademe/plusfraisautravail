@@ -67,6 +67,7 @@ venv/
 # Local DB dumps (pg_restore input for `just db-restore`)
 *.pgsql
 *.pgsql.gz
+*.dump
 
 # Coverage data
 .coverage

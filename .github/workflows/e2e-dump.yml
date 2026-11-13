@@ -1,0 +1,36 @@
+name: 🌙 E2E dump
+
+# Every night, ask the private e2e-dump container (infra/e2e-dump) to dump the
+# CMS database, anonymise it and upload it to
+# s3://pfat-e2e-fixtures/cms/latest.dump. The data never transits through
+# GitHub: the container answers with its progress lines only, its errors stay
+# in the container logs (Scaleway Cockpit).
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  dump:
+    name: 🌙 Anonymised dump
+    runs-on: ubuntu-latest
+    environment: cms
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          sparse-checkout: .github/scripts
+      # Private container: the IAM secret key authenticates the call. It
+      # answers once dump.sh is over (a few minutes); 500 = nothing uploaded,
+      # yesterday's dump is still in place.
+      - name: Run the dump and wait for it
+        env:
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+        run: .github/scripts/scw-container.sh run e2e-dump-prod # module.e2e_dump, infra/envs/prod

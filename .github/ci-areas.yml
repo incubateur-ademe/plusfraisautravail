@@ -7,6 +7,9 @@ cms:
   - "packages/**"
   - "ruff.toml"
   - ".github/workflows/cms.yml"
+  # The e2e dump image ships with the CMS: its masking rules follow the schema.
+  - "infra/e2e-dump/**"
+  - ".github/scripts/scw-container.sh"
   - "!packages/api-client/**"
   - "!**/*.md"
 

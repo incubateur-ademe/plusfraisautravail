@@ -197,9 +197,55 @@ resource "scaleway_rdb_user" "e2e_dump" {
   is_admin    = false
 }
 
+# Over the Private Network: the dump container is attached to it, like the CMS.
+locals {
+  e2e_dump_dsn = "postgresql://${scaleway_rdb_user.e2e_dump.name}:${urlencode(random_password.e2e_dump.result)}@${module.cms_db.host}:${module.cms_db.port}/${module.cms_db.database_name}?sslmode=require"
+}
+
 resource "scaleway_rdb_privilege" "e2e_dump" {
   instance_id   = module.cms_db.instance_id
   user_name     = scaleway_rdb_user.e2e_dump.name
   database_name = module.cms_db.database_name
   permission    = "readonly"
+}
+
+# Nightly anonymised dump (infra/e2e-dump), run when .github/workflows/e2e-dump.yml
+# POSTs /run. A private container, not a Serverless Job: Jobs cannot join a
+# Private Network, so they would need the database's public endpoint.
+# - privacy private: every request needs a Scaleway IAM key (X-Auth-Token);
+# - attached to the database's Private Network, read-only user e2e_dump;
+# - min_scale 0: billed only while a dump runs (a few minutes a night).
+# The image is built by the CMS deploy (cms.yml), so the masking rules match
+# the schema actually deployed, and that deploy rolls it out on this container.
+module "e2e_dump" {
+  source      = "../../modules/serverless-container"
+  app_name    = "e2e-dump"
+  environment = local.environment
+  # Placeholder: Scaleway checks that the image exists when the container is
+  # created, and the e2e-dump image may not be pushed yet (the CMS deploy of
+  # the same push builds it). That deploy rolls the real image out (cms.yml),
+  # tofu then ignores the image. Scaled to zero and private: the placeholder
+  # never starts unless called.
+  registry_image     = "rg.fr-par.scw.cloud/pfat/cms:latest"
+  privacy            = "private"
+  private_network_id = module.cms_db.private_network_id
+  health_check_path  = "/"
+  min_scale          = 0
+  max_scale          = 1
+  # Local Postgres + the copy of the database and its dump.
+  cpu_limit                 = 1000
+  memory_limit              = 2048
+  local_storage_limit_bytes = 4000000000
+  # A dump takes a few minutes.
+  timeout_seconds = 1800
+  environment_variables = {
+    E2E_DUMP_PREFIX    = "s3://${module.e2e_fixtures.bucket_name}/cms"
+    AWS_DEFAULT_REGION = "fr-par"
+    AWS_ENDPOINT_URL   = module.e2e_fixtures.endpoint
+  }
+  secret_environment_variables = {
+    SOURCE_DATABASE_URL   = local.e2e_dump_dsn
+    AWS_ACCESS_KEY_ID     = var.s3_bucket_scw_access_key_id
+    AWS_SECRET_ACCESS_KEY = var.s3_bucket_scw_secret_key #gitleaks:allow
+  }
 }
