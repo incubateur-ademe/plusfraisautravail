@@ -9,6 +9,11 @@ Fragments exposés dans le menu **Questions / réponses** de l'admin :
   Un aperçu rend la question en accordéon DSFR comme sur le site.
 - **Thème** : pour organiser la liste des questions.
 
+La liste des questions affiche une colonne **Utilisation** (« Utilisé(e) N fois »,
+triable) qui mène à la page d'utilisation de Wagtail : les pages qui affichent la
+question, avec une colonne **Référence SEO** (la page qui porte le balisage
+`FAQPage`) et une colonne **Publiée**.
+
 Les auteurs réutilisent les **Personnes** de sites-conformes
 (Fragments → Personnes) : le rôle, le nom et l'organisation de la personne
 composent la ligne d'auteur, affichée au-dessus de la réponse seulement si

@@ -76,7 +76,8 @@ class ContentPage(FaqSeoMixin, AbstractContentPage):
         "Date de mise à jour",
         null=True,
         blank=True,
-        help_text="Affichée en bas de la page. Vide : la date de la dernière publication.",
+        help_text="Affichée en bas de la page. Si ce champ est laissé vide, alors"
+        " la date de la dernière publication est utilisée par défaut.",
     )
     show_update_date = models.BooleanField("Afficher la date de mise à jour", default=True)
 
