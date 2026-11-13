@@ -31,6 +31,7 @@ resource "scaleway_container" "this" {
   environment_variables        = var.environment_variables
   secret_environment_variables = var.secret_environment_variables
   local_storage_limit_bytes    = var.local_storage_limit_bytes
+  command                      = var.command
 
   scaling_option {
     concurrent_requests_threshold = var.concurrent_requests_threshold

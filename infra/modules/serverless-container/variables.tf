@@ -113,3 +113,9 @@ variable "local_storage_limit_bytes" {
   default     = null
   description = "Ephemeral disk of each instance. Null: the provider default."
 }
+
+variable "command" {
+  type        = list(string)
+  default     = null
+  description = "Overrides the image's entrypoint (e.g. another server in the same image). Null: the image's own."
+}

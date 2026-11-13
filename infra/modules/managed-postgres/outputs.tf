@@ -28,25 +28,6 @@ output "password" {
   sensitive = true
 }
 
-output "public_host" {
-  value       = try(scaleway_rdb_instance.this.load_balancer[0].ip, null)
-  description = "Public load-balancer IP for the RDB instance."
-}
-
-output "public_port" {
-  value       = try(scaleway_rdb_instance.this.load_balancer[0].port, null)
-  description = "Public load-balancer port."
-}
-
-output "database_url" {
-  value = try(
-    "postgresql://${var.db_user}:${urlencode(random_password.db.result)}@${scaleway_rdb_instance.this.load_balancer[0].ip}:${scaleway_rdb_instance.this.load_balancer[0].port}/${scaleway_rdb_database.this.name}?sslmode=require",
-    "postgresql://${var.db_user}:${urlencode(random_password.db.result)}@${scaleway_rdb_instance.this.private_network[0].ip}:${scaleway_rdb_instance.this.private_network[0].port}/${scaleway_rdb_database.this.name}?sslmode=require",
-  )
-  sensitive   = true
-  description = "Full DSN - prefers the public load-balancer when available, falls back to private-network IP."
-}
-
 # Password is percent-encoded: the generated one contains URL-reserved
 # characters and consumers (dj-database-url, libpq) decode a URI password.
 output "private_database_url" {

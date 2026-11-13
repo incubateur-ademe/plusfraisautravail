@@ -167,3 +167,15 @@ variable "email_host_password" {
   default   = ""
   sensitive = true
 }
+
+variable "bastion_enabled" {
+  type        = bool
+  default     = false
+  description = "Create the on-demand SSH bastion to the database's Private Network (`just bastion-up`)."
+}
+
+variable "bastion_allowed_ip_ranges" {
+  type        = list(string)
+  default     = []
+  description = "IP ranges allowed to reach the SSH bastion, e.g. [\"203.0.113.7/32\"]. Required with bastion_enabled: without it the bastion would be open to the Internet."
+}
