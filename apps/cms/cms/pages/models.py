@@ -72,12 +72,28 @@ class FaqSeoMixin:
 class ContentPage(FaqSeoMixin, AbstractContentPage):
     tags = ClusterTaggableManager(through="TagContentPage", blank=True)
     body = faq_body()
+    last_update_date = models.DateField(
+        "Date de mise à jour",
+        null=True,
+        blank=True,
+        help_text="Affichée en bas de la page. Vide : la date de la dernière publication.",
+    )
+    show_update_date = models.BooleanField("Afficher la date de mise à jour", default=True)
 
-    content_panels = AbstractContentPage.content_panels + [FieldPanel("tags")]
+    content_panels = AbstractContentPage.content_panels + [
+        FieldPanel("tags"),
+        FieldPanel("show_update_date"),
+        FieldPanel("last_update_date"),
+    ]
     api_fields = AbstractContentPage.api_fields + [APIField("tags")]
 
     class Meta:
         verbose_name = "Page de contenu"
+
+    @property
+    def update_date(self):
+        """The date shown on the page: the editor's, else the last publication."""
+        return self.last_update_date or self.last_published_at
 
 
 class TagContentPage(TaggedItemBase):

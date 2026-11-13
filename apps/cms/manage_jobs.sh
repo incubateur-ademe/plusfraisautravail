@@ -26,6 +26,10 @@ python manage.py migrate_from_sites_faciles --no-input
 # once prod is done, as for the content pages.
 python manage.py migrate_blog_entry_page_model
 python manage.py migrate --noinput
+# Idempotent: moves the update dates typed in the page bodies to the update date field,
+# a no-op once none is left. After `migrate`, it needs the column. Drop this call once
+# prod is done.
+python manage.py move_update_dates_to_field
 # Idempotent: replaces the page tags by categories, a no-op once no page carries a mapped
 # tag. After `migrate`, it needs the category tables. Drop this call once prod is done.
 python manage.py seed_categories_from_tags
