@@ -79,3 +79,19 @@ jobs:
     secrets: inherit # pragma: allowlist secret
     with:
       apply: ${{ needs.scope.outputs.infrastructure != 'false' }}
+
+  report:
+    name: 📋 Report
+    needs: [scope, cms, autodiag, alert_widget, climadiag, infrastructure]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          sparse-checkout: .github/scripts
+      - name: Write the report on the run's summary page
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+          SHA: ${{ github.sha }}
+        run: .github/scripts/run-report.sh

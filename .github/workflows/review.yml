@@ -68,19 +68,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Summary
+      - uses: actions/checkout@v7.0.1
+        with:
+          sparse-checkout: .github/scripts
+      - name: Write the report on the run's summary page
         env:
-          COVERAGE: ${{ needs.cms.outputs.coverage }}
-          CMS_RESULT: ${{ needs.cms.result }}
-        run: |
-          if [ -n "$COVERAGE" ]; then
-            line="📊 Python coverage: **${COVERAGE} %**"
-          elif [ "$CMS_RESULT" = "skipped" ]; then
-            line="📊 Python coverage: not measured, this pull request does not touch the CMS."
-          else
-            line="📊 Python coverage: not measured, the CMS tests did not run to the end."
-          fi
-          echo "$line" >> "$GITHUB_STEP_SUMMARY"
+          NEEDS: ${{ toJSON(needs) }}
+          SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: .github/scripts/run-report.sh
 
       - name: Fail if a product failed
         if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
