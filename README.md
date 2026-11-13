@@ -65,8 +65,11 @@ Chaque nuit, un conteneur Scaleway privé, relié à la base par le réseau priv
 createdb pfat_e2e       # une fois ; ou E2E_DATABASE_URL=… dans .env
 just e2e-restore        # télécharge le dump, restaure, migre, crée l'admin e2e / e2e
 just e2e-serve          # CMS sur http://localhost:8765, comme en prod (DEBUG off)
+npm run test:e2e        # tests Playwright (e2e/), démarre le CMS s'il ne tourne pas
 ```
 Le téléchargement utilise les clés `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` du `.env`. `E2E_DUMP_FILE=chemin` restaure un dump local à la place.
+
+Les tests tournent hors ligne : les médias sont remplacés par une image vide et tout autre domaine est bloqué. En CI, ils se lancent sur les PR qui portent le label `frontend`, et sur `main`.
 
 ## CI/CD
 
@@ -80,6 +83,8 @@ Le découpage par produit est dans [`.github/ci-areas.yml`](.github/ci-areas.yml
 - **📰 CMS** (et l'API qu'il sert) - `cms.yml` : ruff, pytest avec couverture, puis image Docker poussée sur le registre Scaleway et Serverless Container redéployé.
 - **🩺 Autodiag**, **🚨 Alert widget**, **🌡️ Climadiag** - `frontend.yml` : ESLint et build, puis synchronisation vers leur bucket Scaleway.
 - **🏗️ Infrastructure** - `infrastructure.yml` : `tofu plan`, puis `tofu apply` sur `main`.
+
+À côté de ce découpage, **🎭 E2E** (`e2e.yml`) lance les tests Playwright sur la base iso-prod, sur les PR qui portent le label `frontend` et sur `main`. **🌙 E2E dump** (`e2e-dump.yml`) produit chaque nuit le dump anonymisé de la prod.
 
 Le taux de couverture Python s'affiche en haut de chaque run (annotation **📊 Python coverage**) et dans le résumé du job ✅ CI.
 

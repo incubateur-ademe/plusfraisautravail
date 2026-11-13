@@ -18,6 +18,8 @@ frontend: &frontend
   - "package-lock.json"
   - "eslint.config.js"
   - ".github/workflows/frontend.yml"
+  # The Playwright suite (stories and journeys of the three apps), linted by frontend.yml.
+  - "e2e/**"
 
 autodiag:
   - *frontend

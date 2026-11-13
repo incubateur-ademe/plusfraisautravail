@@ -32,8 +32,9 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      # Config in the root eslint.config.js, shared by every workspace.
-      - run: npx eslint "apps/$APP"
+      # Config in the root eslint.config.js, shared by every workspace. e2e/ holds
+      # the Playwright suite of every app: each app run lints it too (a few files).
+      - run: npx eslint "apps/$APP" e2e
       # The apps import packages/api-client as source, so their `tsc -b` checks it too.
       - run: npm run build --workspace "@pfat/$APP"
 

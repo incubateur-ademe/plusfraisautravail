@@ -9,7 +9,7 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 // Shared lint config for every JS/TS workspace (apps/* and packages/*).
 export default defineConfig([
   // ponytail: only apps/* and packages/* hold JS/TS; the rest is Python, infra or build output.
-  globalIgnores(['*/', '!apps/', '!packages/', 'apps/cms/', '**/.venv/', '**/dist/', '**/.vite/','**/test-embed/']),
+  globalIgnores(['*/', '!apps/', '!packages/', '!e2e/', 'e2e/.cache/', 'apps/cms/', '**/.venv/', '**/dist/', '**/.vite/','**/test-embed/']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
