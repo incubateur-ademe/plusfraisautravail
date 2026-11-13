@@ -43,6 +43,13 @@ AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY", "")
 AWS_STORAGE_BUCKET_NAME = os.environ.get("AWS_STORAGE_BUCKET_NAME", "")
 AWS_S3_ENDPOINT_URL = os.environ.get("AWS_S3_ENDPOINT_URL", "")
 AWS_S3_REGION_NAME = os.environ.get("AWS_S3_REGION_NAME", "")
+# django-storages defaults to True: an upload whose name is already taken then
+# reuses that key and overwrites the object, so two images end up sharing one
+# file, and deleting or replacing either one deletes the other's file too.
+# Wagtail also truncates rendition names to 60 characters and relies on the
+# storage to keep them unique. False adds a suffix instead, as sites-conformes
+# does in its own settings.
+AWS_S3_FILE_OVERWRITE = False
 # Media URLs are plain https://<site>/media/<key>: the bucket is public-read
 # (infra: object-bucket public_read) and the Scalingo nginx proxy serves and
 # caches /media/ from it. No signature, so browsers and nginx can cache.
