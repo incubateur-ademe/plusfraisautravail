@@ -1,6 +1,7 @@
 name: 🎭 E2E
 
-# Playwright, on pull requests labelled `frontend` and on main:
+# Playwright, on pull requests labelled `frontend`, and on main where cd.yml
+# calls it and puts its coverage in the run report:
 # - cms: the CMS restored from the nightly anonymised prod dump (e2e/restore.sh);
 # - spa: every Storybook story of the SPAs (render, axe, screenshots) and
 #   the autodiag journeys on its build.
@@ -9,9 +10,14 @@ name: 🎭 E2E
 on:
   pull_request:
     types: [opened, synchronize, reopened, labeled]
-  push:
-    branches:
-      - main
+  workflow_call:
+    outputs:
+      server_coverage:
+        description: "Python coverage of the CMS under the e2e tests, in percent"
+        value: ${{ jobs.cms.outputs.coverage }}
+      browser_coverage:
+        description: "Line coverage of the SPAs under the e2e tests, in percent"
+        value: ${{ jobs.spa.outputs.coverage }}
   workflow_dispatch:
 
 permissions:
@@ -36,9 +42,11 @@ jobs:
     # cancel the one in progress. A job's `if` is evaluated before its group.
     concurrency:
       group: e2e-cms-${{ github.ref }}
-      cancel-in-progress: true
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    outputs:
+      coverage: ${{ steps.coverage.outputs.total }}
     services:
       postgres:
         image: postgres:16
@@ -92,11 +100,13 @@ jobs:
       # Separate from the unit-test coverage (cms.yml): what the e2e tests
       # exercise on the server, informative only.
       - name: Server coverage of the e2e tests
+        id: coverage
         if: ${{ !cancelled() }}
         working-directory: apps/cms
         run: |
           data=../../e2e/.cache/coverage/server.coverage
           [ -f "$data" ] || exit 0
+          echo "total=$(uv run coverage report --data-file="$data" --fail-under=0 --format=total)" >> "$GITHUB_OUTPUT"
           echo "### Couverture serveur des tests e2e" >> "$GITHUB_STEP_SUMMARY"
           uv run coverage report --data-file="$data" --fail-under=0 --format=markdown >> "$GITHUB_STEP_SUMMARY"
 
@@ -119,7 +129,7 @@ jobs:
       )
     concurrency:
       group: e2e-spa-${{ github.ref }}
-      cancel-in-progress: true
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     # Same image as `just e2e-spa-update-snapshots`, which made the reference
@@ -127,6 +137,8 @@ jobs:
     # @playwright/test version (Renovate bumps both in one PR).
     container:
       image: mcr.microsoft.com/playwright:v1.61.1-noble
+    outputs:
+      coverage: ${{ steps.coverage.outputs.lines }}
     env:
       HOME: /root # Firefox/Chromium refuse a HOME owned by another user
       E2E_COVERAGE: "1" # sourcemaps in the builds, browser coverage (e2e/coverage.ts)
@@ -136,10 +148,13 @@ jobs:
       - run: npm run test:spa # builds the Storybooks and autodiag first (pretest:spa)
 
       - name: Browser coverage of the e2e tests
+        id: coverage
         if: ${{ !cancelled() }}
         run: |
           summary=e2e/.cache/coverage/front/coverage-summary.md
-          [ -f "$summary" ] && cat "$summary" >> "$GITHUB_STEP_SUMMARY" || true
+          [ -f "$summary" ] || exit 0
+          cat "$summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "lines=$(grep '^| Lines' "$summary" | grep -oE '[0-9.]+ %' | head -1 | tr -d ' %')" >> "$GITHUB_OUTPUT"
 
       - name: Upload the Playwright report
         if: failure()
