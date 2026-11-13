@@ -11,9 +11,18 @@
     "dev:autodiag": "npm run dev --workspace @pfat/autodiag",
     "dev:alert-widget": "npm run dev --workspace @pfat/alert-widget",
     "build": "npm run build --workspaces --if-present",
-    "lint": "npm run lint --workspaces --if-present"
+    "lint": "eslint . && npm run lint --workspaces --if-present"
   },
   "engines": {
     "node": ">=22"
-  }
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "globals": "^16.5.0",
+    "typescript-eslint": "^8.48.0"
+  },
+  "type": "module"
 }

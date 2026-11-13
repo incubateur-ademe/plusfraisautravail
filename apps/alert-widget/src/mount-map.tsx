@@ -45,6 +45,7 @@ interface MapMountProps {
   demo?: ScenarioName;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- entry bundle, no HMR
 function MapMount({ apiBaseUrl, phenomenaIds, demo }: MapMountProps) {
   const client = useMemo(
     () => (demo ? buildFakeClient(demo) : new ApiClient({ baseUrl: apiBaseUrl })),
@@ -55,11 +56,12 @@ function MapMount({ apiBaseUrl, phenomenaIds, demo }: MapMountProps) {
 
   useEffect(() => {
     let cancelled = false;
-    setError(null);
     client
       .getMeteoAlerts()
       .then((snapshot) => {
-        if (!cancelled) setMeteo(snapshot);
+        if (cancelled) return;
+        setError(null);
+        setMeteo(snapshot);
       })
       .catch((reason: unknown) => {
         if (cancelled) return;

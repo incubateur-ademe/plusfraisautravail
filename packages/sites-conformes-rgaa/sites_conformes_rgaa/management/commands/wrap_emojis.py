@@ -54,9 +54,7 @@ class Command(BaseCommand):
     def _apply(self, instance, field_name, field, unwrap: bool) -> bool:
         html_fn = unwrap_emojis_in_html if unwrap else wrap_emojis_in_html
         stream_fn = (
-            unwrap_emojis_in_streamfield_raw_data
-            if unwrap
-            else wrap_emojis_in_streamfield_raw_data
+            unwrap_emojis_in_streamfield_raw_data if unwrap else wrap_emojis_in_streamfield_raw_data
         )
         value = getattr(instance, field_name)
         if isinstance(field, RichTextField):

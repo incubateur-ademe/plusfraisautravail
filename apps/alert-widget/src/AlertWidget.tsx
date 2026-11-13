@@ -79,11 +79,11 @@ export function AlertWidget({
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
     client
       .getMeteoAlerts()
       .then((snapshot) => {
         if (cancelled) return;
+        setMeteoError(null);
         setMeteo(snapshot);
       })
       .catch((reason: unknown) => {

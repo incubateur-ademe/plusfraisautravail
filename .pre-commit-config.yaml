@@ -20,15 +20,15 @@ repos:
       - id: check-added-large-files
         args: ["--maxkb=512"]
 
-  # ── Python (apps/cms/, packages/pfat-api/) ───────────────────────
+  # ── Python (apps/cms/, packages/*), config in ruff.toml ──────────
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.7.4
+    rev: v0.15.22
     hooks:
       - id: ruff
         args: ["--fix"]
-        files: ^(apps/cms|packages/pfat-api)/
+        files: ^(apps|packages)/
       - id: ruff-format
-        files: ^(apps/cms|packages/pfat-api)/
+        files: ^(apps|packages)/
 
   # ── HCL (infra/) ──────────────────────────────────────────────────
   # Uses the local `tofu` binary so it matches what CI runs.

@@ -3,6 +3,7 @@
 from typing import Any
 
 import pytest
+
 from pfat_api.schemas import Severity
 from pfat_api.sources import meteofrance as mf
 

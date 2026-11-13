@@ -10,7 +10,6 @@ from modelcluster.fields import ParentalKey, ParentalManyToManyField
 from sites_conformes.blog.models import AbstractBlogEntryPage
 from sites_conformes.core.blocks.core import STREAMFIELD_COMMON_BLOCKS
 from sites_conformes.core.models import AbstractContentPage, Category
-from sites_conformes_faq.blocks import FaqBlock, seo_holder
 from taggit.models import TaggedItemBase
 from wagtail.admin.panels import FieldPanel
 from wagtail.api import APIField
@@ -20,6 +19,8 @@ from wagtail.blocks import (
     StructBlockValidationError,
 )
 from wagtail.fields import StreamField
+
+from sites_conformes_faq.blocks import FaqBlock, seo_holder
 
 
 def faq_body():
