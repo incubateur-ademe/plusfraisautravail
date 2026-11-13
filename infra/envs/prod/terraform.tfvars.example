@@ -36,3 +36,6 @@ cms_extra_allowed_hosts = []
 # cms media bucket, see DEPLOY.md 2.1). Keeping API keys out of tfvars files,
 # even gitignored ones, avoids them ending up in a stray
 # `tofu show`/backup/screen-share.
+
+# Sentry DSN (sentry.incubateur.net). Empty disables Sentry.
+sentry_dsn = ""
