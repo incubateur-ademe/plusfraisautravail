@@ -73,3 +73,5 @@ venv/
 .coverage
 # e2e: downloaded dump, Playwright output
 e2e/.cache/
+# Playwright default output folder
+test-results/
