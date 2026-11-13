@@ -12,3 +12,5 @@ set -euo pipefail
 # when the migration itself succeeded (see fea5b49). This job has no such
 # time pressure (1800s timeout, no probe).
 python manage.py migrate --noinput
+# Idempotent: the database table of the "pfat_api" cache (cms/settings/base.py).
+python manage.py createcachetable

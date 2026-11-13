@@ -73,6 +73,9 @@ locals {
     EMAIL_PORT           = var.email_port
     EMAIL_HOST_USER      = var.email_host_user
     EMAIL_USE_TLS        = "true"
+    # The alert and Climadiag API (packages/pfat-api), served under /api/.
+    RTE_USE_SANDBOX   = var.rte_use_sandbox ? "true" : "false"
+    CLIMADIAG_API_URL = var.climadiag_api_url
   }
 }
 
@@ -158,7 +161,7 @@ module "cms" {
   cpu_limit                    = 560
   memory_limit                 = 1024
   environment_variables        = local.cms_env
-  secret_environment_variables = local.cms_secret_env
+  secret_environment_variables = merge(local.cms_secret_env, local.api_secret_env) # API secrets: not for cms_manage
   custom_domain                = var.base_domain
   private_network_id           = module.cms_db.private_network_id
   # Probe a real Wagtail render, not just SELECT 1: a container that answers

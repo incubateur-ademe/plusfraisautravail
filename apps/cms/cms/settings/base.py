@@ -109,6 +109,27 @@ CACHES = {
         "LOCATION": "renditions",
         "TIMEOUT": 86400,
     },
+    # The alert snapshots, shared by every worker and instance so the RTE rate limit
+    # (one call per 15 minutes) holds. `createcachetable` in manage_jobs.sh.
+    "pfat_api": {
+        "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+        "LOCATION": "pfat_api_cache",
+    },
+}
+
+# The alert and Climadiag API served under /api/ (packages/pfat-api).
+PFAT_API = {
+    "vigilance_app_id": os.environ.get("VIGILANCE_APP_ID"),
+    "rte_client_id": os.environ.get("RTE_CLIENT_ID"),
+    "rte_client_secret": os.environ.get("RTE_CLIENT_SECRET"),
+    "rte_use_sandbox": os.environ.get("RTE_USE_SANDBOX", "false").lower() == "true",
+    "climadiag_api_token": os.environ.get("CLIMADIAG_API_TOKEN"),
+    "cache_alias": "pfat_api",
+    **(
+        {"climadiag_api_url": os.environ["CLIMADIAG_API_URL"]}
+        if os.environ.get("CLIMADIAG_API_URL")
+        else {}
+    ),
 }
 
 AUTH_PASSWORD_VALIDATORS = [
