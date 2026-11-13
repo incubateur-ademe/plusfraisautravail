@@ -26,7 +26,11 @@ if [ -z "${E2E_DUMP_FILE:-}" ]; then
     export AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY:-${SCW_SECRET_KEY:-}}"
     export AWS_DEFAULT_REGION=fr-par AWS_ENDPOINT_URL=https://s3.fr-par.scw.cloud
     mkdir -p "$cache"
-    remote_sha="$(aws s3 cp --only-show-errors "$src/latest.sha256" -)"
+    remote_sha="$(aws s3 cp --only-show-errors "$src/latest.sha256" -)" || {
+        echo "No anonymised dump at $src yet, or no read access to it." >&2
+        echo "Run the 'E2E dump' workflow once, or restore a local file with E2E_DUMP_FILE=path." >&2
+        exit 1
+    }
     if [ "$(shasum -a 256 "$dump" 2>/dev/null | cut -d' ' -f1)" = "$remote_sha" ]; then
         echo "Dump already up to date ($dump)"
     else
