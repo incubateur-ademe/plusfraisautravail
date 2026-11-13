@@ -122,6 +122,7 @@ jobs:
       IMAGE_NAME: cms
     outputs:
       image: ${{ steps.meta.outputs.image }}
+      e2e_dump_image: ${{ steps.meta.outputs.e2e_dump_image }}
     steps:
       - uses: actions/checkout@v7.0.1
 
@@ -139,6 +140,7 @@ jobs:
         run: |
           IMAGE="$REGISTRY/$REGISTRY_NAMESPACE/$IMAGE_NAME:sha-${GITHUB_SHA::12}"
           echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
+          echo "e2e_dump_image=$REGISTRY/$REGISTRY_NAMESPACE/e2e-dump:sha-${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
 
       - name: Build & push
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
@@ -159,6 +161,23 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      # Nightly anonymised dump for the e2e tests (infra/e2e-dump), built from
+      # the same commit as the CMS so its masking rules match the schema.
+      # A dev tool must not block a production deploy: on failure the container
+      # keeps its previous image, and the dump refuses a schema it does not know.
+      - name: Build & push the e2e dump image
+        continue-on-error: true
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: infra/e2e-dump
+          push: true
+          platforms: linux/amd64
+          tags: |
+            ${{ steps.meta.outputs.e2e_dump_image }}
+            ${{ env.REGISTRY }}/${{ env.REGISTRY_NAMESPACE }}/e2e-dump:latest
+          cache-from: type=gha,scope=e2e-dump
+          cache-to: type=gha,scope=e2e-dump,mode=max
+
   deploy:
     name: 🚀 Deploy
     needs: build
@@ -170,6 +189,9 @@ jobs:
     env:
       REGION: fr-par
     steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          sparse-checkout: .github/scripts
       - name: Trigger Scaleway container redeploy
         env:
           SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
@@ -211,3 +233,12 @@ jobs:
             -H "X-Auth-Token: $SCW_SECRET_KEY" \
             -H "Content-Type: application/json" \
             -d "{}"
+
+      # Not run here: e2e-dump.yml calls it every night. The dump itself
+      # refuses to upload if rules.sql misses a column of the schema.
+      - name: Roll the e2e dump container out to this commit's image
+        continue-on-error: true
+        env:
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          IMAGE: ${{ needs.build.outputs.e2e_dump_image }}
+        run: .github/scripts/scw-container.sh redeploy e2e-dump-prod "$IMAGE" # module.e2e_dump, infra/envs/prod

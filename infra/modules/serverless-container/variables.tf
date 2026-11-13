@@ -101,3 +101,15 @@ variable "custom_domain" {
   default     = ""
   description = "Custom hostname to bind to the container (e.g. api.example.com, or a bare zone apex like example.com). Requires a DNS record pointing this hostname at the container's public_endpoint to already exist first - a CNAME for a subdomain, or the DNS provider's apex-alias equivalent for a bare domain. See the cname_target output. Leave empty to skip."
 }
+
+variable "privacy" {
+  type        = string
+  default     = "public"
+  description = "\"private\": every request needs an X-Auth-Token header (a Scaleway IAM secret key)."
+}
+
+variable "local_storage_limit_bytes" {
+  type        = number
+  default     = null
+  description = "Ephemeral disk of each instance. Null: the provider default."
+}

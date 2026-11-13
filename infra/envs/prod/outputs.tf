@@ -83,7 +83,16 @@ output "e2e_fixtures_bucket" {
 }
 
 output "e2e_dump_database_url" {
-  value       = "postgresql://${scaleway_rdb_user.e2e_dump.name}:${urlencode(random_password.e2e_dump.result)}@${module.cms_db.public_host}:${module.cms_db.public_port}/${module.cms_db.database_name}?sslmode=require"
+  value       = local.e2e_dump_dsn
   sensitive   = true
-  description = "Read-only DSN over the public load-balancer endpoint, for the e2e dump job."
+  description = "Read-only DSN over the Private Network, for the e2e dump container."
+}
+
+output "e2e_dump_container_id" {
+  value = module.e2e_dump.container_id
+}
+
+output "e2e_dump_url" {
+  value       = module.e2e_dump.public_endpoint
+  description = "Private container: POST /run with an X-Auth-Token header (Scaleway IAM secret key), or the e2e-dump workflow."
 }
