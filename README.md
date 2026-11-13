@@ -59,6 +59,15 @@ Les conventions de code sont celles des outils standards, configurés à la raci
 - **Python** : [ruff](https://docs.astral.sh/ruff/) (lint + format), config dans [`ruff.toml`](ruff.toml) ;
 - **TypeScript / React** : [ESLint](https://eslint.org/) avec les règles recommandées de typescript-eslint et React Hooks, config dans [`eslint.config.js`](eslint.config.js).
 
+### Base iso-prod pour les tests e2e
+Chaque nuit, un conteneur Scaleway privé, relié à la base par le réseau privé, publie un dump **anonymisé** de la base de prod (voir [`infra/e2e-dump`](infra/e2e-dump)). Pour travailler dessus en local :
+```bash
+createdb pfat_e2e       # une fois ; ou E2E_DATABASE_URL=… dans .env
+just e2e-restore        # télécharge le dump, restaure, migre, crée l'admin e2e / e2e
+just e2e-serve          # CMS sur http://localhost:8765, comme en prod (DEBUG off)
+```
+Le téléchargement utilise les clés `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` du `.env`. `E2E_DUMP_FILE=chemin` restaure un dump local à la place.
+
 ## CI/CD
 
 Deux workflows d'entrée, un groupe par produit dans la barre latérale de chaque run :
