@@ -5,6 +5,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 import dj_database_url
+import sentry_sdk
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -290,6 +291,14 @@ HOST_URL = "localhost"
 # PostHog project key (public by nature - it ships in every page). Empty
 # disables the loader; see packages/sites-conformes-posthog.
 POSTHOG_KEY = os.environ.get("POSTHOG_KEY", "")
+
+# Sentry: errors, performance traces and logs (std logging, INFO and up).
+# The SDK reads SENTRY_DSN from the env; no DSN = disabled (dev, CI).
+# send_default_pii stays off: no IPs, cookies or user emails leave the site.
+sentry_sdk.init(
+    traces_sample_rate=float(os.environ.get("SENTRY_TRACES_SAMPLE_RATE", "0.1")),
+    enable_logs=True,
+)
 
 # sites_conformes reads this for {% canonical_url %}.
 HOST_PROTO = urlsplit(WAGTAILADMIN_BASE_URL).scheme

@@ -68,6 +68,7 @@ locals {
     # without this Django would build absolute URLs on the Scaleway hostname.
     USE_X_FORWARDED_HOST = "true"
     POSTHOG_KEY          = var.posthog_key
+    SENTRY_DSN           = var.sentry_dsn
     DEFAULT_FROM_EMAIL   = var.default_from_email
     EMAIL_HOST           = var.email_host
     EMAIL_PORT           = var.email_port

@@ -27,6 +27,7 @@ jobs:
       TF_VAR_rte_client_secret: ${{ secrets.RTE_CLIENT_SECRET }}
       TF_VAR_climadiag_api_token: ${{ secrets.CLIMADIAG_API_TOKEN }}
       TF_VAR_django_secret_key: ${{ secrets.DJANGO_SECRET_KEY }}
+      TF_VAR_sentry_dsn: ${{ vars.SENTRY_DSN }}
     steps:
       - uses: actions/checkout@v4
 

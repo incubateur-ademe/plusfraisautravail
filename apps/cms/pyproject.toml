@@ -12,6 +12,7 @@ dependencies = [
     "django-storages[s3]>=1.14",
     "whitenoise>=6.8",
     "python-dotenv>=1.0",
+    "sentry-sdk[django]>=2.35",
     "django-debug-toolbar>=6.1",
     "wagtail-notion-form",
     "sites-conformes-footer-partners",

@@ -35,6 +35,8 @@ jobs:
 
       - name: Build
         run: npm run build --workspace @pfat/autodiag
+        env:
+          VITE_SENTRY_DSN: ${{ vars.SENTRY_DSN }}
 
       - name: Configure AWS CLI for Scaleway
         run: |

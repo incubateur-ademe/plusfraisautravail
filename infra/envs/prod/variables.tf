@@ -145,6 +145,12 @@ variable "cms_base_url" {
   description = "Public origin the CMS builds absolute URLs on (WAGTAILADMIN_BASE_URL). Empty = https://<base_domain>. Set to the Scalingo proxy URL while testing before the DNS cutover."
 }
 
+variable "sentry_dsn" {
+  type        = string
+  default     = ""
+  description = "Sentry DSN (sentry.incubateur.net) for the cms container (which also serves /api/): errors, traces and logs. Empty disables Sentry."
+}
+
 variable "posthog_key" {
   type        = string
   default     = ""
