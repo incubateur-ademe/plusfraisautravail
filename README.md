@@ -71,6 +71,14 @@ Le téléchargement utilise les clés `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` du `.e
 
 Les tests tournent hors ligne : les médias sont remplacés par une image vide et tout autre domaine est bloqué. En CI, ils se lancent sur les PR qui portent le label `frontend`, et sur `main`.
 
+### Storybook des SPA
+Chaque SPA (`apps/autodiag`, `apps/alert-widget`, `apps/climadiag`) a son Storybook (`npm run storybook --workspace @pfat/<spa>`), avec des données fictives injectées dans les composants. Chaque story est vérifiée par Playwright :
+```bash
+just e2e-spa            # build des Storybook, rendu et accessibilité (axe) de chaque story
+just e2e-spa-update-snapshots  # régénère les captures de référence (Docker, même image que la CI)
+```
+Les captures (320, 768 et 1440 px) ne sont comparées que sous Linux, en CI ou via `just e2e-spa-update-snapshots` : les polices macOS donnent un autre rendu. Relire le diff des PNG avant de committer.
+
 ## CI/CD
 
 Deux workflows d'entrée, un groupe par produit dans la barre latérale de chaque run :

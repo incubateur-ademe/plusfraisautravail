@@ -22,7 +22,15 @@ export function RadarChartComponent({ scores }: RadarChartComponentProps) {
           <PolarGrid stroke="#ddd" />
           <PolarAngleAxis dataKey="theme" tick={{ fontSize: 12 }} />
           <PolarRadiusAxis angle={30} domain={[0, maxVal]} tickCount={5} />
-          <Radar name="Score" dataKey="score" stroke="#0063cb" fill="#0063cb" fillOpacity={0.2} />
+          <Radar
+            name="Score"
+            dataKey="score"
+            stroke="#0063cb"
+            fill="#0063cb"
+            fillOpacity={0.2}
+            // Recharts ignores the OS "reduce motion" setting on its own.
+            isAnimationActive={!window.matchMedia('(prefers-reduced-motion: reduce)').matches}
+          />
         </RadarChart>
       </ResponsiveContainer>
     </div>

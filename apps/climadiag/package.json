@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc && vite build && BUILD_TARGET=embed vite build",
     "build:embed": "tsc && BUILD_TARGET=embed vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build --quiet -o ../../e2e/.cache/storybook/climadiag"
   },
   "dependencies": {
     "@codegouvfr/react-dsfr": "^1.32.4",

@@ -1,7 +1,8 @@
 name: 🎭 E2E
 
-# Playwright against the CMS restored from the nightly anonymised prod dump
-# (e2e/restore.sh). On pull requests labelled `frontend`, and on main.
+# Playwright, on pull requests labelled `frontend` and on main:
+# - cms: the CMS restored from the nightly anonymised prod dump (e2e/restore.sh);
+# - spa: every Storybook story of the SPAs (render, axe, screenshots).
 # Not a product of .github/ci-areas.yml: it runs on a label, not on the files
 # touched, and adding `labeled` to review.yml would rerun the whole CI on any label.
 on:
@@ -94,4 +95,39 @@ jobs:
           path: |
             e2e/.cache/report
             e2e/.cache/test-results
+          retention-days: 7
+
+  spa:
+    name: 🎭 SPA stories
+    if: >-
+      github.event_name != 'pull_request' || (
+        contains(github.event.pull_request.labels.*.name, 'frontend') &&
+        (github.event.action != 'labeled' || github.event.label.name == 'frontend')
+      )
+    concurrency:
+      group: e2e-spa-${{ github.ref }}
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Same image as `just e2e-spa-update-snapshots`, which made the reference
+    # screenshots: same fonts, same rendering. Keep its tag equal to the
+    # @playwright/test version (Renovate bumps both in one PR).
+    container:
+      image: mcr.microsoft.com/playwright:v1.61.1-noble
+    env:
+      HOME: /root # Firefox/Chromium refuse a HOME owned by another user
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - run: npm ci
+      - run: npm run build-storybook
+      - run: npm run test:spa
+
+      - name: Upload the Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: playwright-spa-report
+          path: |
+            e2e/.cache/spa-report
+            e2e/.cache/spa-results
           retention-days: 7

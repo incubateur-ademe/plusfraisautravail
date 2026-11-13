@@ -8,7 +8,9 @@
     "build": "tsc -b && vite build && BUILD_TARGET=embed vite build && BUILD_TARGET=embed-map vite build",
     "build:embed": "tsc -b && BUILD_TARGET=embed vite build && BUILD_TARGET=embed-map vite build",
     "preview": "vite preview",
-    "preview:embed": "npm run build:embed && cp dist/alert-widget-embed.js test-embed/ && npx serve test-embed -p 4173"
+    "preview:embed": "npm run build:embed && cp dist/alert-widget-embed.js test-embed/ && npx serve test-embed -p 4173",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build --quiet -o ../../e2e/.cache/storybook/alert-widget"
   },
   "dependencies": {
     "@codegouvfr/react-dsfr": "^1.31.1",
