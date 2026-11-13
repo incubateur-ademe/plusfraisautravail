@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Container entrypoint. Migrations (migrate_from_sites_faciles, migrate) are
+# Container entrypoint. Migrations (`migrate`, see manage_jobs.sh) are
 # run once, out-of-band via `manage.py` from CI or locally - not on every
 # cold start. Running them inside the startup-probe-gated boot path meant a
 # slow migration could exceed the probe budget and get the container killed

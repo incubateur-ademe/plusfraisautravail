@@ -158,8 +158,7 @@ WAGTAILIMAGES_FORMAT_CONVERSIONS = {"png": "webp", "jpeg": "webp"}
 # has no .webp entry (3.13 added one). django-storages falls back to
 # mimetypes.guess_type, so every WebP rendition was uploaded as
 # application/octet-stream. Register it explicitly - version- and
-# image-independent. Repair already-uploaded objects with
-# `manage.py set_s3_cache_control`, which now recomputes ContentType.
+# image-independent.
 mimetypes.add_type("image/webp", ".webp")
 
 WAGTAIL_SITE_NAME = "Plus Frais Au Travail"
@@ -253,7 +252,6 @@ INSTALLED_APPS.extend(
         "wagtailmenus",
         "wagtailmarkdown",
         "sites_conformes.proconnect",
-        "cms.media_tools",
         "wagtail_notion_form",
         "sites_conformes_rgaa",
         "sites_conformes_faq",

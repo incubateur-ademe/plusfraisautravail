@@ -101,8 +101,8 @@ class TagContentPage(TaggedItemBase):
 
 
 class BlogEntryPage(FaqSeoMixin, AbstractBlogEntryPage):
-    # Same model, field and related names as upstream: migrate_blog_entry_page_model
-    # adopts the legacy tables by renaming them, and old revisions keep restoring.
+    # Same model, field and related names as upstream: the tables were adopted from
+    # sites_conformes_blog by renaming them, and old revisions keep restoring.
     tags = ClusterTaggableManager(through="TagEntryPage", blank=True)
     categories = ParentalManyToManyField(
         Category, through="CategoryEntryPage", blank=True, verbose_name="Catégories"
