@@ -86,3 +86,9 @@ L'API Vigilance de Météo-France ([`meteole`](https://pypi.org/project/meteole/
 ## Remerciements
 
 Merci à [Vincent Poirot](https://github.com/vvpoirot) pour l'exploration initiale de l'API Vigilance avec l'INRS, qui a servi de point de départ à ce travail.
+
+## Licence
+
+Copyright (c) 2026 ADEME
+
+Ce code est publié sous la licence [GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0), la même que [sites-conformes](https://github.com/numerique-gouv/sites-conformes), sur lequel repose le CMS. Elle figure dans la [liste des licences autorisées](https://www.data.gouv.fr/fr/pages/legal/licences/) pour les logiciels publiés par l'administration.
