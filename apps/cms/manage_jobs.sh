@@ -26,5 +26,9 @@ python manage.py migrate_from_sites_faciles --no-input
 # once prod is done, as for the content pages.
 python manage.py migrate_blog_entry_page_model
 python manage.py migrate --noinput
+# Idempotent: moves the update dates typed in the page bodies to the update date field,
+# a no-op once none is left. After `migrate`, it needs the column. Drop this call once
+# prod is done.
+python manage.py move_update_dates_to_field
 # python manage.py wagtail_update_image_renditions
 # python manage.py set_s3_cache_control
