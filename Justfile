@@ -138,6 +138,22 @@ e2e-serve:
     uv run python manage.py compilemessages -l fr >/dev/null
     exec uv run python manage.py runserver "${E2E_PORT:-8765}"
 
+# Check every Storybook story of the SPAs: render, accessibility (axe).
+e2e-spa:
+    npm run build-storybook
+    npm run test:spa
+
+# Regenerate the reference screenshots of the stories, in the same Linux
+# image as CI (fonts render differently on macOS). Review the PNG diff before committing.
+e2e-spa-update-snapshots:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    npm run build-storybook
+    version=$(node -p "require('@playwright/test/package.json').version")
+    docker run --rm --platform linux/amd64 -v "$PWD":/work -w /work/e2e -e E2E_SNAPSHOTS=1 \
+      "mcr.microsoft.com/playwright:v$version-noble" \
+      npx playwright test --config spa.config.ts --update-snapshots
+
 # ── test / lint ──────────────────────────────────────────────────────────
 
 # Run all checks: JS build + CMS tests (the API's included) + ruff + ESLint.

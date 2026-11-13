@@ -17,11 +17,16 @@ export default defineConfig({
     baseURL: `http://localhost:${port}`,
     locale: 'fr-FR',
     timezoneId: 'Europe/Paris',
-    reducedMotion: 'reduce',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    {
+      name: 'chromium',
+      // After the device: set at the top level, it does not reach the page.
+      use: { ...devices['Desktop Chrome'], contextOptions: { reducedMotion: 'reduce' } },
+    },
+  ],
   webServer: {
     command: `uv run python manage.py compilemessages -l fr > /dev/null && uv run python manage.py runserver ${port} --noreload`,
     cwd: '../apps/cms',

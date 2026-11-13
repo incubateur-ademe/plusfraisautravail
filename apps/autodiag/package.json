@@ -9,7 +9,9 @@
     "build:embed": "tsc -b && BUILD_TARGET=embed vite build",
     "preview:embed": "npm run build:embed && cp dist/autodiag-embed.js test-embed/ && npx serve test-embed -p 4173",
     "preview": "vite preview",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build --quiet -o ../../e2e/.cache/storybook/autodiag"
   },
   "dependencies": {
     "@codegouvfr/react-dsfr": "^1.31.1",

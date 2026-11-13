@@ -13,7 +13,9 @@
     "dev:alert-widget": "npm run dev --workspace @pfat/alert-widget",
     "build": "npm run build --workspaces --if-present",
     "lint": "eslint . && npm run lint --workspaces --if-present",
-    "test:e2e": "npm run test --workspace @pfat/e2e"
+    "test:e2e": "npm run test --workspace @pfat/e2e",
+    "build-storybook": "npm run build-storybook --workspaces --if-present",
+    "test:spa": "npm run test:spa --workspace @pfat/e2e"
   },
   "engines": {
     "node": ">=22"
@@ -21,10 +23,12 @@
   "devDependencies": {
     "@creedengo/eslint-plugin": "^3.1.0",
     "@eslint/js": "^9.39.1",
+    "@storybook/react-vite": "^10.6.7",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
+    "storybook": "^10.6.7",
     "typescript-eslint": "^8.48.0"
   },
   "type": "module",

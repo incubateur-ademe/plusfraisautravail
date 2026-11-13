@@ -79,7 +79,9 @@ export function VigilanceMap({
       <div className="pfat-map-wrapper" ref={wrapperRef}>
         <svg
           viewBox={VIEW_BOX}
-          role="img"
+          // A group, not an image: each department inside is focusable, and
+          // an img role would hide them from screen readers (axe nested-interactive).
+          role="group"
           aria-label={ariaLabel}
           className="pfat-map-svg"
         >
