@@ -19,19 +19,22 @@ env:
   UV_VERSION: "0.13.x"
   PYTHON_VERSION: "3.12"
 
-concurrency:
-  group: e2e-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   cms:
     name: 🎭 CMS on the prod copy
-    # Adding another label to the PR must not rerun the suite.
+    # Adding another label must not rerun the suite. Fork PRs get no secrets,
+    # hence no dump: skipped.
     if: >-
       github.event_name != 'pull_request' || (
         contains(github.event.pull_request.labels.*.name, 'frontend') &&
-        (github.event.action != 'labeled' || github.event.label.name == 'frontend')
+        (github.event.action != 'labeled' || github.event.label.name == 'frontend') &&
+        github.event.pull_request.head.repo.full_name == github.repository
       )
+    # Per job, not per workflow: a skipped run (another label added) must not
+    # cancel the one in progress. A job's `if` is evaluated before its group.
+    concurrency:
+      group: e2e-cms-${{ github.ref }}
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     timeout-minutes: 20
     services:
@@ -40,7 +43,7 @@ jobs:
         env:
           POSTGRES_USER: cms
           POSTGRES_PASSWORD: cms
-          POSTGRES_DB: cms
+          POSTGRES_DB: pfat_e2e # restore.sh only empties a database named *e2e*
         ports:
           - 5432:5432
         options: >-
@@ -49,8 +52,7 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     env:
-      E2E_DATABASE_URL: "postgresql://cms:cms@localhost:5432/cms"
-      DATABASE_URL: "postgresql://cms:cms@localhost:5432/cms"
+      E2E_DATABASE_URL: "postgresql://cms:cms@localhost:5432/pfat_e2e"
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: actions/setup-node@v7.1.0

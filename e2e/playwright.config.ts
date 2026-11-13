@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test'
 
 // The CMS runs on a database restored from the anonymised prod dump
 // (`just e2e-restore`, or e2e/restore.sh in CI).
-const port = Number(process.env.E2E_PORT ?? 8000)
+const port = Number(process.env.E2E_PORT ?? 8765)
 const isCI = !!process.env.CI
 
 export default defineConfig({
