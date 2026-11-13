@@ -2,7 +2,8 @@
 
 Builds the category trees of CATEGORY_TREE (reusing the categories that already exist, by
 name), puts every page carrying a mapped tag in the matching category, removes that tag
-from the page, and turns the tag filter off on the index pages of the migrated pages.
+from the page, and switches the index pages of the migrated pages from the tag filter to
+the category filter.
 Pages and their latest revision are both updated, so a pending draft keeps the change.
 
 Tags missing from CATEGORY_TREE are left on their pages and listed at the end.
@@ -80,7 +81,7 @@ def patch_latest_revision(page, patch):
 
 
 class Command(BaseCommand):
-    help = "Replace the page tags by categories and turn the tag filters off."
+    help = "Replace the page tags by categories, and the tag filters by category filters."
 
     def add_arguments(self, parser):
         parser.add_argument("--dry-run", action="store_true", help="Report only, change nothing.")
@@ -96,7 +97,7 @@ class Command(BaseCommand):
                     indexes.add(page.get_parent().specific)
                     migrated += 1
             for index in sorted(indexes, key=lambda page: page.path):
-                self.turn_tag_filter_off(index)
+                self.switch_to_category_filter(index)
             self.report_leftover_tags()
             if dry_run:
                 transaction.set_rollback(True)
@@ -145,13 +146,19 @@ class Command(BaseCommand):
         names = ", ".join(sorted(c.name for c in categories))
         self.stdout.write(f"  {page.url_path}: {', '.join(t.name for t in tags)} -> {names}")
 
-    def turn_tag_filter_off(self, index):
-        if not getattr(index, "filter_by_tag", False):
+    def switch_to_category_filter(self, index):
+        """Filter by category instead of tag: an editor may have hidden the category filter
+        while its categories were empty (/solutions/ in prod)."""
+        switched = {"filter_by_tag": False, "filter_by_category": True}
+        if not hasattr(index, "filter_by_tag"):
             return
-        index.filter_by_tag = False
+        if all(getattr(index, field) == value for field, value in switched.items()):
+            return
+        for field, value in switched.items():
+            setattr(index, field, value)
         index.save(clean=False)
-        patch_latest_revision(index, lambda content: {**content, "filter_by_tag": False})
-        self.stdout.write(f"  {index.url_path}: tag filter turned off")
+        patch_latest_revision(index, lambda content: {**content, **switched})
+        self.stdout.write(f"  {index.url_path}: filters by category instead of tag")
 
     def report_leftover_tags(self):
         for model in tagged_page_models():

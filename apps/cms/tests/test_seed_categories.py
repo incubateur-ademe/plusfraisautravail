@@ -1,5 +1,5 @@
 """seed_categories_from_tags replaces the mapped tags of the pages by categories, in the page
-and in its latest revision, and turns the tag filter off on their index pages."""
+and in its latest revision, and switches their index pages to the category filter."""
 
 import pytest
 from django.core.management import call_command
@@ -15,7 +15,9 @@ pytestmark = pytest.mark.django_db
 @pytest.fixture
 def index():
     root = Site.objects.get(is_default_site=True).root_page
-    index = CatalogIndexPage(title="Inspirations", slug="inspirations", filter_by_tag=True)
+    index = CatalogIndexPage(
+        title="Inspirations", slug="inspirations", filter_by_tag=True, filter_by_category=False
+    )
     root.add_child(instance=index)
     index.save_revision().publish()
     return index
@@ -67,12 +69,14 @@ def test_cleans_the_tags_of_revisions_saved_before_the_swap(tagged_page):
     ]
 
 
-def test_turns_the_tag_filter_off_on_the_index(tagged_page, index):
+def test_switches_the_index_from_the_tag_to_the_category_filter(tagged_page, index):
     call_command("seed_categories_from_tags")
 
     index = CatalogIndexPage.objects.get(pk=index.pk)
-    assert index.filter_by_tag is False
-    assert index.latest_revision.content["filter_by_tag"] is False
+    assert (index.filter_by_tag, index.filter_by_category) == (False, True)
+    content = index.latest_revision.content
+    assert (content["filter_by_tag"], content["filter_by_category"]) == (False, True)
+    assert index.show_filters
 
 
 def test_reuses_the_categories_the_editors_created(index):
