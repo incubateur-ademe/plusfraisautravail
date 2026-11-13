@@ -45,7 +45,11 @@ echo "Restoring $dump"
 # Empty schema rather than pg_restore --clean: tables left by another
 # branch's migrations would otherwise survive and break `migrate`.
 psql -q -v ON_ERROR_STOP=1 "$db_url" -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'
-pg_restore --no-owner --no-privileges --exit-on-error -d "$db_url" "$dump"
+# Through psql rather than straight into the database: a pg_restore newer than
+# the server (17+ against Postgres 16, as in production) sets a parameter the
+# server does not know.
+pg_restore --no-owner --no-privileges -f - "$dump" | grep -v '^SET transaction_timeout' \
+    | psql -q -v ON_ERROR_STOP=1 "$db_url" > /dev/null
 
 echo "Running the post-deploy steps"
 cd "$root/apps/cms"
