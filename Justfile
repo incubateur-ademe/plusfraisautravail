@@ -121,6 +121,23 @@ build-climadiag:
 build-cms:
     docker build -f apps/cms/Dockerfile -t pfat-cms:local .
 
+# ── e2e ──────────────────────────────────────────────────────────────────
+# Database: E2E_DATABASE_URL (default postgresql:///pfat_e2e), created beforehand.
+
+# Restore the nightly anonymised prod dump into the e2e database, then migrate.
+# E2E_DUMP_FILE=path restores a local dump instead of downloading the latest.
+e2e-restore:
+    ./e2e/restore.sh
+
+# Serve the CMS on the e2e database like in production, on E2E_PORT (8765).
+e2e-serve:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cd apps/cms
+    export DJANGO_SETTINGS_MODULE=cms.settings.e2e
+    uv run python manage.py compilemessages -l fr >/dev/null
+    exec uv run python manage.py runserver "${E2E_PORT:-8765}"
+
 # ── test / lint ──────────────────────────────────────────────────────────
 
 # Run all checks: JS build + CMS tests (the API's included) + ruff + ESLint.
