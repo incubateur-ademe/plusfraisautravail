@@ -77,3 +77,13 @@ output "dns_records_to_create" {
   }
   description = "Hostname -> required DNS record. Create these in the OVH DNS zone for plusfraisautravail.beta.gouv.fr."
 }
+
+output "e2e_fixtures_bucket" {
+  value = module.e2e_fixtures.bucket_name
+}
+
+output "e2e_dump_database_url" {
+  value       = "postgresql://${scaleway_rdb_user.e2e_dump.name}:${urlencode(random_password.e2e_dump.result)}@${module.cms_db.public_host}:${module.cms_db.public_port}/${module.cms_db.database_name}?sslmode=require"
+  sensitive   = true
+  description = "Read-only DSN over the public load-balancer endpoint, for the e2e dump job."
+}
