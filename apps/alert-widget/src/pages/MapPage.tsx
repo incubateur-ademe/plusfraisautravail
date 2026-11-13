@@ -34,11 +34,12 @@ export function MapPage({
 
   useEffect(() => {
     let cancelled = false;
-    setError(null);
     client
       .getMeteoAlerts()
       .then((snapshot) => {
-        if (!cancelled) setMeteo(snapshot);
+        if (cancelled) return;
+        setError(null);
+        setMeteo(snapshot);
       })
       .catch((reason: unknown) => {
         if (cancelled) return;

@@ -36,7 +36,6 @@ class FaqBlock(blocks.ListBlock):
 
     def get_context(self, value, parent_context=None):
         context = super().get_context(value, parent_context=parent_context)
-        page = (parent_context or {}).get("page")
         items = [item for item in value if item["question"] is not None]
         context["accordions"] = [item["question"].accordion for item in items]
         seo = [item["question"] for item in items if item["seo"]]

@@ -4,6 +4,7 @@ from typing import Any
 
 import httpx
 import pytest
+
 from pfat_api.sources import climadiag
 
 pytestmark = pytest.mark.django_db

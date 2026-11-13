@@ -16,6 +16,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run lint
       - run: npm run build
 
   python-cms:
@@ -51,5 +52,7 @@ jobs:
           version: "0.5.x"
       - run: uv python install 3.12
       - run: uv sync --extra dev
-      - run: uv run ruff check . ../../packages/pfat-api
+      # Config in the root ruff.toml, shared by apps/cms and packages/*.
+      - run: uv run ruff check ../../apps ../../packages
+      - run: uv run ruff format --check ../../apps ../../packages
       - run: uv run pytest

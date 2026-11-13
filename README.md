@@ -50,8 +50,14 @@ L'API est servie par le CMS sous `/api/` ; OpenAPI : http://localhost:8080/api/d
 ### Tests / lint
 ```bash
 npm run build           # build tous les workspaces
-just test-cms lint-cms  # tests et lint du CMS et de l'API
+just test-cms lint-cms  # tests du CMS, lint Python (CMS et packages)
+just lint-js            # lint JS/TS de tous les workspaces
+just install-hooks      # hooks pre-commit (ruff, gitleaks…)
 ```
+
+Les conventions de code sont celles des outils standards, configurés à la racine et vérifiés par la CI :
+- **Python** : [ruff](https://docs.astral.sh/ruff/) (lint + format), config dans [`ruff.toml`](ruff.toml) ;
+- **TypeScript / React** : [ESLint](https://eslint.org/) avec les règles recommandées de typescript-eslint et React Hooks, config dans [`eslint.config.js`](eslint.config.js).
 
 ## Modèle de déploiement
 

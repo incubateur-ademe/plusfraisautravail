@@ -5,8 +5,9 @@ import pytest
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from sites_conformes.blog.models import Organization, Person
-from sites_conformes_faq.models import Question, Theme
 from wagtail.models import Site
+
+from sites_conformes_faq.models import Question, Theme
 
 
 @pytest.fixture

@@ -65,7 +65,6 @@ function parseDemoAttr(value: string | undefined): ScenarioName | undefined {
   // `data-demo` with no value (empty string) → default to heatwave.
   if (value === '') return 'heatwave';
   if (isScenarioName(value)) return value;
-  // eslint-disable-next-line no-console
   console.warn(
     `PfatAlertWidget: unknown demo scenario "${value}", falling back to "heatwave"`,
   );
@@ -200,7 +199,6 @@ if (currentScript?.dataset.auto !== undefined) {
         phenomena: currentScript.dataset.phenomena,
         demo: parseDemoAttr(currentScript.dataset.demo),
       }).catch((err: unknown) => {
-        // eslint-disable-next-line no-console
         console.error('PfatVigilanceMap: failed to mount', err);
       });
     if (document.readyState === 'loading') {

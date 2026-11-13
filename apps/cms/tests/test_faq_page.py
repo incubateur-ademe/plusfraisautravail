@@ -5,12 +5,12 @@ import pytest
 from django.core.exceptions import ValidationError
 from django.urls import reverse
 from sites_conformes.blog.models import BlogIndexPage
-from sites_conformes_faq.blocks import FaqItemBlock
-from sites_conformes_faq.models import Question
 from wagtail.blocks.base import get_error_json_data
 from wagtail.models import Site, get_page_models
 
 from cms.pages.models import BlogEntryPage, ContentPage
+from sites_conformes_faq.blocks import FaqItemBlock
+from sites_conformes_faq.models import Question
 
 pytestmark = pytest.mark.django_db
 

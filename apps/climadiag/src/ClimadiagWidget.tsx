@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert } from '@codegouvfr/react-dsfr/Alert';
 import { ApiClient, type ClimadiagLieu } from '@pfat/api-client';
 import { CommuneCombobox, type ComboboxOption } from './CommuneCombobox';
@@ -15,11 +15,10 @@ export interface ClimadiagWidgetProps {
 }
 
 export const ClimadiagWidget = ({ apiBaseUrl, client: clientProp }: ClimadiagWidgetProps) => {
-  const clientRef = useRef<ApiClient | undefined>(undefined);
-  if (!clientRef.current) {
-    clientRef.current = clientProp ?? new ApiClient({ baseUrl: apiBaseUrl });
-  }
-  const client = clientRef.current;
+  const client = useMemo(
+    () => clientProp ?? new ApiClient({ baseUrl: apiBaseUrl }),
+    [clientProp, apiBaseUrl],
+  );
 
   const [search, setSearch] = useState('');
   const [results, setResults] = useState<ClimadiagLieu[]>([]);
@@ -34,12 +33,7 @@ export const ClimadiagWidget = ({ apiBaseUrl, client: clientProp }: ClimadiagWid
       return;
     }
     const query = search.trim();
-    if (query.length < MIN_SEARCH_LENGTH) {
-      setResults([]);
-      setError(undefined);
-      return;
-    }
-    setLoading(true);
+    if (query.length < MIN_SEARCH_LENGTH) return;
     const timer = setTimeout(() => {
       client
         .searchClimadiag(query, { communesOnly: true })
@@ -53,7 +47,12 @@ export const ClimadiagWidget = ({ apiBaseUrl, client: clientProp }: ClimadiagWid
     return () => clearTimeout(timer);
   }, [client, search]);
 
-  const options: ComboboxOption[] = results.map((r) => ({
+  // Short queries show nothing, without clearing state from inside the effect.
+  const isTooShort = search.trim().length < MIN_SEARCH_LENGTH;
+  const visibleResults = isTooShort ? [] : results;
+  const visibleError = isTooShort ? undefined : error;
+
+  const options: ComboboxOption[] = visibleResults.map((r) => ({
     value: String(r.id),
     label: `${r.nom} - ${r.code_postal}`,
   }));
@@ -68,6 +67,8 @@ export const ClimadiagWidget = ({ apiBaseUrl, client: clientProp }: ClimadiagWid
         onInputChange={(value) => {
           setSearch(value);
           setSelected(undefined);
+          // Set here, not in the effect: the debounced search below clears it.
+          setLoading(value.trim().length >= MIN_SEARCH_LENGTH);
         }}
         onSelect={(option) => {
           const lieu = results.find((r) => String(r.id) === option.value);
@@ -76,7 +77,9 @@ export const ClimadiagWidget = ({ apiBaseUrl, client: clientProp }: ClimadiagWid
           setSearch(option.label);
         }}
       />
-      {error && <Alert className="fr-mt-2w" severity="error" small description={error} />}
+      {visibleError && (
+        <Alert className="fr-mt-2w" severity="error" small description={visibleError} />
+      )}
       {selected && <ClimadiagIndicateurs climadiagInfo={selected} />}
     </div>
   );

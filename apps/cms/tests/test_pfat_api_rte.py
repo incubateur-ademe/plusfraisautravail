@@ -6,6 +6,7 @@ from typing import Any
 import httpx
 import pytest
 from django.core.cache import caches
+
 from pfat_api import api as api_module
 from pfat_api.config import settings as api_settings
 from pfat_api.schemas import ElectricityLevel

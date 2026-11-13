@@ -123,8 +123,8 @@ build-cms:
 
 # ── test / lint ──────────────────────────────────────────────────────────
 
-# Run all checks: JS build + CMS tests (the API's included) + ruff.
-check: build test-cms lint-cms
+# Run all checks: JS build + CMS tests (the API's included) + ruff + ESLint.
+check: build test-cms lint-cms lint-js
 
 # CMS tests.
 test-cms:
@@ -135,18 +135,19 @@ test-cms:
 test-rgaa:
     cd packages/sites-conformes-rgaa && DJANGO_SETTINGS_MODULE=cms.settings.dev PYTHONPATH="../../apps/cms:${PYTHONPATH:-}" ../../apps/cms/.venv/bin/python -m pytest sites_conformes_rgaa/tests/
 
-# CMS lint (ruff), with the API package it serves.
+# Python lint (ruff, config in ruff.toml): CMS and every package.
 lint-cms:
-    cd apps/cms && uv run ruff check . ../../packages/pfat-api
+    cd apps/cms && uv run ruff check ../../apps ../../packages
+    cd apps/cms && uv run ruff format --check ../../apps ../../packages
 
 # Auto-fix ruff issues where possible.
 fmt-cms:
-    cd apps/cms && uv run ruff check --fix . ../../packages/pfat-api
-    cd apps/cms && uv run ruff format . ../../packages/pfat-api
+    cd apps/cms && uv run ruff check --fix ../../apps ../../packages
+    cd apps/cms && uv run ruff format ../../apps ../../packages
 
-# JS lint (per-workspace).
+# JS lint (ESLint, config in eslint.config.js) + api-client type check.
 lint-js:
-    npm run lint --if-present
+    npm run lint
 
 # ── pre-commit hooks ─────────────────────────────────────────────────────
 
