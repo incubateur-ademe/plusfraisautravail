@@ -3,6 +3,7 @@ import datetime
 from django import forms
 from django.db import models
 from django.template.loader import render_to_string
+from django.urls import reverse
 from modelcluster.fields import ParentalManyToManyField
 from modelcluster.models import ClusterableModel
 from wagtail.admin.panels import FieldPanel, MultiFieldPanel
@@ -100,6 +101,11 @@ class Question(PreviewableMixin, index.Indexed, ClusterableModel):
     @property
     def link(self):
         return self.link_page.url if self.link_page else self.link_url
+
+    @property
+    def usage_url(self):
+        """Admin « Utilisation » view, linked from the listing's usage count column."""
+        return reverse("wagtailsnippets_sites_conformes_faq_question:usage", args=[self.pk])
 
     @property
     def link_is_external(self):

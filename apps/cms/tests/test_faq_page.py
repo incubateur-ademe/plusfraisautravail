@@ -3,6 +3,7 @@ markup (checkbox checked by default) and the one-SEO-holder-per-question rule.""
 
 import pytest
 from django.core.exceptions import ValidationError
+from django.urls import reverse
 from sites_conformes.blog.models import BlogIndexPage
 from sites_conformes_faq.blocks import FaqItemBlock
 from sites_conformes_faq.models import Question
@@ -121,3 +122,37 @@ def test_blog_entry_holder_blocks_a_content_page(question):
     with pytest.raises(ValidationError) as err:
         Site.objects.get(is_default_site=True).root_page.add_child(instance=page)
     assert f"« Article » /cms-admin/pages/{entry.pk}/edit/" in str(err.value.error_dict["__all__"])
+
+
+@pytest.fixture
+def admin(client):
+    from django.contrib.auth import get_user_model
+
+    client.force_login(get_user_model().objects.create_superuser("admin", "a@example.org", "pw"))
+    return client
+
+
+def test_listing_links_usage_count(admin, question):
+    make_page("Page A", question, seo=False)
+    make_page("Page B", question)
+    unused = Question.objects.create(question="Orpheline ?", answer="<p>.</p>")
+    url = reverse("wagtailsnippets_sites_conformes_faq_question:list")
+    html = admin.get(url, {"ordering": "usage_count"}).content.decode()
+    assert f'href="{question.usage_url}"' in html and "Utilisé(e) 2 fois" in html
+    assert f'href="{unused.usage_url}"' in html
+    assert html.index(unused.question) < html.index(question.question)
+
+
+def test_usage_view_flags_seo_holder_and_status(admin, question):
+    a = make_page("Page A", question, seo=False)
+    b = make_page("Page B", question)
+    a.unpublish()
+    html = admin.get(question.usage_url).content.decode()
+    assert "Référence SEO" in html and "Publiée" in html
+
+    def last_cells(page):  # (SEO, Publiée) cells of the page's row
+        row = html[html.index(f"/pages/{page.pk}/edit/") :].split("</tr>")[0]
+        return ["icon-check" in cell for cell in row.split("<td")[-2:]]
+
+    assert last_cells(a) == [False, False]
+    assert last_cells(b) == [True, True]
