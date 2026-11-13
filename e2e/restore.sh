@@ -16,6 +16,11 @@ case "$db_name" in
     *e2e*) ;;
     *) echo "Refusing to empty '$db_name': the e2e database name must contain 'e2e'." >&2; exit 1 ;;
 esac
+# A pg_restore newer than the server (16, as in production) sends settings
+# the server does not know.
+server="$(psql -At "$db_url" -c 'SHOW server_version_num' | cut -c1-2)"
+client="$(pg_restore --version | grep -oE '[0-9]+' | head -1)"
+[ "$client" -le "$server" ] || { echo "pg_restore $client is newer than the server ($server): use the PostgreSQL $server client." >&2; exit 1; }
 root="$(cd "$(dirname "$0")/.." && pwd)"
 cache="$root/e2e/.cache"
 dump="${E2E_DUMP_FILE:-$cache/latest.dump}"
@@ -45,11 +50,7 @@ echo "Restoring $dump"
 # Empty schema rather than pg_restore --clean: tables left by another
 # branch's migrations would otherwise survive and break `migrate`.
 psql -q -v ON_ERROR_STOP=1 "$db_url" -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'
-# Through psql rather than straight into the database: a pg_restore newer than
-# the server (17+ against Postgres 16, as in production) sets a parameter the
-# server does not know.
-pg_restore --no-owner --no-privileges -f - "$dump" | grep -v '^SET transaction_timeout' \
-    | psql -q -v ON_ERROR_STOP=1 "$db_url" > /dev/null
+pg_restore --no-owner --no-privileges --exit-on-error -d "$db_url" "$dump"
 
 echo "Running the post-deploy steps"
 cd "$root/apps/cms"

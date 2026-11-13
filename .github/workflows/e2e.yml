@@ -37,7 +37,9 @@ jobs:
     concurrency:
       group: e2e-cms-${{ github.ref }}
       cancel-in-progress: true
-    runs-on: ubuntu-latest
+    # Not ubuntu-latest: this image ships the PostgreSQL 16 client, the version
+    # of the database service and of production (restore.sh needs it).
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     services:
       postgres:
