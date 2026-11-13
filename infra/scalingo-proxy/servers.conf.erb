@@ -13,7 +13,8 @@
 # - /<spa>/            everything else from the buckets, 5m from the bucket's
 #                      own Cache-Control (set by `aws s3 sync` in CI)
 # - /ph/               PostHog EU, first-party analytics path, never cached
-# - /api/, /           never cached
+# - /                  never cached: Wagtail pages and /api/ (Wagtail's API and the
+#                      alert API of packages/pfat-api)
 #
 # Cache lives in /tmp: wiped on each container restart, which is fine.
 
@@ -27,7 +28,6 @@ resolver 1.1.1.1 8.8.8.8 valid=60s ipv6=off;
 
 # ENV.fetch: a missing host must fail the build, not render an empty server.
 upstream cms       { zone cms 1m;       server <%= ENV.fetch("CMS_HOST") %>:443 resolve; keepalive 16; }
-upstream api       { zone api 1m;       server <%= ENV.fetch("API_HOST") %>:443 resolve; keepalive 16; }
 upstream media     { zone media 1m;     server <%= ENV["MEDIA_HOST"] || "pfat-cms-media.s3.fr-par.scw.cloud" %>:443 resolve; keepalive 8; }
 upstream autodiag  { zone autodiag 1m;  server <%= ENV["AUTODIAG_HOST"] || "pfat-autodiag.s3-website.fr-par.scw.cloud" %>:443 resolve; keepalive 8; }
 upstream alert     { zone alert 1m;     server <%= ENV["ALERT_WIDGET_HOST"] || "pfat-alert-widget.s3-website.fr-par.scw.cloud" %>:443 resolve; keepalive 8; }
@@ -62,7 +62,6 @@ server {
     server_name _;
 
     set $cms      <%= ENV.fetch("CMS_HOST") %>;
-    set $api      <%= ENV.fetch("API_HOST") %>;
     set $media    <%= ENV["MEDIA_HOST"] || "pfat-cms-media.s3.fr-par.scw.cloud" %>;
     set $autodiag <%= ENV["AUTODIAG_HOST"] || "pfat-autodiag.s3-website.fr-par.scw.cloud" %>;
     set $alert    <%= ENV["ALERT_WIDGET_HOST"] || "pfat-alert-widget.s3-website.fr-par.scw.cloud" %>;
@@ -167,21 +166,6 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header Origin "";
         proxy_set_header Referer "";
-    }
-
-    # ── Wagtail API (the autodiag reads its pages there): the CMS, not the API
-    # container. The longest prefix wins, so it takes /api/v2/ from /api/.
-    location /api/v2/ {
-        set $up $cms;
-        proxy_pass https://cms;
-        proxy_read_timeout 30s;
-    }
-
-    # ── API: live data, never cached.
-    location /api/ {
-        set $up $api;
-        rewrite ^/api/(.*) /$1 break;
-        proxy_pass https://api;
     }
 
     # ── Wagtail admin: longer timeouts for imports/uploads.
