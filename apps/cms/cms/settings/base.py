@@ -227,7 +227,10 @@ WAGTAILSEARCH_BACKENDS = {
 
 # Matches upstream sites-conformes' default admin path.
 WAGTAILADMIN_PATH = "cms-admin/"
-WAGTAIL_I18N_ENABLED = True
+# The site has one language (the "fr" locale). Upstream enables Wagtail i18n for
+# its fr/en demo; here it only cost a locale query per internal rich-text link
+# (page.localized), 10 of the 62 queries on the home page.
+WAGTAIL_I18N_ENABLED = False
 
 # Upstream disables this by default too: "They can clash with Whitenoise and
 # are normally not useful as we serve the statics from a trusted source."
