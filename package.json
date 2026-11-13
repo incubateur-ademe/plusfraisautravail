@@ -5,13 +5,15 @@
   "description": "Monorepo for plusfraisautravail.beta.gouv.fr - API gateway, frontends, scripts.",
   "workspaces": [
     "apps/*",
-    "packages/*"
+    "packages/*",
+    "e2e"
   ],
   "scripts": {
     "dev:autodiag": "npm run dev --workspace @pfat/autodiag",
     "dev:alert-widget": "npm run dev --workspace @pfat/alert-widget",
     "build": "npm run build --workspaces --if-present",
-    "lint": "eslint . && npm run lint --workspaces --if-present"
+    "lint": "eslint . && npm run lint --workspaces --if-present",
+    "test:e2e": "npm run test --workspace @pfat/e2e"
   },
   "engines": {
     "node": ">=22"
