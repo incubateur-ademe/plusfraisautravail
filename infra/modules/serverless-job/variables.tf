@@ -22,7 +22,7 @@ variable "registry_image" {
 
 variable "startup_command" {
   type        = list(string)
-  description = "Argv, e.g. [\"./manage_jobs.sh\"] or [\"python\", \"manage.py\", \"set_s3_cache_control\"]. Exec'd directly (no shell) - overrides the image's ENTRYPOINT. Chain multiple commands in a script baked into the image rather than a single \"cmd1 && cmd2\" string."
+  description = "Argv, e.g. [\"./manage_jobs.sh\"] or [\"python\", \"manage.py\", \"migrate\"]. Exec'd directly (no shell) - overrides the image's ENTRYPOINT. Chain multiple commands in a script baked into the image rather than a single \"cmd1 && cmd2\" string."
 }
 
 variable "cpu_limit" {
