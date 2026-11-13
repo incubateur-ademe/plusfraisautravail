@@ -32,9 +32,7 @@ jobs:
       TF_VAR_django_secret_key: ${{ secrets.DJANGO_SECRET_KEY }}
       TF_VAR_s3_bucket_scw_access_key_id: ${{ secrets.S3_BUCKET_SCW_ACCESS_KEY_ID }}
       TF_VAR_s3_bucket_scw_secret_key: ${{ secrets.S3_BUCKET_SCW_SECRET_KEY }}
-      TF_VAR_api_deploy: "true"
       TF_VAR_cms_deploy: "true"
-      TF_VAR_api_image: "rg.fr-par.scw.cloud/pfat/api:latest"
       TF_VAR_cms_image: "rg.fr-par.scw.cloud/pfat/cms:latest"
     steps:
       - uses: actions/checkout@v4

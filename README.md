@@ -7,10 +7,11 @@ Monorepo de l'écosystème [plusfraisautravail.beta.gouv.fr](https://plusfraisau
 ```
 .
 ├── apps/
+│   ├── cms/              # CMS Wagtail (Sites Conformes), sert aussi l'API sous /api/
 │   ├── autodiag/         # SPA d'auto-évaluation (Vite + React + react-dsfr)
 │   └── alert-widget/     # Widget d'alerte canicule embarquable
-├── api/                  # Passerelle FastAPI agrégeant les sources d'alerte (meteole/Vigilance)
 ├── packages/
+│   ├── pfat-api/         # API d'alertes et Climadiag (Django Ninja), montée par le CMS
 │   └── api-client/       # Client TypeScript partagé pour l'API
 ├── infra/                # OpenTofu (Scaleway : buckets + serverless containers)
 ├── scripts/              # Scripts ponctuels
@@ -21,7 +22,7 @@ Monorepo de l'écosystème [plusfraisautravail.beta.gouv.fr](https://plusfraisau
 ## Stack technique
 
 - **Frontends :** npm workspaces, Vite, React 19, TypeScript, [`@codegouvfr/react-dsfr`](https://github.com/codegouvfr/react-dsfr).
-- **API :** Python 3.12, [`uv`](https://docs.astral.sh/uv/), FastAPI, [`meteole`](https://pypi.org/project/meteole/).
+- **CMS et API :** Python 3.12, [`uv`](https://docs.astral.sh/uv/), Django, Wagtail ([Sites Conformes](https://github.com/numerique-gouv/sites-conformes)), Django Ninja, [`meteole`](https://pypi.org/project/meteole/).
 - **Infra :** OpenTofu -> Scaleway (buckets Object Storage, Serverless Containers, Container Registry). État stocké sur Scaleway Object Storage (backend compatible S3).
 - **CI/CD :** GitHub Actions, filtrées par chemin pour chaque app.
 
@@ -38,26 +39,25 @@ npm run dev:autodiag        # http://localhost:5173/autodiag/
 npm run dev:alert-widget    # http://localhost:5173/alert-widget/  (proxifie /api -> :8080)
 ```
 
-### API
+### CMS et API
 ```bash
-cd api
-cp .env.example .env  # renseigner VIGILANCE_APP_ID
-uv sync --extra dev
-uv run uvicorn pfat_api.main:app --reload --port 8080
+cp apps/cms/.env.example apps/cms/.env  # renseigner VIGILANCE_APP_ID, RTE_*, CLIMADIAG_API_TOKEN pour l'API
+just install-cms
+just cms
 ```
-OpenAPI : http://localhost:8080/docs
+L'API est servie par le CMS sous `/api/` ; OpenAPI : http://localhost:8080/api/docs
 
 ### Tests / lint
 ```bash
 npm run build           # build tous les workspaces
-cd api && uv run pytest && uv run ruff check .
+just test-cms lint-cms  # tests et lint du CMS et de l'API
 ```
 
 ## Modèle de déploiement
 
 - **autodiag** - bucket Scaleway, déployé par `deploy-autodiag.yml` lors d'un push sur `main`.
 - **alert-widget** - bucket Scaleway, déployé par `deploy-alert-widget.yml` lors d'un push sur `main`.
-- **api** - image construite et poussée sur le Container Registry Scaleway, puis le Serverless Container est redéployé par `deploy-api.yml`.
+- **cms** (et l'API qu'il sert) - image construite et poussée sur le Container Registry Scaleway, puis le Serverless Container est redéployé par `deploy-cms.yml`.
 - **infra** - `tofu plan` s'exécute en CI sur les PR touchant `infra/**`. `tofu apply` est lancé via le workflow `terraform-apply.yml` lors d'un push sur `main`.
 
 Voir [`DEPLOY.md`](./DEPLOY.md) pour la procédure de bootstrap initiale.
@@ -67,15 +67,15 @@ Voir [`DEPLOY.md`](./DEPLOY.md) pour la procédure de bootstrap initiale.
 **Secrets :**
 - `SCW_ACCESS_KEY`, `SCW_SECRET_KEY`, `SCW_DEFAULT_PROJECT_ID`, `SCW_DEFAULT_ORGANIZATION_ID`
 - `VIGILANCE_APP_ID`
-- `RTE_CLIENT_ID`, `RTE_CLIENT_SECRET` (optionnels - sans ces secrets, l'endpoint `/alerts/electricity` répond 503)
+- `RTE_CLIENT_ID`, `RTE_CLIENT_SECRET` (optionnels - sans ces secrets, l'endpoint `/api/alerts/electricity` répond 503)
 
 **Variables :**
-- `API_BASE_URL` - URL publique de l'API déployée (utilisée au build des frontends)
-- `SCW_API_CONTAINER_ID` - ID du container Scaleway, sortie de `tofu apply`
+- `API_BASE_URL` - base de l'API utilisée au build des frontends : `/api` (même origine, le proxy l'envoie au CMS)
+- `SCW_CMS_CONTAINER_ID` - ID du container Scaleway du CMS, sortie de `tofu apply`
 
 ## Sources de données
 
-L'API Vigilance de Météo-France ([`meteole`](https://pypi.org/project/meteole/)) renvoie, par département, des codes couleur (1=vert, 2=jaune, 3=orange, 4=rouge) pour chaque phénomène. La passerelle API expose pour l'instant les phénomènes canicule (id `6`) et orages (id `3`), ainsi que les prévisions de tension du réseau électrique national via l'API Ecowatt de RTE.
+L'API Vigilance de Météo-France ([`meteole`](https://pypi.org/project/meteole/)) renvoie, par département, des codes couleur (1=vert, 2=jaune, 3=orange, 4=rouge) pour chaque phénomène. L'API (`packages/pfat-api`) expose pour l'instant les phénomènes canicule (id `6`) et orages (id `3`), ainsi que les prévisions de tension du réseau électrique national via l'API Ecowatt de RTE.
 
 ## Remerciements
 

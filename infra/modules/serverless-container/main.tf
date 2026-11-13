@@ -49,7 +49,7 @@ resource "scaleway_container" "this" {
     timeout           = "10s"
   }
 
-  # Image rollouts are owned by deploy-api.yml / deploy-cms.yml (PATCH on the
+  # Image rollouts are owned by deploy-cms.yml (PATCH on the
   # container API), not by tofu. Without this, every `tofu apply` would try to
   # revert the running image to whatever bootstrap reference is in
   # terraform.tfvars.

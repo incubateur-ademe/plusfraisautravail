@@ -1,37 +1,16 @@
 locals {
   environment = "prod"
 
-  # Only pass secrets that are actually set; an empty secret env var on a
-  # Scaleway container is still a real env var pointing at nothing, which the
-  # API would happily try to use. Use a conditional map and merge.
+  # The alert API's secrets (packages/pfat-api, served by the CMS). Only pass
+  # secrets that are actually set; an empty secret env var on a Scaleway
+  # container is still a real env var pointing at nothing, which the API would
+  # happily try to use. Use a conditional map and merge.
   api_secret_env = merge(
     var.vigilance_app_id == "" ? {} : { VIGILANCE_APP_ID = var.vigilance_app_id },
     var.rte_client_id == "" ? {} : { RTE_CLIENT_ID = var.rte_client_id },
     var.rte_client_secret == "" ? {} : { RTE_CLIENT_SECRET = var.rte_client_secret },
     var.climadiag_api_token == "" ? {} : { CLIMADIAG_API_TOKEN = var.climadiag_api_token },
   )
-
-  api_env = {
-    RTE_USE_SANDBOX   = var.rte_use_sandbox ? "true" : "false"
-    CLIMADIAG_API_URL = var.climadiag_api_url
-    # JSON-encoded list - pydantic-settings parses this as list[str].
-    # Includes the deployed alert-widget/climadiag bucket origins so the
-    # embeds can call the API without a CORS preflight failure.
-    CORS_ORIGINS = jsonencode(concat(
-      [
-        "http://localhost:5173",
-        "http://localhost:4173",
-        "https://plusfraisautravail.beta.gouv.fr",
-        # website_endpoint is "<bucket>.s3-website.<region>.scw.cloud" (with bucket).
-        # website_domain is the region-only suffix - using it here would give an
-        # origin that matches every bucket in the region, which is wrong.
-        "https://${module.alert_widget_site.website_endpoint}",
-        "https://${module.autodiag_site.website_endpoint}",
-        "https://${module.climadiag_site.website_endpoint}",
-      ],
-      var.extra_cors_origins,
-    ))
-  }
 
   cms_secret_env = merge(
     # Private-network DSN: the container is attached to the DB's Private
@@ -54,8 +33,8 @@ locals {
     # container is created, and the container's env vars are set at create
     # time, so referencing it back would be a dependency cycle. Add the
     # Scaleway-assigned domain to cms_extra_allowed_hosts once you have it
-    # (from `tofu output cms_url`) and re-apply, same as the api_image /
-    # api_deploy bootstrap two-step.
+    # (from `tofu output cms_url`) and re-apply, same as the cms_image /
+    # cms_deploy bootstrap two-step.
     ALLOWED_HOSTS           = jsonencode(var.cms_extra_allowed_hosts)
     AWS_STORAGE_BUCKET_NAME = module.cms_media.bucket_name
     AWS_S3_ENDPOINT_URL     = module.cms_media.endpoint
@@ -80,7 +59,7 @@ locals {
   }
 }
 
-# Shared by every serverless-container app (api, cms, ...) - Scaleway
+# Shared by every serverless-container app (cms, ...) - Scaleway
 # registry namespaces hold multiple image repos, no need for one per app.
 resource "scaleway_registry_namespace" "pfat" {
   name      = "pfat"
@@ -107,21 +86,6 @@ module "climadiag_site" {
   app_name    = "climadiag"
   environment = local.environment
   bucket_name = "pfat-climadiag"
-}
-
-module "api" {
-  source                       = "../../modules/serverless-container"
-  app_name                     = "api"
-  environment                  = local.environment
-  registry_image               = var.api_image
-  deploy                       = var.api_deploy
-  port                         = 8080
-  min_scale                    = var.api_min_scale
-  max_scale                    = 5
-  environment_variables        = local.api_env
-  secret_environment_variables = local.api_secret_env
-  health_check_path            = "/health"
-  custom_domain                = "api.${var.base_domain}"
 }
 
 module "cms_db" {

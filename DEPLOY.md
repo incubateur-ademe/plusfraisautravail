@@ -11,9 +11,7 @@ The stack is provisioned with [OpenTofu](https://opentofu.org/) (`infra/envs/pro
 | Bucket `pfat-alert-widget` | `static-site` | `module.alert_widget_site` |
 | Bucket `pfat-climadiag` | `static-site` | `module.climadiag_site` |
 | Bucket `pfat-cms-media` (private) | `object-bucket` | `module.cms_media` |
-| Container Registry namespace `pfat` | none | `scaleway_registry_namespace.pfat` (shared by `api` and `cms`) |
-| Container namespace `api-prod` | `serverless-container` | `module.api` |
-| Container `api-prod` | `serverless-container` | `module.api` |
+| Container Registry namespace `pfat` | none | `scaleway_registry_namespace.pfat` |
 | Private Network `cms-prod` | `managed-postgres` | `module.cms_db` |
 | RDB instance `cms-prod` | `managed-postgres` | `module.cms_db` |
 | Container namespace `cms-prod` | `serverless-container` | `module.cms` |
@@ -21,10 +19,9 @@ The stack is provisioned with [OpenTofu](https://opentofu.org/) (`infra/envs/pro
 
 CI/CD lives under `.github/workflows/`:
 
-- `ci.yml` - JS build + Python ruff + pytest (api and cms) on every PR/push.
+- `ci.yml` - JS build + Python ruff + pytest (cms, with the API of `packages/pfat-api`) on every PR/push.
 - `terraform-plan.yml` - `tofu plan` on PRs touching `infra/**`.
-- `deploy-api.yml` - Docker build, push to registry, `PATCH redeploy=true`.
-- `deploy-cms.yml` - Docker build, push to registry, `PATCH redeploy=true` (same shape as `deploy-api.yml`).
+- `deploy-cms.yml` - Docker build, push to registry, `PATCH redeploy=true`, then the `cms_manage` job (migrations).
 - `deploy-autodiag.yml` - Vite build, `aws s3 sync` to the bucket.
 - `deploy-alert-widget.yml` - Vite build, `aws s3 sync` to the bucket.
 - `deploy-climadiag.yml` - Vite build (SPA + embed), `aws s3 sync` to the bucket.
@@ -102,7 +99,7 @@ just bootstrap-state
 just bootstrap-tfvars
 ```
 
-Set at least `vigilance_app_id`. Set `rte_client_id` / `rte_client_secret` if you have them; leave empty to disable `/alerts/electricity`. Set `climadiag_api_token` if you have it; leave empty to disable `/climadiag/search`. Set `django_secret_key` for the CMS. Leave `api_image=""`/`api_deploy=false` and `cms_image=""`/`cms_deploy=false` for now.
+Set at least `vigilance_app_id`. Set `rte_client_id` / `rte_client_secret` if you have them; leave empty to disable `/api/alerts/electricity`. Set `climadiag_api_token` if you have it; leave empty to disable `/api/climadiag/search`. Set `django_secret_key` for the CMS. Leave `cms_image=""`/`cms_deploy=false` for now.
 
 ### 2.4 Initialize OpenTofu
 
@@ -110,50 +107,38 @@ Set at least `vigilance_app_id`. Set `rte_client_id` / `rte_client_secret` if yo
 just tf-init
 ```
 
-**Upgrading an existing deployment (registry namespace already exists from before `cms` was added):** run this once, before the first apply below, so the existing `pfat` registry namespace is relabeled in state instead of destroyed and recreated (which would orphan already-pushed `api` images):
-
-```bash
-cd infra/envs/prod
-tofu state mv module.api.scaleway_registry_namespace.this scaleway_registry_namespace.pfat
-```
-
-Skip this on a fresh account with no prior state - there's nothing to migrate.
-
 ### 2.5 First apply (creates buckets, registry, Postgres, Private Network - no container deploy yet)
 
 ```bash
 just tf-apply
 ```
 
-This succeeds with `api_deploy=false`/`cms_deploy=false` because the registry must exist before any image can be pushed to it (chicken-and-egg). **The RDB instance takes several minutes to provision** - `scaleway_rdb_instance.this: Still creating... [4m0s elapsed]`-style output is expected, not a stuck apply.
+This succeeds with `cms_deploy=false` because the registry must exist before any image can be pushed to it (chicken-and-egg). **The RDB instance takes several minutes to provision** - `scaleway_rdb_instance.this: Still creating... [4m0s elapsed]`-style output is expected, not a stuck apply.
 
 ### 2.6 First image push
 
 ```bash
-just deploy-api-bootstrap
 just deploy-cms-bootstrap
 ```
 
-Builds `api/Dockerfile` / `apps/cms/Dockerfile`, logs into `rg.fr-par.scw.cloud` (username `nologin`, password = `$SCW_SECRET_KEY`), pushes `rg.fr-par.scw.cloud/pfat/api:bootstrap` and `rg.fr-par.scw.cloud/pfat/cms:bootstrap`. Each recipe prints the exact reference at the end.
+Builds `apps/cms/Dockerfile`, logs into `rg.fr-par.scw.cloud` (username `nologin`, password = `$SCW_SECRET_KEY`), pushes `rg.fr-par.scw.cloud/pfat/cms:bootstrap`. The recipe prints the exact reference at the end.
 
 ### 2.7 Edit `terraform.tfvars` again
 
 Set:
 
 ```hcl
-api_image  = "rg.fr-par.scw.cloud/pfat/api:bootstrap"
-api_deploy = true
 cms_image  = "rg.fr-par.scw.cloud/pfat/cms:bootstrap"
 cms_deploy = true
 ```
 
-### 2.8 Second apply (creates the containers)
+### 2.8 Second apply (creates the container)
 
 ```bash
 just tf-apply
 ```
 
-After this, note the `cms_url` output and add it to `cms_extra_allowed_hosts` in `terraform.tfvars`, then apply once more - the container's own Scaleway domain can't be known before it's created, so Django's `ALLOWED_HOSTS` needs this one extra round-trip (same reason `api_image`/`api_deploy` needed two applies).
+After this, note the `cms_url` output and add it to `cms_extra_allowed_hosts` in `terraform.tfvars`, then apply once more - the container's own Scaleway domain can't be known before it's created, so Django's `ALLOWED_HOSTS` needs this one extra round-trip (same reason `cms_image`/`cms_deploy` needed two applies).
 
 ### 2.9 Capture outputs
 
@@ -161,7 +146,7 @@ After this, note the `cms_url` output and add it to `cms_extra_allowed_hosts` in
 just status
 ```
 
-Note the `container_id`, `api_url`, `cms_container_id`, and `cms_url` outputs - you need them for the next step.
+Note the `cms_container_id` and `cms_url` outputs - you need them for the next step.
 
 ### 2.10 Set GitHub secrets and environments
 
@@ -169,14 +154,14 @@ Two recipes, both idempotent:
 
 ```bash
 just bootstrap-secrets        # repo-level secrets (used only by terraform-plan.yml on PRs)
-just bootstrap-environments   # creates api / cms / autodiag / alert-widget / climadiag envs + their secrets
+just bootstrap-environments   # creates cms / autodiag / alert-widget / climadiag envs + their secrets
 ```
 
-`bootstrap-environments` reads `SCW_*`, `VIGILANCE_APP_ID`, `RTE_*`, `DJANGO_SECRET_KEY` from your shell and `api_url` / `container_id` / `cms_url` / `cms_container_id` / bucket URLs from `tofu output`. It creates each environment with a `branch=main` policy so only main-branch deploys can read those secrets.
+`bootstrap-environments` reads `SCW_*`, `VIGILANCE_APP_ID`, `RTE_*`, `DJANGO_SECRET_KEY` from your shell and `cms_url` / `cms_container_id` / bucket URLs from `tofu output`. The SPAs get `API_BASE_URL=/api`: same origin, the proxy sends `/api/` to the CMS. It creates each environment with a `branch=main` policy so only main-branch deploys can read those secrets.
 
 **Why two scopes:** `terraform-plan.yml` runs on PRs from any branch; environment-scoped secrets aren't readable from non-main refs, so its credentials live at repo level. `deploy-*.yml` workflows live in their respective environments - the GitHub UI shows a deployment history per environment with a clickable URL.
 
-You're done. The next push to `main` touching `api/**` will redeploy the API container; `apps/cms/**` will redeploy the CMS container; `apps/autodiag/**` and `apps/alert-widget/**` will sync to their buckets. The deploy progress is visible at:
+You're done. The next push to `main` touching `apps/cms/**` or `packages/**` will redeploy the CMS container (and the API it serves); `apps/autodiag/**` and `apps/alert-widget/**` will sync to their buckets. The deploy progress is visible at:
 
 ```
 https://github.com/incubateur-ademe/plusfraisautravail/deployments
@@ -188,20 +173,18 @@ https://github.com/incubateur-ademe/plusfraisautravail/deployments
 
 | Trigger | What happens |
 |---|---|
-| Push to `main` touching `api/**` | `deploy-api.yml` builds + pushes a new image, then `PATCH`es the container with `redeploy=true`. |
-| Push to `main` touching `apps/cms/**` | `deploy-cms.yml` builds + pushes a new image, then `PATCH`es the container with `redeploy=true`. |
+| Push to `main` touching `apps/cms/**` or `packages/**` | `deploy-cms.yml` builds + pushes a new image, then `PATCH`es the container with `redeploy=true`. |
 | Push to `main` touching `apps/autodiag/**` | `deploy-autodiag.yml` builds and `aws s3 sync`s to `pfat-autodiag`. |
 | Push to `main` touching `apps/alert-widget/**` | `deploy-alert-widget.yml` builds and `aws s3 sync`s to `pfat-alert-widget`. |
 | Push to `main` touching `apps/climadiag/**` | `deploy-climadiag.yml` builds (SPA + embed) and `aws s3 sync`s to `pfat-climadiag`. |
 | PR touching `infra/**` | `terraform-plan.yml` posts a plan as a step summary. |
 | Push to `main` touching `infra/**` | `terraform-apply.yml` runs `tofu apply` against prod. The deployment shows up in the `tofu-apply` GitHub Environment. |
 
-Both containers have `registry_image` under `lifecycle { ignore_changes = [registry_image] }` so `tofu apply` won't fight the deploy workflows - image rollouts go through `deploy-api.yml`/`deploy-cms.yml`, infra changes go through Tofu, neither steps on the other.
+The container has `registry_image` under `lifecycle { ignore_changes = [registry_image] }` so `tofu apply` won't fight the deploy workflow - image rollouts go through `deploy-cms.yml`, infra changes go through Tofu, neither steps on the other.
 
 Manual triggers from your machine:
 
 ```bash
-just deploy-api
 just deploy-cms
 just deploy-autodiag
 just deploy-alert-widget
@@ -230,7 +213,7 @@ The local dev server keeps the historical sub-path (`/autodiag/`, `/alert-widget
 <script
   src="https://pfat-climadiag.s3-website.fr-par.scw.cloud/climadiag-embed.js"
   data-auto
-  data-api-base-url="https://<api-prod-url>"
+  data-api-base-url="https://plusfraisautravail.beta.gouv.fr/api"
 ></script>
 ```
 
@@ -250,12 +233,12 @@ The script self-mounts right where it's placed in the DOM and injects the DSFR C
 | `/<spa>/assets/` | SPA bucket | 1y (Vite content-hashed) |
 | `/<spa>/` | SPA bucket | 5m (from the bucket's own Cache-Control) |
 | `/ph/` | PostHog EU (`eu.i.posthog.com`, assets from `eu-assets.i.posthog.com`) | none - the PostHog snippet in Wagtail's custom scripts uses `api_host: '/ph'` |
-| `/api/` | api container | none |
+| `/api/` | cms container (Wagtail's `api/v2/` and the alert API of `packages/pfat-api`) | none |
 | `/` | cms container | none |
 
 Requests for `www.plusfraisautravail.beta.gouv.fr` and `plus-fraiche-ma-boite.sites.beta.gouv.fr` get a 301 to the canonical domain; both domains are attached to the proxy app.
 
-The app is `plusfraisautravail-proxy` (osc-fr1). Its env already carries `BUILDPACK_URL`, `PROJECT_DIR=infra/scalingo-proxy`, `CMS_HOST` and `API_HOST` (the containers' Scaleway hostnames, from `tofu output cms_url` / `api_url`). `scalingo -a plusfraisautravail-proxy git-setup` adds the `scalingo` git remote, then:
+The app is `plusfraisautravail-proxy` (osc-fr1). Its env already carries `BUILDPACK_URL`, `PROJECT_DIR=infra/scalingo-proxy`, `CMS_HOST` (the cms container's Scaleway hostname, from `tofu output cms_url`). `scalingo -a plusfraisautravail-proxy git-setup` adds the `scalingo` git remote, then:
 
 ```bash
 git push scalingo main   # or link the GitHub repo in the Scalingo dashboard
@@ -274,15 +257,15 @@ The SPAs must be built with their default sub-path base (`/autodiag/` etc.), not
 ## 6. Troubleshooting
 
 **"image not found" on the first `tofu apply`.**
-You forgot `api_deploy=false`/`cms_deploy=false` for the first pass. Set it, apply, then push the image with `just deploy-api-bootstrap`/`just deploy-cms-bootstrap`, then flip `*_deploy=true` and apply again.
+You forgot `cms_deploy=false` for the first pass. Set it, apply, then push the image with `just deploy-cms-bootstrap`, then flip `cms_deploy=true` and apply again.
 
-**API returns 502.**
-The container is up but the app crashed at boot. Check Scaleway dashboard -> Containers -> `api-prod` -> Logs (or `scw container container logs <id>` if you have the CLI). Most common cause: missing/wrong `VIGILANCE_APP_ID`. RTE is optional; if the creds are wrong only `/alerts/electricity` will 503.
+**API returns 502 on `/api/alerts/meteo` or `/api/alerts/electricity`.**
+The upstream (Météo-France or RTE) failed and no earlier snapshot is cached. Check the cms container logs (Scaleway dashboard -> Containers -> `cms-prod` -> Logs). Most common cause: a wrong `VIGILANCE_APP_ID`; a missing one answers 503.
 
-**API returns 503 on `/alerts/electricity`.**
+**API returns 503 on `/api/alerts/electricity`.**
 RTE creds are missing or wrong. Set `rte_client_id` / `rte_client_secret` in `terraform.tfvars` and re-apply, or set the corresponding GitHub secrets and re-run `terraform-plan.yml` for visibility (the actual variable injection happens at `tofu apply` time, locally).
 
-**API returns 503 on `/climadiag/search`.**
+**API returns 503 on `/api/climadiag/search`.**
 `climadiag_api_token` is missing. Set it in `terraform.tfvars` and re-apply, or set the `CLIMADIAG_API_TOKEN` GitHub secret (repo-level and on the `tofu-apply` environment) and re-run the apply.
 
 **CMS returns 502.**

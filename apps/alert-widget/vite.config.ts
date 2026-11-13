@@ -36,12 +36,10 @@ export default defineConfig(
         base,
         server: {
           proxy: {
+            // The CMS serves the API under /api/ (`just cms`).
             '/api': {
-              target:
-                process.env.VITE_API_PROXY_TARGET ??
-                'https://apiprodedce25f6-api-prod.functions.fnc.fr-par.scw.cloud',
+              target: process.env.VITE_API_PROXY_TARGET ?? 'http://127.0.0.1:8080',
               changeOrigin: true,
-              rewrite: (path) => path.replace(/^\/api/, ''),
             },
           },
         },
