@@ -5,6 +5,7 @@
 #   scw-container.sh redeploy NAME IMAGE   roll IMAGE out on NAME
 #   scw-container.sh run NAME [BUILD]      POST /run once NAME is ready (and its
 #                                          GET / answers BUILD), print the answer
+#   scw-container.sh delete_tags IMAGE PREFIX   delete the registry tags PREFIX* of IMAGE
 set -euo pipefail
 
 api="https://api.scaleway.com/containers/v1/regions/fr-par/containers"
@@ -57,6 +58,21 @@ run() {
     # Longer than the container's own timeout (timeout_seconds), so its answer
     # arrives rather than a client-side cut.
     curl --fail-with-body -sS --max-time 1900 -X POST "$url/run" -H "$auth"
+}
+
+delete_tags() {
+    local registry="https://api.scaleway.com/registry/v1/regions/fr-par" image tags ids="" page=1
+    image=$(curl -fsS "$registry/images?name=$1" -H "$auth" | jq -r '.images[0].id // empty')
+    # Nothing was ever pushed.
+    [ -n "$image" ] || return 0
+    # Every page is read before the first deletion, which would shift them.
+    while :; do
+        tags=$(curl -fsS "$registry/images/$image/tags?page_size=100&page=$page" -H "$auth")
+        [ "$(jq '.tags | length' <<< "$tags")" -gt 0 ] || break
+        ids+=" $(jq -r --arg prefix "$2" '.tags[] | select(.name | startswith($prefix)) | .id' <<< "$tags")"
+        page=$((page + 1))
+    done
+    for tag in $ids; do curl -fsS -X DELETE "$registry/tags/$tag" -H "$auth" > /dev/null; done
 }
 
 "$@"

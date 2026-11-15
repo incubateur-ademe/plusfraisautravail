@@ -163,7 +163,29 @@ To roll out an infrastructure change: edit `infra/envs/prod/**`, open a PR, revi
 
 ---
 
-## 4. Frontend bucket layout
+## 4. Preview of a pull request
+
+The `preview` label on a pull request to `main` (same repository, not a fork) runs `preview.yml`, which applies `infra/envs/preview` in a workspace `pr-<number>` and posts the URL on the pull request. Each push updates it.
+
+| Created per pull request | Name |
+|---|---|
+| Database on the production instance | `preview_pr_<number>` |
+| Its user: not admin, permission `all` on that database, `none` on `cms` | `preview_pr_<number>` |
+| Media bucket, filled with a copy of production's `images/` and `original_images/` | `pfat-preview-pr-<number>` |
+| Public container, on the database's Private Network, stopped while unused | `cms-pr-<number>` |
+| Image tags in the private registry | `cms-preview:pr-<number>-<sha>` |
+
+The image holds the nightly anonymised dump. At its first start the container restores it into its database; later starts only run the migrations, so what is changed in a preview is kept. At every start it first checks that its user cannot connect to the production database, and refuses to start otherwise.
+
+A preview gets the key of production's media bucket (`pfat-prod-cms-media-…`) and no other secret: no mail, Notion, Sentry, PostHog or alert API. A key restricted to the preview buckets can replace it in `infra/envs/preview/main.tf`.
+
+**Nothing is destroyed by itself**, not even when the pull request is closed. To destroy a preview: run the `🌱 Preview` workflow by hand with the number of the pull request (`gh workflow run preview.yml -f pr_number=<number>`). It destroys everything in the table above. What stays behind until then: the database (on the production instance's disk), the bucket, the stopped container and the image tags.
+
+**In another Scaleway project**, change: the state bucket and the instance name `cms-prod` in `infra/envs/preview/main.tf`; the bucket names `pfat-preview-…`, `pfat-cms-media`, `pfat-e2e-fixtures` and the registry `rg.fr-par.scw.cloud/pfat` in `preview.yml` and `main.tf`. Create the `preview` label on GitHub.
+
+---
+
+## 5. Frontend bucket layout
 
 All SPAs are built with their default sub-path base (`/autodiag/`, `/alert-widget/`, `/climadiag/`) so they work behind the proxy's prefix routing. Bucket files sit at the bucket root; the proxy strips the prefix. Direct bucket URLs therefore no longer render the SPAs on their own:
 
@@ -187,7 +209,7 @@ The script self-mounts right where it's placed in the DOM and injects the DSFR C
 
 ---
 
-## 5. Public hostname: Scalingo nginx proxy
+## 6. Public hostname: Scalingo nginx proxy
 
 `plusfraisautravail.beta.gouv.fr` carries MX records, so it can't be a CNAME to Scaleway. Instead a tiny Scalingo app running the [nginx buildpack](https://github.com/Scalingo/nginx-buildpack) keeps the existing A records + TLS cert and reverse-proxies to Scaleway. Config: `infra/scalingo-proxy/servers.conf.erb`.
 
@@ -220,7 +242,7 @@ The SPAs must be built with their default sub-path base (`/autodiag/` etc.), not
 
 ---
 
-## 6. Troubleshooting
+## 7. Troubleshooting
 
 **"image not found" on the first `tofu apply`.**
 The containers are created with `pfat/cms:latest`: push it first (2.4).
