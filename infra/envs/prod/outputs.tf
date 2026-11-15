@@ -10,6 +10,12 @@ output "climadiag_url" {
   value = "https://${module.site["climadiag"].website_endpoint}"
 }
 
+# Names only, never the values: a key missing from the secret, or misspelt,
+# shows in the plan of the pull request.
+output "secret_names" {
+  value = nonsensitive(keys(local.secrets))
+}
+
 output "cms_url" {
   value = trimsuffix(module.cms.public_endpoint, "/")
 }

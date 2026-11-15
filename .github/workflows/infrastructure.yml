@@ -81,16 +81,24 @@ jobs:
           TOFU_REPLACE: ${{ inputs.tofu_replace }}
         run: |
           set -o pipefail
+          status=0
           # Read-only: without the state lock, so it never makes an apply wait or fail.
-          tofu plan -no-color -input=false -lock=false ${TOFU_REPLACE:+-replace="$TOFU_REPLACE"} | tee plan.txt
-          echo "summary=$(grep -m1 -E '^(Plan:|No changes)' plan.txt || true)" >> "$GITHUB_OUTPUT"
+          tofu plan -no-color -input=false -lock=false ${TOFU_REPLACE:+-replace="$TOFU_REPLACE"} 2>&1 | tee plan.txt || status=$?
+          # A plan that only changes outputs prints neither "Plan:" nor "No changes".
+          summary=$(grep -m1 -E '^(Plan:|No changes)' plan.txt) ||
+            summary=$(grep -m1 '^Changes to Outputs' plan.txt | sed 's/:$/ only./') ||
+            summary="Plan failed."
+          [ "$status" = 0 ] || summary="Plan failed."
+          echo "summary=$summary" >> "$GITHUB_OUTPUT"
+          # A failed plan shows on the summary page too.
           {
-            echo '## 🏗️ OpenTofu plan'
+            echo "## 🏗️ OpenTofu plan: $summary"
             echo
             echo '```'
             cat plan.txt
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
 
   apply:
     name: 🧱 Apply

@@ -11,5 +11,5 @@ variable "environment" {
 
 variable "bucket_name" {
   type        = string
-  description = "Globally-unique bucket name. Suggested: pfat-<app>-<environment>."
+  description = "Globally-unique bucket name. Here: pfat-<app>."
 }

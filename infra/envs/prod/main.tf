@@ -4,9 +4,12 @@ locals {
   base_domain = "plusfraisautravail.beta.gouv.fr"
 
   # Every hand-provided secret, as { ENV_VAR_NAME = value }: see DEPLOY.md.
-  # A secret that is not set is simply absent from the object (the API
-  # answers 503 on the matching endpoint).
-  secrets = jsondecode(base64decode(data.scaleway_secret_version.app.data))
+  # A secret left out, null or empty is not passed at all: an empty variable
+  # would still be set, and the API would try to use it.
+  secrets = {
+    for name, value in jsondecode(base64decode(data.scaleway_secret_version.app.data)) :
+    name => value if value != null && value != ""
+  }
 
   # The alert API's own secrets (packages/pfat-api, served by the CMS).
   api_secret_names = ["VIGILANCE_APP_ID", "RTE_CLIENT_ID", "RTE_CLIENT_SECRET", "CLIMADIAG_API_TOKEN"]
@@ -128,7 +131,6 @@ module "cms" {
   app_name       = "cms"
   environment    = local.environment
   registry_image = local.bootstrap_image
-  port           = 8080
   min_scale      = 1 # always warm: no cold start on the public site
   max_scale      = 3
   # gunicorn serves 16 requests at once (apps/cms/entrypoint.sh): start another
@@ -142,7 +144,7 @@ module "cms" {
   cpu_limit                    = 560
   memory_limit                 = 1024
   environment_variables        = local.cms_env
-  secret_environment_variables = merge(local.secrets, local.cms_secret_env) # API secrets: not for cms_manage
+  secret_environment_variables = merge(local.secrets, local.cms_secret_env) # every secret, the API ones included
   custom_domain                = local.base_domain
   private_network_id           = module.cms_db.private_network_id
   # Probe a real Wagtail render, not just SELECT 1: a container that answers
@@ -286,7 +288,7 @@ module "e2e_dump" {
   timeout_seconds = 1800
   environment_variables = {
     E2E_DUMP_PREFIX    = "s3://${module.e2e_fixtures.bucket_name}/cms"
-    AWS_DEFAULT_REGION = "fr-par"
+    AWS_DEFAULT_REGION = local.region
     AWS_ENDPOINT_URL   = module.e2e_fixtures.endpoint
   }
   secret_environment_variables = {
