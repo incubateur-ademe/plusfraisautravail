@@ -10,7 +10,6 @@ terraform {
 resource "scaleway_container_namespace" "this" {
   name        = "${var.app_name}-${var.environment}"
   description = "Container namespace for ${var.app_name} (${var.environment})."
-  region      = var.region
 }
 
 resource "scaleway_container" "this" {
@@ -26,7 +25,6 @@ resource "scaleway_container" "this" {
   privacy                      = var.privacy
   protocol                     = "http1"
   https_connections_only       = false
-  deploy                       = var.deploy
   private_network_id           = var.private_network_id != "" ? var.private_network_id : null
   environment_variables        = var.environment_variables
   secret_environment_variables = var.secret_environment_variables
@@ -56,9 +54,8 @@ resource "scaleway_container" "this" {
   }
 
   # Image rollouts are owned by .github/workflows/cms.yml (PATCH on the
-  # container API), not by tofu. Without this, every `tofu apply` would try to
-  # revert the running image to whatever bootstrap reference is in
-  # terraform.tfvars.
+  # container API), not by tofu. Without this, every `tofu apply` would
+  # revert the running image to the one the container was created with.
   lifecycle {
     ignore_changes = [image]
   }
@@ -75,5 +72,4 @@ resource "scaleway_container_domain" "this" {
   count        = var.custom_domain != "" ? 1 : 0
   container_id = scaleway_container.this.id
   hostname     = var.custom_domain
-  region       = var.region
 }

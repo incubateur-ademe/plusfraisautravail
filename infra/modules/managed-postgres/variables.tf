@@ -9,12 +9,6 @@ variable "environment" {
   default     = "prod"
 }
 
-variable "region" {
-  type        = string
-  description = "Scaleway region."
-  default     = "fr-par"
-}
-
 variable "node_type" {
   type        = string
   description = "Scaleway RDB node class. DB-DEV-S is the smallest current class - fine for a low-traffic CMS."

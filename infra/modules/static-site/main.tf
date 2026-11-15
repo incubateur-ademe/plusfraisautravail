@@ -2,23 +2,19 @@ terraform {
   required_providers {
     scaleway = {
       source  = "scaleway/scaleway"
-      version = "~> 2.50"
+      version = ">= 2.73"
     }
   }
 }
 
 resource "scaleway_object_bucket" "this" {
   name          = var.bucket_name
-  region        = var.region
-  force_destroy = true
-  tags = merge(
-    {
-      app         = var.app_name
-      environment = var.environment
-      managed_by  = "opentofu"
-    },
-    var.tags,
-  )
+  force_destroy = true # rebuilt by each deploy
+  tags = {
+    app         = var.app_name
+    environment = var.environment
+    managed_by  = "opentofu"
+  }
 }
 
 resource "scaleway_object_bucket_acl" "this" {

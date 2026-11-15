@@ -2,7 +2,7 @@ terraform {
   required_providers {
     scaleway = {
       source  = "scaleway/scaleway"
-      version = "~> 2.50"
+      version = ">= 2.73"
     }
     random = {
       source  = "hashicorp/random"
@@ -27,8 +27,7 @@ resource "random_password" "db" {
 }
 
 resource "scaleway_vpc_private_network" "this" {
-  name   = "${var.app_name}-${var.environment}"
-  region = var.region
+  name = "${var.app_name}-${var.environment}"
 }
 
 resource "scaleway_rdb_instance" "this" {
@@ -39,7 +38,6 @@ resource "scaleway_rdb_instance" "this" {
   disable_backup    = false
   volume_type       = var.volume_type
   volume_size_in_gb = var.volume_size_in_gb
-  region            = var.region
   user_name         = var.db_user
   password          = random_password.db.result
 
@@ -49,6 +47,11 @@ resource "scaleway_rdb_instance" "this" {
   private_network {
     pn_id       = scaleway_vpc_private_network.this.id
     enable_ipam = true
+  }
+
+  # The production data. Destroying it means removing this line first.
+  lifecycle {
+    prevent_destroy = true
   }
 }
 

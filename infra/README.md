@@ -1,14 +1,19 @@
 # Infrastructure (OpenTofu / Scaleway)
 
-Provisions every Scaleway resource for the monorepo: two website buckets (autodiag + alert-widget), one container registry namespace, one serverless container (API).
+Every Scaleway resource of the monorepo, in one stack: `envs/prod`.
 
-See **[`../DEPLOY.md`](../DEPLOY.md)** for the full bootstrap walkthrough and the day-to-day flow.
+See **[`../DEPLOY.md`](../DEPLOY.md)** to bootstrap it on a new project and for the day-to-day flow.
 
 ```
 infra/
 ├── modules/
-│   ├── static-site/           # bucket + website config + public-read policy
-│   └── serverless-container/  # registry + container namespace + container
-└── envs/
-    └── prod/                  # one stack per environment
+│   ├── static-site/           # website bucket of a SPA
+│   ├── object-bucket/         # private bucket, optional public read on prefixes
+│   ├── managed-postgres/      # RDB instance on its Private Network
+│   └── serverless-container/  # container namespace + container (+ custom domain)
+├── envs/prod/                 # the stack
+├── e2e-dump/                  # image of the nightly anonymised dump
+└── scalingo-proxy/            # nginx in front of the public hostname
 ```
+
+Secrets: one Scaleway Secret Manager secret, `pfat-prod`, read by the stack. GitHub only holds the Scaleway key.
