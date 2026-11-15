@@ -3,29 +3,39 @@ locals {
   region      = "fr-par"
   base_domain = "plusfraisautravail.beta.gouv.fr"
 
-  # Every hand-provided secret, as { ENV_VAR_NAME = value }: see DEPLOY.md.
-  # A secret left out, null or empty is not passed at all: an empty S3 key
-  # fails the plan, and the output secret_names only lists usable keys.
-  secrets = {
-    for name, value in jsondecode(base64decode(data.scaleway_secret_version.app.data)) :
-    name => value if value != null && value != ""
+  # Every hand-provided secret is one Secret Manager secret, named
+  # pfat-prod-<name> (DEPLOY.md). All of them must exist: a missing one fails
+  # the plan, naming it. Each use has its own, so that the buckets and the
+  # e-mail can each get a restricted key.
+  secret_names = [
+    "vigilance-app-id", "rte-client-id", "rte-client-secret", "climadiag-api-token",
+    "notion-token", "email-host-password",
+    "cms-media-access-key-id", "cms-media-secret-key",
+    "e2e-fixtures-access-key-id", "e2e-fixtures-secret-key",
+  ]
+  # trimspace: a value pasted from a file often ends with a newline.
+  secret = { for name, version in data.scaleway_secret_version.app : name => trimspace(base64decode(version.data)) }
+
+  # The alert API's own secrets (packages/pfat-api, served by the CMS): not
+  # for cms_manage.
+  api_secret_env = {
+    VIGILANCE_APP_ID    = local.secret["vigilance-app-id"]
+    RTE_CLIENT_ID       = local.secret["rte-client-id"]
+    RTE_CLIENT_SECRET   = local.secret["rte-client-secret"]
+    CLIMADIAG_API_TOKEN = local.secret["climadiag-api-token"]
   }
 
-  # The alert API's own secrets (packages/pfat-api, served by the CMS).
-  api_secret_names = ["VIGILANCE_APP_ID", "RTE_CLIENT_ID", "RTE_CLIENT_SECRET", "CLIMADIAG_API_TOKEN"]
-
-  cms_secret_env = merge(
-    { for name, value in local.secrets : name => value if !contains(local.api_secret_names, name) },
-    {
-      # Private-network DSN: the container is attached to the DB's Private
-      # Network (module.cms private_network_id).
-      DATABASE_URL      = module.cms_db.private_database_url
-      DJANGO_SECRET_KEY = random_password.django_secret_key.result
-      # Scaleway TEM takes an API secret key as SMTP password: the S3 one
-      # unless a dedicated one is set.
-      EMAIL_HOST_PASSWORD = lookup(local.secrets, "EMAIL_HOST_PASSWORD", local.secrets.AWS_SECRET_ACCESS_KEY)
-    },
-  )
+  cms_secret_env = {
+    # Private-network DSN: the container is attached to the DB's Private
+    # Network (module.cms private_network_id).
+    DATABASE_URL      = module.cms_db.private_database_url
+    DJANGO_SECRET_KEY = random_password.django_secret_key.result
+    NOTION_TOKEN      = local.secret["notion-token"]
+    # Scaleway TEM takes an API secret key as SMTP password.
+    EMAIL_HOST_PASSWORD   = local.secret["email-host-password"]
+    AWS_ACCESS_KEY_ID     = local.secret["cms-media-access-key-id"]
+    AWS_SECRET_ACCESS_KEY = local.secret["cms-media-secret-key"]
+  }
 
   cms_env = {
     # Wide open: Scaleway's health probes do not send the container's domain
@@ -61,7 +71,8 @@ locals {
 data "scaleway_account_project" "current" {}
 
 data "scaleway_secret_version" "app" {
-  secret_name = "pfat-${local.environment}"
+  for_each    = toset(local.secret_names)
+  secret_name = "pfat-${local.environment}-${each.key}"
   revision    = "latest"
 }
 
@@ -144,7 +155,7 @@ module "cms" {
   cpu_limit                    = 560
   memory_limit                 = 1024
   environment_variables        = local.cms_env
-  secret_environment_variables = merge(local.secrets, local.cms_secret_env) # every secret, the API ones included
+  secret_environment_variables = merge(local.cms_secret_env, local.api_secret_env)
   custom_domain                = local.base_domain
   private_network_id           = module.cms_db.private_network_id
   # Probe a real Wagtail render, not just SELECT 1: a container that answers
@@ -293,7 +304,7 @@ module "e2e_dump" {
   }
   secret_environment_variables = {
     SOURCE_DATABASE_URL   = local.e2e_dump_dsn
-    AWS_ACCESS_KEY_ID     = local.secrets.AWS_ACCESS_KEY_ID
-    AWS_SECRET_ACCESS_KEY = local.secrets.AWS_SECRET_ACCESS_KEY
+    AWS_ACCESS_KEY_ID     = local.secret["e2e-fixtures-access-key-id"]
+    AWS_SECRET_ACCESS_KEY = local.secret["e2e-fixtures-secret-key"]
   }
 }
