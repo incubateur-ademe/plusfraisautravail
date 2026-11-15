@@ -6,16 +6,17 @@ The stack is provisioned with [OpenTofu](https://opentofu.org/) (`infra/envs/pro
 
 | Resource | Module | Created from |
 |---|---|---|
-| Bucket `pfat-tfstate` | none | manual `aws s3 mb` (state backend) |
-| Bucket `pfat-autodiag` | `static-site` | `module.autodiag_site` |
-| Bucket `pfat-alert-widget` | `static-site` | `module.alert_widget_site` |
-| Bucket `pfat-climadiag` | `static-site` | `module.climadiag_site` |
+| Bucket `pfat-terraform` | none | `just bootstrap-state` (state backend) |
+| Secret `pfat-prod` | none | by hand, Scaleway Secret Manager (2.3) |
+| Buckets `pfat-autodiag`, `pfat-alert-widget`, `pfat-climadiag` | `static-site` | `module.site` |
 | Bucket `pfat-cms-media` (private) | `object-bucket` | `module.cms_media` |
 | Container Registry namespace `pfat` | none | `scaleway_registry_namespace.pfat` |
 | Private Network `cms-prod` | `managed-postgres` | `module.cms_db` |
 | RDB instance `cms-prod` | `managed-postgres` | `module.cms_db` |
 | Container namespace `cms-prod` | `serverless-container` | `module.cms` |
 | Container `cms-prod` | `serverless-container` | `module.cms` |
+| Private containers `cms-manage-prod`, `e2e-dump-prod` | `serverless-container` | `module.cms_manage`, `module.e2e_dump` |
+| Bucket `pfat-e2e-fixtures` (private) | `object-bucket` | `module.e2e_fixtures` |
 
 CI/CD lives under `.github/workflows/`:
 
@@ -23,54 +24,25 @@ CI/CD lives under `.github/workflows/`:
 - `cd.yml` (🚀 Production) - on `main`, runs the same checks and deploys each product it touches. Manual runs pick one product or all.
 - `cms.yml` - ruff, pytest with coverage; on deploy, Docker build, push to registry, then the migrations: the image is rolled out on the private `cms-manage` container and `POST /run` runs `manage_jobs.sh`. Only then is the CMS container rolled out (`PATCH redeploy=true`): a failed migration fails the deploy and leaves the current CMS in place. Containers are found by name (`.github/scripts/scw-container.sh`).
 - `frontend.yml` - ESLint and Vite build of one SPA; on deploy, `aws s3 sync` to its bucket.
-- `infrastructure.yml` - `tofu plan`; on `main` (or a manual run), `tofu apply`.
-- `infrastructure-destroy.yml` - manual `tofu destroy`.
+- `infrastructure.yml` - `tofu plan`, shown on the run's summary page; on `main` (or a manual run), `tofu apply`.
 
 ---
 
 ## 1. Prerequisites
 
-Install once on your workstation:
-
-- Scaleway account with a project, plus an API key (Access key + Secret key) scoped for project, container, registry, object-storage, RDB, VPC and IAM.
-- Météo-France [Vigilance API](https://portail-api.meteofrance.fr/) application ID.
-- (optional) RTE Ecowatt OAuth2 client ID & secret. Without these the `/alerts/electricity` endpoint returns 503; everything else still works.
-- (optional) PlusFraîcheMaVille Climadiag `X-AUTH-TOKEN`. Without it `/climadiag/search` returns 503; everything else still works.
-- A Django `SECRET_KEY` for the CMS - generate with `python -c "import secrets; print(secrets.token_urlsafe(50))"`.
-- [GitHub CLI](https://cli.github.com/) (`gh auth login`).
-- [AWS CLI v2](https://docs.aws.amazon.com/cli/) - used as a Scaleway S3 client.
-- [OpenTofu](https://opentofu.org/) 1.8+ (`tofu` CLI).
-- Docker.
-- [`just`](https://github.com/casey/just) (already used as the task runner here).
+- Scaleway account with a project, plus an API key (access key + secret key) allowed on containers, registry, Object Storage, RDB, VPC and Secret Manager (read the secret and its versions).
+- The secrets of the third parties, each optional: Météo-France [Vigilance API](https://portail-api.meteofrance.fr/) application ID, RTE Ecowatt OAuth2 client ID and secret, PlusFraîcheMaVille Climadiag token, Notion token. Without one, the matching feature answers 503 or is off; everything else works.
+- [GitHub CLI](https://cli.github.com/) (`gh auth login`), [AWS CLI v2](https://docs.aws.amazon.com/cli/) (S3 client), [Scaleway CLI](https://cli.scaleway.com/), [OpenTofu](https://opentofu.org/) 1.10+, Docker, [`just`](https://github.com/casey/just).
 
 ---
 
 ## 2. One-time bootstrap
 
-Run these in order. Every step has a `just` recipe; the recipes that mutate state ask for confirmation.
+Run these in order. The recipes that change something ask for confirmation.
 
-### 2.1 Set Scaleway credentials in your shell
+### 2.1 Scaleway credentials in your shell
 
-The same Scaleway access/secret key serves three roles: OpenTofu provider auth, S3 backend auth (via `AWS_*`), and Docker registry auth.
-
-**fish:**
-
-```fish
-set -x SCW_ACCESS_KEY              SCWxxxxxxxxxxxxxxxxx
-set -x SCW_SECRET_KEY              xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-set -x SCW_DEFAULT_PROJECT_ID      xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-set -x SCW_DEFAULT_ORGANIZATION_ID xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-set -x AWS_ACCESS_KEY_ID           $SCW_ACCESS_KEY
-set -x AWS_SECRET_ACCESS_KEY       $SCW_SECRET_KEY
-# Dedicated S3 credentials for the cms container's media bucket (private
-# pfat-cms-media) - a separate key from the account-wide SCW key above.
-set -x S3_BUCKET_SCW_ACCESS_KEY_ID         SCWxxxxxxxxxxxxxxxxx
-set -x S3_BUCKET_SCW_SECRET_KEY            xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-set -x TF_VAR_s3_bucket_scw_access_key_id  $S3_BUCKET_SCW_ACCESS_KEY_ID
-set -x TF_VAR_s3_bucket_scw_secret_key     $S3_BUCKET_SCW_SECRET_KEY
-```
-
-**bash / zsh:**
+The same key serves OpenTofu, its S3 state backend (`AWS_*`) and the Docker registry.
 
 ```bash
 export SCW_ACCESS_KEY=SCWxxxxxxxxxxxxxxxxx
@@ -79,93 +51,69 @@ export SCW_DEFAULT_PROJECT_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 export SCW_DEFAULT_ORGANIZATION_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 export AWS_ACCESS_KEY_ID="$SCW_ACCESS_KEY"
 export AWS_SECRET_ACCESS_KEY="$SCW_SECRET_KEY"
-export S3_BUCKET_SCW_ACCESS_KEY_ID=SCWxxxxxxxxxxxxxxxxx
-export S3_BUCKET_SCW_SECRET_KEY=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-export TF_VAR_s3_bucket_scw_access_key_id="$S3_BUCKET_SCW_ACCESS_KEY_ID"
-export TF_VAR_s3_bucket_scw_secret_key="$S3_BUCKET_SCW_SECRET_KEY"
 ```
 
-### 2.2 Create the OpenTofu state bucket
+### 2.2 State bucket
 
-OpenTofu can't manage its own state bucket - bootstrap it once:
+OpenTofu can't manage its own state bucket:
 
 ```bash
 just bootstrap-state
 ```
 
-### 2.3 Fill `terraform.tfvars`
+### 2.3 The secrets: one Secret Manager secret
 
-```bash
-just bootstrap-tfvars
+Every hand-provided secret lives in one Scaleway Secret Manager secret, `pfat-prod`, a JSON object whose keys are the environment variables of the CMS container. OpenTofu reads its latest version at each plan and passes the values to the containers. Write the object in a file outside the repository:
+
+```json
+{
+  "AWS_ACCESS_KEY_ID": "SCW…",
+  "AWS_SECRET_ACCESS_KEY": "…",
+  "VIGILANCE_APP_ID": "…",
+  "RTE_CLIENT_ID": "…",
+  "RTE_CLIENT_SECRET": "…",
+  "CLIMADIAG_API_TOKEN": "…",
+  "NOTION_TOKEN": "…"
+}
 ```
 
-Set at least `vigilance_app_id`. Set `rte_client_id` / `rte_client_secret` if you have them; leave empty to disable `/api/alerts/electricity`. Set `climadiag_api_token` if you have it; leave empty to disable `/api/climadiag/search`. Set `django_secret_key` for the CMS. Leave `cms_image=""`/`cms_deploy=false` for now.
+- `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` are required: a Scaleway API key for the media bucket, the e2e fixtures bucket and, unless `EMAIL_HOST_PASSWORD` is set, Scaleway Transactional Email.
+- Leave out the secrets you don't have. Any other key becomes a secret environment variable of the CMS.
+- The Vigilance, RTE and Climadiag secrets go to the CMS container only, not to `cms-manage`.
 
-### 2.4 Initialize OpenTofu
+```bash
+scw secret secret create name=pfat-prod
+scw secret version create <secret-id> data=@/path/to/secrets.json
+rm /path/to/secrets.json
+```
+
+To change or add a secret later: create a new version the same way (the whole object), then apply (`just deploy infrastructure`, or any merge touching `infra/`). The Django `SECRET_KEY` and the database passwords are not in it: OpenTofu generates them.
+
+### 2.4 Registry, first image, then everything else
+
+Scaleway only creates a container whose image exists, so the registry and a first image come first:
 
 ```bash
 just tf-init
-```
-
-### 2.5 First apply (creates buckets, registry, Postgres, Private Network - no container deploy yet)
-
-```bash
+cd infra/envs/prod && tofu apply -target=scaleway_registry_namespace.pfat && cd -
+just deploy-cms-bootstrap   # builds and pushes rg.fr-par.scw.cloud/pfat/cms:latest
 just tf-apply
 ```
 
-This succeeds with `cms_deploy=false` because the registry must exist before any image can be pushed to it (chicken-and-egg). **The RDB instance takes several minutes to provision** - `scaleway_rdb_instance.this: Still creating... [4m0s elapsed]`-style output is expected, not a stuck apply.
+**The RDB instance takes several minutes to provision.** From then on OpenTofu ignores the containers' image: the deploys roll images out.
 
-### 2.6 First image push
-
-```bash
-just deploy-cms-bootstrap
-```
-
-Builds `apps/cms/Dockerfile`, logs into `rg.fr-par.scw.cloud` (username `nologin`, password = `$SCW_SECRET_KEY`), pushes `rg.fr-par.scw.cloud/pfat/cms:bootstrap`. The recipe prints the exact reference at the end.
-
-### 2.7 Edit `terraform.tfvars` again
-
-Set:
-
-```hcl
-cms_image  = "rg.fr-par.scw.cloud/pfat/cms:bootstrap"
-cms_deploy = true
-```
-
-### 2.8 Second apply (creates the container)
+### 2.5 GitHub secrets and environments
 
 ```bash
-just tf-apply
+just bootstrap-secrets        # the 4 SCW_* repository secrets (plan on pull requests)
+just bootstrap-environments   # cms / autodiag / alert-widget / climadiag / tofu-apply environments
 ```
 
-After this, note the `cms_url` output and add it to `cms_extra_allowed_hosts` in `terraform.tfvars`, then apply once more - the container's own Scaleway domain can't be known before it's created, so Django's `ALLOWED_HOSTS` needs this one extra round-trip (same reason `cms_image`/`cms_deploy` needed two applies).
+GitHub only holds the Scaleway key: `SCW_ACCESS_KEY`, `SCW_SECRET_KEY`, `SCW_DEFAULT_PROJECT_ID`, `SCW_DEFAULT_ORGANIZATION_ID`, at repository level and in each environment (restricted to `main`). Not secret, as repository variables: `SENTRY_DSN`, `POSTHOG_KEY`, and `CMS_BASE_URL` while testing before a DNS cutover.
 
-### 2.9 Capture outputs
+On a repository set up before Secret Manager, these GitHub secrets are no longer read and can be deleted after the first successful apply: `VIGILANCE_APP_ID`, `RTE_CLIENT_ID`, `RTE_CLIENT_SECRET`, `CLIMADIAG_API_TOKEN`, `DJANGO_SECRET_KEY`, `NOTION_TOKEN`, `S3_BUCKET_SCW_ACCESS_KEY_ID`, `S3_BUCKET_SCW_SECRET_KEY` (repository and `tofu-apply` environment).
 
-```bash
-just status
-```
-
-Note the `cms_url` output - you need it for the next step.
-
-### 2.10 Set GitHub secrets and environments
-
-Two recipes, both idempotent:
-
-```bash
-just bootstrap-secrets        # repo-level secrets (used only by the infrastructure plan on PRs)
-just bootstrap-environments   # creates cms / autodiag / alert-widget / climadiag envs + their secrets
-```
-
-`bootstrap-environments` reads `SCW_*`, `VIGILANCE_APP_ID`, `RTE_*`, `DJANGO_SECRET_KEY` from your shell and `cms_url` / bucket URLs from `tofu output`. The SPAs get `API_BASE_URL=/api`: same origin, the proxy sends `/api/` to the CMS. It creates each environment with a `branch=main` policy so only main-branch deploys can read those secrets.
-
-**Why two scopes:** the infrastructure plan runs on PRs from any branch; environment-scoped secrets aren't readable from non-main refs, so its credentials live at repo level. The deploy jobs live in their respective environments - the GitHub UI shows a deployment history per environment with a clickable URL.
-
-You're done. The next push to `main` touching `apps/cms/**` or `packages/**` will redeploy the CMS container (and the API it serves); `apps/autodiag/**` and `apps/alert-widget/**` will sync to their buckets. The deploy progress is visible at:
-
-```
-https://github.com/incubateur-ademe/plusfraisautravail/deployments
-```
+The next push to `main` deploys what it touches. Progress: <https://github.com/incubateur-ademe/plusfraisautravail/deployments>.
 
 ---
 
@@ -180,7 +128,7 @@ https://github.com/incubateur-ademe/plusfraisautravail/deployments
 | PR touching `infra/**` | 💣 Pull request runs `tofu plan`. |
 | Push to `main` touching `infra/**` | 🚀 Production runs `tofu apply` against prod. The deployment shows up in the `tofu-apply` GitHub Environment. |
 
-The container has `registry_image` under `lifecycle { ignore_changes = [registry_image] }` so `tofu apply` won't fight the deploy workflow - image rollouts go through `cms.yml`, infra changes go through Tofu, neither steps on the other.
+The containers have `image` under `lifecycle { ignore_changes = [image] }` so `tofu apply` won't fight the deploy workflow - image rollouts go through `cms.yml`, infra changes go through Tofu, neither steps on the other.
 
 Manual triggers from your machine:
 
@@ -257,16 +205,22 @@ The SPAs must be built with their default sub-path base (`/autodiag/` etc.), not
 ## 6. Troubleshooting
 
 **"image not found" on the first `tofu apply`.**
-You forgot `cms_deploy=false` for the first pass. Set it, apply, then push the image with `just deploy-cms-bootstrap`, then flip `cms_deploy=true` and apply again.
+The containers are created with `pfat/cms:latest`: push it first (2.4).
+
+**The plan fails on `data.scaleway_secret_version.app`.**
+The secret `pfat-prod` does not exist, has no enabled version, or the Scaleway key cannot read Secret Manager (2.3). Nothing was changed.
+
+**Destroying the stack.**
+Not a workflow: the database instance has `prevent_destroy` and the media bucket no `force_destroy`. Remove both in a pull request first, then `tofu destroy` locally.
 
 **API returns 502 on `/api/alerts/meteo` or `/api/alerts/electricity`.**
 The upstream (Météo-France or RTE) failed and no earlier snapshot is cached. Check the cms container logs (Scaleway dashboard -> Containers -> `cms-prod` -> Logs). Most common cause: a wrong `VIGILANCE_APP_ID`; a missing one answers 503.
 
 **API returns 503 on `/api/alerts/electricity`.**
-RTE creds are missing or wrong. Set `rte_client_id` / `rte_client_secret` in `terraform.tfvars` and re-apply, or set the corresponding GitHub secrets and re-run the infrastructure plan for visibility (the actual variable injection happens at `tofu apply` time, locally).
+RTE creds are missing or wrong: `RTE_CLIENT_ID` / `RTE_CLIENT_SECRET` in a new version of the `pfat-prod` secret (2.3), then apply.
 
 **API returns 503 on `/api/climadiag/search`.**
-`climadiag_api_token` is missing. Set it in `terraform.tfvars` and re-apply, or set the `CLIMADIAG_API_TOKEN` GitHub secret (repo-level and on the `tofu-apply` environment) and re-run the apply.
+`CLIMADIAG_API_TOKEN` is missing from the `pfat-prod` secret (2.3).
 
 **CMS returns 502.**
 Check Scaleway dashboard -> Containers -> `cms-prod` -> Logs. Most common causes: missing/wrong `DATABASE_URL` or `DJANGO_SECRET_KEY`, or the container can't reach Postgres over the Private Network (verify `module.cms` and `module.cms_db` ended up on the same `private_network_id` - check `tofu output cms_db_host` is a private `10.x`/`172.x` address, not a public one).
@@ -289,7 +243,7 @@ The deploying Scaleway API key doesn't have IAM write rights. `object-bucket` us
 Check `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` repo secrets - all deploy workflows use the same credentials.
 
 **`tofu apply` fails with "state lock".**
-Someone else is mid-apply, or a previous run was killed. Identify the lock with `tofu plan` (it prints the lock ID) and release with:
+Someone else is mid-apply, or a previous run was killed (the lock is the object `envs/prod/terraform.tfstate.tflock` of the state bucket). Identify the lock with `tofu plan` (it prints the lock ID) and release with:
 
 ```bash
 cd infra/envs/prod

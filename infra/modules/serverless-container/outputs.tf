@@ -1,7 +1,3 @@
-output "container_id" {
-  value = scaleway_container.this.id
-}
-
 output "public_endpoint" {
   value       = scaleway_container.this.public_endpoint
   description = "Full public URL of the container (scheme + domain)."

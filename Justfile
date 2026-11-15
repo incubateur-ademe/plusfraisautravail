@@ -313,20 +313,14 @@ bootstrap-secrets:
     set_secret SCW_SECRET_KEY              "${SCW_SECRET_KEY:-}"
     set_secret SCW_DEFAULT_PROJECT_ID      "${SCW_DEFAULT_PROJECT_ID:-}"
     set_secret SCW_DEFAULT_ORGANIZATION_ID "${SCW_DEFAULT_ORGANIZATION_ID:-}"
-    set_secret VIGILANCE_APP_ID            "${VIGILANCE_APP_ID:-}"
-    set_secret RTE_CLIENT_ID               "${RTE_CLIENT_ID:-}"
-    set_secret RTE_CLIENT_SECRET           "${RTE_CLIENT_SECRET:-}"
-    set_secret CLIMADIAG_API_TOKEN         "${CLIMADIAG_API_TOKEN:-}"
-    set_secret DJANGO_SECRET_KEY           "${DJANGO_SECRET_KEY:-}"
 
     echo
     echo "Done. Run \`just bootstrap-environments\` next to push deploy-time secrets."
 
 # Create (or update) the cms / autodiag / alert-widget / climadiag
 # GitHub Environments and push the right secrets and variables to each. Reads
-# SCW_*, S3_BUCKET_SCW_*, VIGILANCE_APP_ID, RTE_*, CLIMADIAG_API_TOKEN,
-# DJANGO_SECRET_KEY from your shell and cms_url / *_url
-# from `tofu output`.
+# SCW_* from your shell and cms_url / *_url from `tofu output`. The application
+# secrets are not in GitHub: Scaleway Secret Manager holds them (DEPLOY.md).
 # Restricts each environment to the `main` branch so only main-branch deploys
 # can read them. Idempotent.
 bootstrap-environments:
@@ -398,7 +392,7 @@ bootstrap-environments:
       cms_url=$(cd infra/envs/prod && tofu output -raw cms_url)
     else
       echo "  warn   tofu output unavailable - CMS_URL will be skipped."
-      echo "         Run \`just tf-apply\` (with cms_deploy=true), then re-run this."
+      echo "         Run \`just tf-apply\`, then re-run this."
     fi
 
     echo
@@ -407,7 +401,6 @@ bootstrap-environments:
     set_env_secret   cms SCW_ACCESS_KEY         "${SCW_ACCESS_KEY:-}"
     set_env_secret   cms SCW_SECRET_KEY         "${SCW_SECRET_KEY:-}"
     set_env_secret   cms SCW_DEFAULT_PROJECT_ID "${SCW_DEFAULT_PROJECT_ID:-}"
-    set_env_secret   cms DJANGO_SECRET_KEY      "${DJANGO_SECRET_KEY:-}"
     set_env_variable cms CMS_URL                "$cms_url"
 
     echo
@@ -436,20 +429,12 @@ bootstrap-environments:
 
     echo
     echo "── tofu-apply environment ───────────────────────────────────"
-    # Used by the infrastructure apply (infrastructure.yml). Needs the full set of Scaleway creds
-    # plus the TF_VAR_* secrets that drive the runtime configuration.
+    # Used by the infrastructure apply (infrastructure.yml).
     create_env_main_only tofu-apply
     set_env_secret   tofu-apply SCW_ACCESS_KEY              "${SCW_ACCESS_KEY:-}"
     set_env_secret   tofu-apply SCW_SECRET_KEY              "${SCW_SECRET_KEY:-}"
     set_env_secret   tofu-apply SCW_DEFAULT_PROJECT_ID      "${SCW_DEFAULT_PROJECT_ID:-}"
     set_env_secret   tofu-apply SCW_DEFAULT_ORGANIZATION_ID "${SCW_DEFAULT_ORGANIZATION_ID:-}"
-    set_env_secret   tofu-apply VIGILANCE_APP_ID            "${VIGILANCE_APP_ID:-}"
-    set_env_secret   tofu-apply RTE_CLIENT_ID               "${RTE_CLIENT_ID:-}"
-    set_env_secret   tofu-apply RTE_CLIENT_SECRET           "${RTE_CLIENT_SECRET:-}"
-    set_env_secret   tofu-apply CLIMADIAG_API_TOKEN         "${CLIMADIAG_API_TOKEN:-}"
-    set_env_secret   tofu-apply DJANGO_SECRET_KEY           "${DJANGO_SECRET_KEY:-}"
-    set_env_secret   tofu-apply S3_BUCKET_SCW_ACCESS_KEY_ID "${S3_BUCKET_SCW_ACCESS_KEY_ID:-}"
-    set_env_secret   tofu-apply S3_BUCKET_SCW_SECRET_KEY    "${S3_BUCKET_SCW_SECRET_KEY:-}"
 
     echo
     echo "Done. Verify in the GitHub UI:"
@@ -457,7 +442,8 @@ bootstrap-environments:
 
 # ── deploy (manual triggers) ─────────────────────────────────────────────
 
-# One-time first image push for the CMS, before the second tf-apply.
+# One-time first image push for the CMS, once the registry exists and before
+# the first full tf-apply: containers are created with this image.
 # Requires SCW_SECRET_KEY in env (used as docker registry password).
 deploy-cms-bootstrap:
     #!/usr/bin/env bash
@@ -468,20 +454,17 @@ deploy-cms-bootstrap:
     fi
     REGISTRY="rg.fr-par.scw.cloud"
     NAMESPACE="pfat"
-    IMAGE="$REGISTRY/$NAMESPACE/cms:bootstrap"
+    IMAGE="$REGISTRY/$NAMESPACE/cms:latest"
     echo "About to:"
     echo "  1. docker login $REGISTRY (user=nologin, password=\$SCW_SECRET_KEY)"
-    echo "  2. docker buildx build --platform linux/amd64 --push apps/cms/ -t $IMAGE"
+    echo "  2. docker buildx build --platform linux/amd64 --push -f apps/cms/Dockerfile -t $IMAGE ."
     read -r -p "Proceed? [y/N] " ans
     [[ "$ans" =~ ^[Yy]$ ]] || { echo "Aborted."; exit 1; }
     echo "$SCW_SECRET_KEY" | docker login "$REGISTRY" --username nologin --password-stdin
-    docker buildx build --platform linux/amd64 --push -t "$IMAGE" apps/cms/
+    # The repository root as context: the Dockerfile copies packages/.
+    docker buildx build --platform linux/amd64 --push -f apps/cms/Dockerfile -t "$IMAGE" .
     echo
     echo "Pushed: $IMAGE"
-    echo
-    echo "Now edit infra/envs/prod/terraform.tfvars:"
-    echo "  cms_image  = \"$IMAGE\""
-    echo "  cms_deploy = true"
     echo "Then run: just tf-apply"
 
 # Check and deploy one product (or all) with the cd.yml workflow on GitHub.

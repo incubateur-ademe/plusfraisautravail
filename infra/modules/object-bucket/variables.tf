@@ -9,21 +9,9 @@ variable "environment" {
   default     = "prod"
 }
 
-variable "region" {
-  type        = string
-  description = "Scaleway region."
-  default     = "fr-par"
-}
-
 variable "bucket_name" {
   type        = string
   description = "Globally-unique Object Storage bucket name."
-}
-
-variable "tags" {
-  type        = map(string)
-  default     = {}
-  description = "Extra tags merged with the standard app/environment/managed_by set."
 }
 
 variable "public_read" {
@@ -36,4 +24,10 @@ variable "public_read_prefixes" {
   type        = list(string)
   default     = ["*"]
   description = "Object key patterns anonymous s3:GetObject applies to when public_read is on. Keep anything permission-gated out (e.g. Wagtail documents/*, which Django must serve itself so collection privacy applies)."
+}
+
+variable "force_destroy" {
+  type        = bool
+  default     = false
+  description = "Let tofu destroy the bucket with its objects. Only for buckets whose content can be rebuilt."
 }

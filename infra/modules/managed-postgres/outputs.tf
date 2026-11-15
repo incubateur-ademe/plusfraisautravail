@@ -19,10 +19,6 @@ output "database_name" {
   value = scaleway_rdb_database.this.name
 }
 
-output "user" {
-  value = var.db_user
-}
-
 output "password" {
   value     = random_password.db.result
   sensitive = true

@@ -1,171 +1,21 @@
-variable "region" {
-  type    = string
-  default = "fr-par"
-}
-
-variable "zone" {
-  type    = string
-  default = "fr-par-1"
-}
-
-variable "base_domain" {
-  type        = string
-  default     = "plusfraisautravail.beta.gouv.fr"
-  description = "Root domain. The cms (and its /api/) is served at the root."
-}
-
-# only needed so cms's container can reuse the same account key as
-# S3 media credentials (see cms_secret_env in main.tf) - not read by the
-# provider block itself, which still auths via the SCW_ACCESS_KEY/
-# SCW_SECRET_KEY env vars directly. Duplicated here on purpose so the value
-# can be re-injected into a resource; TF_VAR_* env vars populate these the
-# same way they populate every other secret in this file.
-variable "s3_bucket_scw_access_key_id" {
-  type        = string
-  description = "Scaleway access key - used as the cms container's S3 media credentials until a bucket-scoped IAM key can be created (see infra/modules/object-bucket)."
-  sensitive   = true
-  default     = ""
-}
-
-variable "s3_bucket_scw_secret_key" {
-  type        = string
-  description = "Scaleway secret key - used as the cms container's S3 media credentials until a bucket-scoped IAM key can be created (see infra/modules/object-bucket)."
-  sensitive   = true
-  default     = ""
-}
-
-variable "vigilance_app_id" {
-  type        = string
-  description = "Météo-France Vigilance API application ID."
-  sensitive   = true
-  default     = ""
-}
-
-variable "rte_client_id" {
-  type        = string
-  description = "RTE Ecowatt OAuth2 client ID. Leave empty to disable the /alerts/electricity endpoint (returns 503)."
-  sensitive   = true
-  default     = ""
-}
-
-variable "rte_client_secret" {
-  type        = string
-  description = "RTE Ecowatt OAuth2 client secret. Leave empty to disable the /alerts/electricity endpoint (returns 503)."
-  sensitive   = true
-  default     = ""
-}
-
-variable "rte_use_sandbox" {
-  type        = bool
-  description = "If true, the alert API hits the RTE sandbox endpoint instead of production. Defaults to false (prod)."
-  default     = false
-}
-
-variable "climadiag_api_token" {
-  type        = string
-  description = "X-AUTH-TOKEN for the PlusFraîcheMaVille Climadiag commune-search API. Leave empty to disable /climadiag/search (returns 503)."
-  sensitive   = true
-  default     = ""
-}
-
-variable "climadiag_api_url" {
-  type        = string
-  description = "PlusFraîcheMaVille Climadiag commune-search API URL."
-  # TEMPORARY: pointed at staging because the only X-AUTH-TOKEN we have so far
-  # is staging-only (401s against the prod host). Switch back to
-  # https://plusfraichemaville.fr/api/external-search-climadiag-info once PFMV
-  # issues a production token.
-  default = "https://staging.plusfraichemaville.fr/api/external-search-climadiag-info"
-}
-
-variable "django_secret_key" {
-  type        = string
-  description = "Django SECRET_KEY for the cms app. Generate with: python -c \"import secrets; print(secrets.token_urlsafe(50))\""
-  sensitive   = true
-  default     = ""
-}
-
-variable "cms_image" {
-  type        = string
-  description = "Full image reference for the cms container (e.g. rg.fr-par.scw.cloud/pfat/cms:sha-abc123). Must already be pushed to the registry - Scaleway validates it at container-create time even on first apply."
-  default     = ""
-}
-
-variable "cms_deploy" {
-  type        = bool
-  description = "Set to true once an image has been pushed to the registry."
-  default     = false
-}
-
-variable "cms_min_scale" {
-  type        = number
-  description = "Minimum number of always-warm cms container instances. Kept at 1 so the site is always reachable, no cold starts."
-  default     = 1
-}
-
-variable "cms_db_node_type" {
-  type        = string
-  description = "Scaleway RDB node class for the cms Postgres instance."
-  default     = "DB-DEV-S"
-}
-
-variable "cms_extra_allowed_hosts" {
-  type        = list(string)
-  description = "Hostnames for Django's ALLOWED_HOSTS. The container's own Scaleway domain isn't knowable until after the first apply (it would create a dependency cycle) - set it here from `tofu output cms_url` after the first apply, then re-apply. Also add any custom domain here once one is set up."
-  default     = []
-}
-
+# Not secret: GitHub repository variables in CI (infrastructure.yml),
+# terraform.tfvars locally.
 variable "cms_base_url" {
   type        = string
   default     = ""
-  description = "Public origin the CMS builds absolute URLs on (WAGTAILADMIN_BASE_URL). Empty = https://<base_domain>. Set to the Scalingo proxy URL while testing before the DNS cutover."
+  description = "Public origin the CMS builds absolute URLs on (WAGTAILADMIN_BASE_URL). Empty = the production domain. Set to the Scalingo proxy URL while testing before the DNS cutover."
 }
 
 variable "sentry_dsn" {
   type        = string
   default     = ""
-  description = "Sentry DSN (sentry.incubateur.net) for the cms container (which also serves /api/): errors, traces and logs. Empty disables Sentry."
+  description = "Sentry DSN (sentry.incubateur.net) for the cms container (which also serves /api/). Empty disables Sentry."
 }
 
 variable "posthog_key" {
   type        = string
   default     = ""
   description = "PostHog project key rendered into every page by sites-conformes-posthog. Empty disables analytics."
-}
-
-variable "notion_token" {
-  type        = string
-  default     = ""
-  sensitive   = true
-  description = "Notion internal-integration token for wagtail-notion-form (contact form -> Notion database). Empty disables the sync."
-}
-
-# Outgoing mail for the CMS (contact form), through Scaleway Transactional
-# Email. Only the password is a secret (see cms_secret_env in main.tf).
-variable "default_from_email" {
-  type    = string
-  default = "ne-pas-repondre@plusfraisautravail.beta.gouv.fr" # a sender on the domain verified in Scaleway TEM
-}
-
-variable "email_host" {
-  type    = string
-  default = "smtp.tem.scaleway.com"
-}
-
-variable "email_port" {
-  type    = string
-  default = "465" # implicit TLS; TEM also listens on 2465
-}
-
-variable "email_host_user" {
-  type    = string
-  default = "cedd1f6a-9bfa-4e3f-b6c8-2ce17e63874a" # TEM: the Scaleway project ID
-}
-
-variable "email_host_password" {
-  type      = string
-  default   = ""
-  sensitive = true
 }
 
 variable "bastion_enabled" {
