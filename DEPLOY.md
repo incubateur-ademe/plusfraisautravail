@@ -181,18 +181,27 @@ At every start the container first tries to connect to the production database a
 
 ### Before the first preview: its own bucket key
 
-Create two secrets as in 2.3: `pfat-preview-media-access-key-id` and `pfat-preview-media-secret-key`. Without them the plan fails, naming the missing one.
+Create two secrets as in 2.3: `pfat-preview-media-access-key-id` and `pfat-preview-media-secret-key`. Without them the plan fails, naming the missing one; it also refuses the key of the CI.
 
 **This key must reach the preview buckets and nothing else.** Never store the account's key or production's media key there. A preview is a public container running code nobody has reviewed, on the network of the production database: a key that can read the state bucket gives the production database password, and with it the database.
 
-Scaleway IAM restricts a key to a project, not to a bucket. Two ways to get such a key, yours to choose:
+Scaleway IAM restricts a key to a project, not to a bucket. Two ways to get such a key, not chosen yet:
 
-- a separate Scaleway project holding only the preview buckets, and an IAM application allowed on Object Storage in that project (the buckets of `infra/envs/preview` then need that project);
-- an IAM application allowed on Object Storage in this project, and a bucket policy on every other bucket (state, media, fixtures, sites) that does not admit it.
+- **Bucket policies, in this project.** An IAM application allowed on Object Storage objects in this project reaches every bucket that does not refuse it. Rewrite the policy of `pfat-cms-media` (it admits any key of the project), give one to `pfat-terraform` and `pfat-e2e-fixtures`, which have none, check those of the three site buckets, and do the same for every bucket created later.
+- **A separate project** holding only the preview buckets, and an IAM application allowed on Object Storage there. `infra/envs/preview` does not support it as it stands: its bucket and the policy of `modules/object-bucket` would need that project's ID.
+
+With the new key, before the first preview, both of these must be refused:
+
+```bash
+aws --endpoint-url=https://s3.fr-par.scw.cloud s3 ls s3://pfat-terraform
+aws --endpoint-url=https://s3.fr-par.scw.cloud s3 cp README.md s3://pfat-cms-media/preview-key-check
+```
+
+Every preview holds that same key, the password of its database user and its Django key, in its container and in clear in its state (`env:/pr-<number>/` in `pfat-terraform`): the code of one pull request can read and write the bucket of another. Documents copied to a preview bucket are readable by that code too, which is harmless only while production has no private collection.
 
 ### What a preview shares with production
 
-- **Connections.** The instance has one pool for every database. Production may open up to 48 (3 instances, 2 workers, 8 threads), plus its two private containers. A preview keeps no connection between requests and opens at most 8 while it serves (one worker). Run `SHOW max_connections` on the instance: with the PostgreSQL default of 100, **keep to 5 previews at once**.
+- **Connections.** The instance has one pool for every database. Production may open up to 48 (3 instances, 2 workers, 8 threads), plus its two private containers. A preview keeps no connection between requests and opens at most 8 while it serves (one worker). Run `SHOW max_connections` on the instance: with the PostgreSQL default of 100, **keep to 5 previews at once**. This assumes Scaleway reserves no more connections than PostgreSQL's three, and that production stays at 48 (two revisions overlap during one of its deploys). Nothing enforces the ceiling, and a stopped preview wakes up at the first request.
 - **Disk.** 10 GB for everything. A preview takes about 115 MB as soon as it exists, and keeps it until it is destroyed, backups included.
 - **Load.** The first start of each preview restores and indexes on the production instance (about 25 s locally).
 

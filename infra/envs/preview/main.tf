@@ -37,6 +37,12 @@ provider "scaleway" {
   zone   = "fr-par-1"
 }
 
+variable "ci_access_key_id" {
+  type        = string
+  sensitive   = true
+  description = "Access key ID (not the secret) of the key that applies this stack: the preview must not get that one."
+}
+
 variable "image" {
   type        = string
   description = "Preview image the container is created with. Later images are rolled out by preview.yml."
@@ -125,8 +131,8 @@ data "scaleway_secret_version" "media" {
 
   lifecycle {
     postcondition {
-      condition     = trimspace(base64decode(self.data)) != ""
-      error_message = "The secret pfat-preview-media-${each.key} is empty: it must hold a Scaleway key restricted to the preview buckets."
+      condition     = !contains(["", var.ci_access_key_id], trimspace(base64decode(self.data)))
+      error_message = "The secret pfat-preview-media-${each.key} is empty or holds the key of the CI: it must hold a key restricted to the preview buckets."
     }
   }
 }

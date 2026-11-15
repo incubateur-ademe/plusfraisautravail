@@ -22,22 +22,21 @@ esac
 run() { psql -q -v ON_ERROR_STOP=1 "$DATABASE_URL" "$@"; }
 
 # First start only: what the pull request changes in the database is then kept.
-if [ "$(run -At -c "SELECT to_regclass('django_migrations') IS NULL")" = t ]; then
+empty=$(run -At -c "SELECT to_regclass('django_migrations') IS NULL")
+if [ "$empty" = t ]; then
     echo "Restoring the anonymised dump"
-    # A first start cut short may have left its session, holding locks.
+    # A first start cut short may have left its session, holding locks. This
+    # also interrupts another container of this preview still restoring, which
+    # then starts again.
     run -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE usename = current_user AND pid <> pg_backend_pid()" > /dev/null
-    pg_restore --no-owner --no-privileges -f /tmp/seed.sql /latest.dump
-    # The dump sets a known password on protected pages and collections
-    # (infra/e2e-dump/rules.sql): on a public URL, nobody must know it. The
-    # script of pg_restore empties the search path: schema-qualified names.
-    cat >> /tmp/seed.sql <<'SQL'
-UPDATE public.wagtailcore_pageviewrestriction SET password = gen_random_uuid() WHERE password <> '';
-UPDATE public.wagtailcore_collectionviewrestriction SET password = gen_random_uuid() WHERE password <> '';
-SQL
-    # One transaction: all of it, or an empty database to seed again.
-    run --single-transaction -f /tmp/seed.sql > /dev/null
-    rm /tmp/seed.sql
+    # One transaction: all of it, or an empty database to restore again.
+    pg_restore --no-owner --no-privileges --exit-on-error --single-transaction -d "$DATABASE_URL" /latest.dump
 fi
+# The dump sets a known password on protected pages and collections
+# (infra/e2e-dump/rules.sql): on a public URL, nobody must know it. At every
+# start, before anything is served: a start cut short after the restore.
+run -c "UPDATE wagtailcore_pageviewrestriction SET password = gen_random_uuid() WHERE password = 'e2e'" \
+    -c "UPDATE wagtailcore_collectionviewrestriction SET password = gen_random_uuid() WHERE password = 'e2e'"
 # The migrations of the pull request.
 python manage.py migrate --noinput
 # The dump has no search index (built from raw content).
