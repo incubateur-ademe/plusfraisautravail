@@ -13,6 +13,12 @@ on:
       coverage:
         description: "Total Python coverage, in percent"
         value: ${{ jobs.tests.outputs.coverage }}
+      cms_image_trivy:
+        description: "Vulnerability counts of the CMS image, for the run report"
+        value: ${{ jobs.build.outputs.cms_image_trivy }}
+      e2e_dump_image_trivy:
+        description: "Vulnerability counts of the e2e dump image, for the run report"
+        value: ${{ jobs.build.outputs.e2e_dump_image_trivy }}
 
 permissions:
   contents: read
@@ -123,6 +129,8 @@ jobs:
     outputs:
       image: ${{ steps.meta.outputs.image }}
       e2e_dump_image: ${{ steps.meta.outputs.e2e_dump_image }}
+      cms_image_trivy: ${{ steps.cms_scan.outputs.summary }}
+      e2e_dump_image_trivy: ${{ steps.e2e_dump_scan.outputs.summary }}
     steps:
       - uses: actions/checkout@v7.0.1
 
@@ -142,7 +150,9 @@ jobs:
           echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
           echo "e2e_dump_image=$REGISTRY/$REGISTRY_NAMESPACE/e2e-dump:sha-${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
 
-      - name: Build & push
+      # Loaded, not pushed: the scan below pushes it, unless it finds a HIGH
+      # or CRITICAL vulnerability that has a fix.
+      - name: Build
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           # Repo root, not apps/cms: the Dockerfile needs to COPY packages/*,
@@ -150,7 +160,7 @@ jobs:
           # (../../packages/*) and which live outside apps/cms's own tree.
           context: .
           file: apps/cms/Dockerfile
-          push: true
+          load: true
           # Scaleway Serverless Containers only run amd64.
           platforms: linux/amd64
           build-args: |
@@ -161,22 +171,37 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: 🔍 Trivy scan and push
+        id: cms_scan
+        uses: ./.github/actions/trivy-scan-and-push
+        with:
+          repository: ${{ env.REGISTRY }}/${{ env.REGISTRY_NAMESPACE }}/${{ env.IMAGE_NAME }}
+
       # Nightly anonymised dump for the e2e tests (infra/e2e-dump), built from
       # the same commit as the CMS so its masking rules match the schema.
       # A dev tool must not block a production deploy: on failure the container
       # keeps its previous image, and the dump refuses a schema it does not know.
-      - name: Build & push the e2e dump image
+      - name: Build the e2e dump image
+        id: e2e_dump_build
         continue-on-error: true
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: infra/e2e-dump
-          push: true
+          load: true
           platforms: linux/amd64
           tags: |
             ${{ steps.meta.outputs.e2e_dump_image }}
             ${{ env.REGISTRY }}/${{ env.REGISTRY_NAMESPACE }}/e2e-dump:latest
           cache-from: type=gha,scope=e2e-dump
           cache-to: type=gha,scope=e2e-dump,mode=max
+
+      - name: 🔍 Trivy scan and push (e2e dump)
+        id: e2e_dump_scan
+        if: ${{ steps.e2e_dump_build.outcome == 'success' }}
+        continue-on-error: true
+        uses: ./.github/actions/trivy-scan-and-push
+        with:
+          repository: ${{ env.REGISTRY }}/${{ env.REGISTRY_NAMESPACE }}/e2e-dump
 
   deploy:
     name: 🚀 Deploy

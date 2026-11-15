@@ -80,6 +80,10 @@ jobs:
     with:
       apply: ${{ needs.scope.outputs.infrastructure != 'false' }}
 
+  dependencies:
+    name: 🔍 Dependencies
+    uses: ./.github/workflows/dependencies.yml
+
   # Beside the deployments, not before them: informative on main.
   e2e:
     name: 🎭 E2E
@@ -88,7 +92,7 @@ jobs:
 
   report:
     name: 📋 Report
-    needs: [scope, cms, autodiag, alert_widget, climadiag, infrastructure, e2e]
+    needs: [scope, cms, autodiag, alert_widget, climadiag, infrastructure, dependencies, e2e]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5

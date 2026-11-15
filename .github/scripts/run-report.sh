@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Report at the end of review.yml and cd.yml, on the run's summary page: what
 # ran for each product, the Python coverage, the e2e coverage (cd.yml) or
-# where to find it (review.yml).
+# where to find it (review.yml), the vulnerabilities Trivy found and the
+# infrastructure plan. Each line shows when the job that measures it ran.
 #   NEEDS  toJSON(needs) of the calling job
 #   SHA    the commit that was checked
 set -euo pipefail
@@ -27,5 +28,17 @@ set -euo pipefail
         jq -r '.e2e.outputs | "🎭 E2E coverage: server **\(.server_coverage // "?") %**, SPAs in the browser **\(.browser_coverage // "?") %** of lines."' <<< "$NEEDS"
     else
         echo "🎭 E2E tests and their coverage run in their own workflow, with the \`frontend\` label: [checks of this commit]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/$SHA/checks)."
+    fi
+    # Every `*trivy` output of the jobs: the lockfiles, each image built.
+    trivy=$(jq -r '[.[].outputs // {} | to_entries[] | select(.key | endswith("trivy")) | .value | select(. != "") | "- \(.)"] | join("\n")' <<< "$NEEDS")
+    if [ -n "$trivy" ]; then
+        echo
+        echo "🔍 Vulnerabilities (Trivy). A HIGH or CRITICAL one that has a fix fails its job, which lists them further down this page."
+        echo "$trivy"
+    fi
+    plan=$(jq -r '.infrastructure.outputs.plan // empty' <<< "$NEEDS")
+    if [ -n "$plan" ]; then
+        echo
+        echo "🏗️ Infrastructure plan: $plan"
     fi
 } >> "$GITHUB_STEP_SUMMARY"

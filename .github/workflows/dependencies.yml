@@ -1,0 +1,33 @@
+name: 🔍 Dependencies
+
+# Trivy on the lockfiles (uv.lock, package-lock.json): a HIGH or CRITICAL
+# vulnerability that has a fix fails the job. The images are scanned where they
+# are built (cms.yml), before their push.
+on:
+  workflow_call:
+    outputs:
+      trivy:
+        description: "Vulnerability counts by severity, for the run report"
+        value: ${{ jobs.trivy.outputs.summary }}
+
+permissions:
+  contents: read
+
+jobs:
+  trivy:
+    name: 🔍 Trivy lockfiles
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      summary: ${{ steps.summary.outputs.summary }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln
+          format: json
+          output: trivy-lockfiles.json
+      - id: summary
+        run: .github/scripts/trivy-summary.sh lockfiles trivy-lockfiles.json
