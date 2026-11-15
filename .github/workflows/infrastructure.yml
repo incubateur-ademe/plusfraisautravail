@@ -87,7 +87,7 @@ jobs:
           # A plan that only changes outputs prints neither "Plan:" nor "No changes".
           summary=$(grep -m1 -E '^(Plan:|No changes)' plan.txt) ||
             summary=$(grep -m1 '^Changes to Outputs' plan.txt | sed 's/:$/ only./') ||
-            summary="Plan failed."
+            summary="see the plan."
           [ "$status" = 0 ] || summary="Plan failed."
           echo "summary=$summary" >> "$GITHUB_OUTPUT"
           # A failed plan shows on the summary page too.

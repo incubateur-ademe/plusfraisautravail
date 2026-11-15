@@ -86,8 +86,8 @@ Every hand-provided secret lives in one Scaleway Secret Manager secret, `pfat-pr
 ```
 
 - `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` are required: a Scaleway API key for the media bucket, the e2e fixtures bucket and, unless `EMAIL_HOST_PASSWORD` is set, Scaleway Transactional Email.
-- One level, values are non-empty strings. Leave out the secrets you don't have (an empty or null value counts as left out). Any other key becomes a secret environment variable of the CMS.
-- The plan lists the key names (output `secret_names`, never the values): check there that none is missing or misspelt. A secret that is missing turns its feature off without an error.
+- One level, values are non-empty strings. Leave out the secrets you don't have (an empty or null value counts as left out). Any other key becomes a secret environment variable of the CMS and of `cms-manage`: a misspelt API secret ends up there too.
+- The plan lists the key names (output `secret_names`, never the values): check there that none is missing or misspelt. Key names are therefore public, in the plan and in the state: never put a value in a key. A secret that is missing turns its feature off without an error.
 - The Vigilance, RTE and Climadiag secrets go to the CMS container only, not to `cms-manage`.
 
 ```bash
@@ -122,7 +122,7 @@ just bootstrap-environments   # cms / autodiag / alert-widget / climadiag / tofu
 
 GitHub only holds the Scaleway key: `SCW_ACCESS_KEY`, `SCW_SECRET_KEY`, `SCW_DEFAULT_PROJECT_ID`, `SCW_DEFAULT_ORGANIZATION_ID`, at repository level and in each environment (restricted to `main`). Not secret, as repository variables: `SENTRY_DSN`, `POSTHOG_KEY`, and `CMS_BASE_URL` while testing before a DNS cutover.
 
-**On a repository set up before Secret Manager**, copy each GitHub secret that exists into `pfat-prod` before merging:
+**On a repository set up before Secret Manager**, put each secret GitHub holds into `pfat-prod` before merging. GitHub does not give a secret back: take the values from where they came from (Scaleway console, Météo-France, RTE, PlusFraîcheMaVille and Notion accounts).
 
 | GitHub secret | Key in `pfat-prod` |
 |---|---|
@@ -131,6 +131,8 @@ GitHub only holds the Scaleway key: `SCW_ACCESS_KEY`, `SCW_SECRET_KEY`, `SCW_DEF
 | `EMAIL_HOST_PASSWORD` | `EMAIL_HOST_PASSWORD` (if it was never set, leave it out) |
 | `VIGILANCE_APP_ID`, `RTE_CLIENT_ID`, `RTE_CLIENT_SECRET`, `CLIMADIAG_API_TOKEN`, `NOTION_TOKEN` | same name |
 | `DJANGO_SECRET_KEY` | none: generated |
+
+Before merging: give the Scaleway key of the CI the two Secret Manager permission sets (section 1), and read `secret_names` in the plan of the pull request. Until the first apply from CI is over, `just bastion-up` fails ("Moved resource instances excluded by targeting").
 
 The first apply replaces the Django key by the generated one: every admin is logged out once, and pending signed links stop working. After that apply, these GitHub secrets are no longer read and can be deleted, at repository level and in the `tofu-apply` and `cms` environments.
 
@@ -158,9 +160,11 @@ just deploy-cms
 just deploy-autodiag
 just deploy-alert-widget
 just deploy-climadiag
-just tf-apply          # local apply, still works as an escape hatch
+just tf-apply          # local apply, an escape hatch: needs terraform.tfvars (see below)
 just status            # current outputs + last-run timestamps
 ```
+
+A local apply does not read the GitHub variables: without `infra/envs/prod/terraform.tfvars` (copy `terraform.tfvars.example`, fill `sentry_dsn` and `posthog_key`), it turns Sentry and PostHog off until the next apply from CI.
 
 To roll out an infrastructure change: edit `infra/envs/prod/**`, open a PR, review the plan in CI, merge. CI handles the apply.
 
@@ -231,8 +235,11 @@ The containers are created with `pfat/cms:latest`: push it first (2.4).
 **The plan fails on `data.scaleway_secret_version.app`.**
 The secret `pfat-prod` does not exist, has no enabled version, or the Scaleway key cannot read Secret Manager (2.3). Nothing was changed.
 
+**The plan fails with "Unsupported attribute … does not have an attribute named "AWS_SECRET_ACCESS_KEY"".**
+That key is missing from `pfat-prod`, or empty: both S3 keys are required (2.3).
+
 **Destroying the stack.**
-Not a workflow: the database and its instance have `prevent_destroy` and the media bucket no `force_destroy`. Remove both in a pull request first, then `tofu destroy` locally.
+Not a workflow: the database and its instance have `prevent_destroy` and the media bucket no `force_destroy`. Remove them in a pull request first, then `tofu destroy` locally.
 
 **API returns 502 on `/api/alerts/meteo` or `/api/alerts/electricity`.**
 The upstream (Météo-France or RTE) failed and no earlier snapshot is cached. Check the cms container logs (Scaleway dashboard -> Containers -> `cms-prod` -> Logs). Most common cause: a wrong `VIGILANCE_APP_ID`; a missing one answers 503.
