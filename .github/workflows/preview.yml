@@ -5,7 +5,7 @@ name: 🌱 Preview
 # media bucket, and a container running the CMS of the PR. The database is
 # restored from the nightly anonymised dump at the first start, then kept:
 # each push only runs the migrations. The media bucket gets a copy of
-# production's images; documents are not copied (private in production).
+# production's images and documents (documents stay private there too).
 # Nothing is destroyed by itself: run this workflow by hand with the number of
 # the pull request once it is closed.
 # The branch must hold these files: rebase one that started before them.
@@ -19,7 +19,7 @@ on:
       pr_number:
         description: "Destroy the preview of this pull request (its number)"
         required: true
-        type: string
+        type: number
 
 permissions:
   contents: read
@@ -104,13 +104,13 @@ jobs:
           echo "url=$(tofu output -raw url)" >> "$GITHUB_OUTPUT"
           echo "media_bucket=$(tofu output -raw media_bucket)" >> "$GITHUB_OUTPUT"
 
-      - name: Copy the images of production to the bucket of the preview
+      - name: Copy the media of production to the bucket of the preview
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
           BUCKET: ${{ steps.tofu.outputs.media_bucket }}
         run: |
-          for prefix in images original_images; do
+          for prefix in images original_images documents; do
             aws s3 sync --only-show-errors --size-only "s3://pfat-cms-media/$prefix" "s3://$BUCKET/$prefix"
           done
 
@@ -154,6 +154,10 @@ jobs:
       contents: read
       pull-requests: write
     steps:
+      # The stack only guards the creation: nothing else stops a destroy.
+      - name: Refuse anything but the number of a pull request
+        run: '[[ "$PR" =~ ^[0-9]+$ ]]'
+
       - uses: actions/checkout@v7.0.1
 
       - uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
@@ -161,7 +165,6 @@ jobs:
           tofu_version: ${{ env.TOFU_VERSION }}
           tofu_wrapper: false
 
-      # Refused by the stack unless the workspace is pr-<number>.
       - name: Destroy the container, the bucket, the database, its user and the workspace
         working-directory: infra/envs/preview
         env: *scaleway

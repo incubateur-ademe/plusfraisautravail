@@ -71,6 +71,8 @@ data "scaleway_rdb_instance" "production" {
 resource "scaleway_rdb_database" "preview" {
   instance_id = data.scaleway_rdb_instance.production.id
   name        = local.name
+  # Destroyed before its user, who owns its tables.
+  depends_on = [scaleway_rdb_user.preview]
 }
 
 resource "random_password" "database" {
@@ -85,16 +87,20 @@ resource "scaleway_rdb_user" "preview" {
   is_admin    = false
 }
 
-# A new user has no permission on any database: "all" on its own, and "none"
-# spelled out on production's. The container checks the latter at each start
+# A new user has no permission on any database: "all" on its own only. That it
+# is denied production's is checked by the container at each start
 # (apps/cms/preview_entrypoint.sh).
 resource "scaleway_rdb_privilege" "preview" {
-  for_each      = { (local.name) = "all", (local.production_database) = "none" }
   instance_id   = data.scaleway_rdb_instance.production.id
   user_name     = scaleway_rdb_user.preview.name
-  database_name = each.key
-  permission    = each.value
-  depends_on    = [scaleway_rdb_database.preview]
+  database_name = scaleway_rdb_database.preview.name
+  permission    = "all"
+
+  # Scaleway reports "custom" once the restore has created tables, and the
+  # provider would set "all" again at each push.
+  lifecycle {
+    ignore_changes = [permission]
+  }
 }
 
 # ── Media: its own bucket, filled from production's by preview.yml ───────
@@ -108,12 +114,21 @@ module "media" {
   force_destroy        = true
 }
 
-# The key of production's media bucket (DEPLOY.md 2.3), to keep the number of
-# secrets down: a key restricted to the preview buckets can replace it here.
+# A key that reaches the preview buckets only (DEPLOY.md 4): never the
+# account's key nor production's media key, in a container running unreviewed
+# code next to the production database.
 data "scaleway_secret_version" "media" {
   for_each    = toset(["access-key-id", "secret-key"])
-  secret_name = "pfat-prod-cms-media-${each.key}"
-  revision    = "latest"
+  secret_name = "pfat-preview-media-${each.key}"
+  # Disabling a version rolls back to the one before.
+  revision = "latest_enabled"
+
+  lifecycle {
+    postcondition {
+      condition     = trimspace(base64decode(self.data)) != ""
+      error_message = "The secret pfat-preview-media-${each.key} is empty: it must hold a Scaleway key restricted to the preview buckets."
+    }
+  }
 }
 
 resource "random_password" "django_secret_key" {
