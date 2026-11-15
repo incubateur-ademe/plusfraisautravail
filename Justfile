@@ -267,19 +267,6 @@ bootstrap-state:
     [[ "$ans" =~ ^[Yy]$ ]] || { echo "Aborted."; exit 1; }
     aws --endpoint-url=https://s3.fr-par.scw.cloud s3 mb s3://pfat-terraform --region fr-par
 
-# Copy terraform.tfvars.example to terraform.tfvars (if missing) and open it.
-bootstrap-tfvars:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    cd infra/envs/prod
-    if [[ -f terraform.tfvars ]]; then
-      echo "infra/envs/prod/terraform.tfvars already exists - opening it."
-    else
-      cp terraform.tfvars.example terraform.tfvars
-      echo "Created infra/envs/prod/terraform.tfvars from the example."
-    fi
-    "${EDITOR:-vi}" terraform.tfvars
-
 # Push repo-level secrets used by the infrastructure plan (runs on PRs from
 # any branch and can't read environment-scoped secrets). For the deploy
 # workflows, use `just bootstrap-environments` instead - those secrets live
