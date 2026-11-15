@@ -31,7 +31,7 @@ CI/CD lives under `.github/workflows/`:
 ## 1. Prerequisites
 
 - Scaleway account with a project, plus an API key (access key + secret key) allowed on containers, registry, Object Storage, RDB, VPC and Secret Manager. For the secret, the IAM permission sets `SecretManagerReadOnly` (find it by name) and `SecretManagerSecretAccess` (read its value).
-- The secrets of the third parties: Météo-France [Vigilance API](https://portail-api.meteofrance.fr/) application ID, RTE Ecowatt OAuth2 client ID and secret, PlusFraîcheMaVille Climadiag token, Notion token.
+- The secrets of the third parties, each optional: Météo-France [Vigilance API](https://portail-api.meteofrance.fr/) application ID, RTE Ecowatt OAuth2 client ID and secret, PlusFraîcheMaVille Climadiag token, Notion token. Without one, the matching feature answers 503 or is off; everything else works.
 - [GitHub CLI](https://cli.github.com/) (`gh auth login`), [AWS CLI v2](https://docs.aws.amazon.com/cli/) (S3 client), [Scaleway CLI](https://cli.scaleway.com/), [OpenTofu](https://opentofu.org/) 1.10+, Docker, [`just`](https://github.com/casey/just).
 
 ---
@@ -71,7 +71,7 @@ just bootstrap-state
 
 ### 2.3 The secrets: one Secret Manager secret each
 
-Every hand-provided secret is one Scaleway Secret Manager secret, named `pfat-prod-<name>`, at the default path. OpenTofu reads the latest version of each at every plan and passes it to the containers that need it. All ten must exist: a missing one fails the plan, naming it.
+Every hand-provided secret is one Scaleway Secret Manager secret, named `pfat-prod-<name>`, at the default path. OpenTofu reads the latest enabled version of each at every plan and passes it to the containers that need it. All ten must exist: a missing one fails the plan, naming it.
 
 | Secret | What it is | Goes to | GitHub secret it replaces |
 |---|---|---|---|
@@ -88,17 +88,20 @@ Every hand-provided secret is one Scaleway Secret Manager secret, named `pfat-pr
 
 The media, fixtures and e-mail secrets may all hold the same Scaleway key today. They are separate so that each can later get its own key, restricted to its bucket or to e-mail, without touching the code.
 
-For each one, with the value in a file outside the repository (a final newline is ignored):
+The first six are optional credentials. All ten secrets must still exist: for one you do not have, store an empty value (a file holding only a newline). It is then not passed to the containers and its feature is off (503 on the matching API endpoint, no Notion sync, no outgoing mail). The four key secrets must not be empty: the plan fails, naming the empty one.
+
+For each one, with the value in a file outside the repository (UTF-8 without BOM; a final newline is ignored):
 
 ```bash
-scw secret secret create name=pfat-prod-<name>
-scw secret version create <secret-id> data=@/path/to/value
+scw secret version create "$(scw secret secret create name=pfat-prod-<name> -o json | jq -r .id)" data=@/path/to/value
 rm /path/to/value
 ```
 
-To change a secret later: create a new version the same way, then apply (`just deploy infrastructure`, or any merge touching `infra/`). The Django `SECRET_KEY` and the database passwords are not secrets to create: OpenTofu generates them. To rotate the Django key, run 🏗️ Infrastructure by hand with `tofu_replace` = `random_password.django_secret_key`: every admin is logged out and pending signed links (password reset) stop working.
+If a secret named `pfat-prod` is left from earlier trials, delete it: nothing reads it.
 
-GitHub does not know these values, so it does not mask them in logs: only OpenTofu's `sensitive` marking hides them, in a plan that is public. Never wrap them in `nonsensitive()` or put them in an output.
+To change a secret later: create a new version (`scw secret version create <secret-id> data=@/path/to/value`), then apply (`just deploy infrastructure`, or any merge touching `infra/`). The Django `SECRET_KEY` and the database passwords are not secrets to create: OpenTofu generates them. To rotate the Django key, run 🏗️ Infrastructure by hand with `tofu_replace` = `random_password.django_secret_key`: every admin is logged out and pending signed links (password reset) stop working.
+
+For these secrets, GitHub masks nothing in logs, as it does not know their values: only OpenTofu's `sensitive` marking hides them, in a plan that is public. Never wrap them in `nonsensitive()` or put them in an output.
 
 ### 2.4 Registry, first image, then everything else
 
@@ -223,7 +226,7 @@ The SPAs must be built with their default sub-path base (`/autodiag/` etc.), not
 The containers are created with `pfat/cms:latest`: push it first (2.4).
 
 **The plan fails on `data.scaleway_secret_version.app["…"]`.**
-The secret `pfat-prod-…` named in the error does not exist, has no enabled version, or the Scaleway key cannot read Secret Manager (2.3). Nothing was changed.
+The secret `pfat-prod-…` named in the error does not exist, has no enabled version, or the Scaleway key cannot read Secret Manager (2.3). Nothing was changed. To go back to the previous value of a secret, disable its latest version and apply.
 
 **Destroying the stack.**
 Not a workflow: the database and its instance have `prevent_destroy` and the media bucket no `force_destroy`. Remove them in a pull request first, then `tofu destroy` locally.
@@ -232,10 +235,10 @@ Not a workflow: the database and its instance have `prevent_destroy` and the med
 The upstream (Météo-France or RTE) failed and no earlier snapshot is cached. Check the cms container logs (Scaleway dashboard -> Containers -> `cms-prod` -> Logs). Most common cause: a wrong `VIGILANCE_APP_ID`; a missing one answers 503.
 
 **API returns 503 on `/api/alerts/electricity`.**
-RTE creds are wrong: a new version of `pfat-prod-rte-client-id` / `pfat-prod-rte-client-secret` (2.3), then apply.
+`pfat-prod-rte-client-id` or `pfat-prod-rte-client-secret` is empty (2.3). Wrong credentials answer 502 instead.
 
 **API returns 503 on `/api/climadiag/search`.**
-The Climadiag token is wrong: a new version of `pfat-prod-climadiag-api-token` (2.3), then apply.
+`pfat-prod-climadiag-api-token` is empty (2.3). A wrong token answers 502 instead.
 
 **CMS returns 502.**
 Check Scaleway dashboard -> Containers -> `cms-prod` -> Logs. Most common causes: missing/wrong `DATABASE_URL` or `DJANGO_SECRET_KEY`, or the container can't reach Postgres over the Private Network (verify `module.cms` and `module.cms_db` ended up on the same `private_network_id` - check `tofu output cms_db_host` is a private `10.x`/`172.x` address, not a public one).

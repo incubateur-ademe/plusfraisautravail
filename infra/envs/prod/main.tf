@@ -7,9 +7,13 @@ locals {
   # pfat-prod-<name> (DEPLOY.md). All of them must exist: a missing one fails
   # the plan, naming it. Each use has its own, so that the buckets and the
   # e-mail can each get a restricted key.
-  secret_names = [
+  # A third-party credential we do not have is an empty secret: it is not
+  # passed at all, and its feature is off.
+  optional_secret_names = [
     "vigilance-app-id", "rte-client-id", "rte-client-secret", "climadiag-api-token",
     "notion-token", "email-host-password",
+  ]
+  key_secret_names = [
     "cms-media-access-key-id", "cms-media-secret-key",
     "e2e-fixtures-access-key-id", "e2e-fixtures-secret-key",
   ]
@@ -18,24 +22,28 @@ locals {
 
   # The alert API's own secrets (packages/pfat-api, served by the CMS): not
   # for cms_manage.
-  api_secret_env = {
+  api_secret_env = { for name, value in {
     VIGILANCE_APP_ID    = local.secret["vigilance-app-id"]
     RTE_CLIENT_ID       = local.secret["rte-client-id"]
     RTE_CLIENT_SECRET   = local.secret["rte-client-secret"]
     CLIMADIAG_API_TOKEN = local.secret["climadiag-api-token"]
-  }
+  } : name => value if value != "" }
 
-  cms_secret_env = {
-    # Private-network DSN: the container is attached to the DB's Private
-    # Network (module.cms private_network_id).
-    DATABASE_URL      = module.cms_db.private_database_url
-    DJANGO_SECRET_KEY = random_password.django_secret_key.result
-    NOTION_TOKEN      = local.secret["notion-token"]
-    # Scaleway TEM takes an API secret key as SMTP password.
-    EMAIL_HOST_PASSWORD   = local.secret["email-host-password"]
-    AWS_ACCESS_KEY_ID     = local.secret["cms-media-access-key-id"]
-    AWS_SECRET_ACCESS_KEY = local.secret["cms-media-secret-key"]
-  }
+  cms_secret_env = merge(
+    {
+      # Private-network DSN: the container is attached to the DB's Private
+      # Network (module.cms private_network_id).
+      DATABASE_URL          = module.cms_db.private_database_url
+      DJANGO_SECRET_KEY     = random_password.django_secret_key.result
+      AWS_ACCESS_KEY_ID     = local.secret["cms-media-access-key-id"]
+      AWS_SECRET_ACCESS_KEY = local.secret["cms-media-secret-key"]
+    },
+    { for name, value in {
+      NOTION_TOKEN = local.secret["notion-token"]
+      # Scaleway TEM takes an API secret key as SMTP password.
+      EMAIL_HOST_PASSWORD = local.secret["email-host-password"]
+    } : name => value if value != "" },
+  )
 
   cms_env = {
     # Wide open: Scaleway's health probes do not send the container's domain
@@ -71,9 +79,17 @@ locals {
 data "scaleway_account_project" "current" {}
 
 data "scaleway_secret_version" "app" {
-  for_each    = toset(local.secret_names)
+  for_each    = toset(concat(local.optional_secret_names, local.key_secret_names))
   secret_name = "pfat-${local.environment}-${each.key}"
-  revision    = "latest"
+  # Disabling a version rolls back to the one before.
+  revision = "latest_enabled"
+
+  lifecycle {
+    postcondition {
+      condition     = !contains(local.key_secret_names, each.key) || trimspace(base64decode(self.data)) != ""
+      error_message = "The secret pfat-${local.environment}-${each.key} is empty: it must hold a Scaleway key."
+    }
+  }
 }
 
 resource "random_password" "django_secret_key" {
