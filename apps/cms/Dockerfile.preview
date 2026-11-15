@@ -1,0 +1,26 @@
+# syntax=docker/dockerfile:1
+# Preview of a pull request (.github/workflows/preview.yml): the CMS image of
+# the PR, plus the nightly anonymised dump it restores in its own database at
+# its first start (preview_entrypoint.sh). Build context: apps/cms, and the
+# directory holding latest.dump as `dump`.
+ARG CMS_IMAGE=rg.fr-par.scw.cloud/pfat/cms:latest
+FROM ${CMS_IMAGE}
+
+# The PostgreSQL 16 client, like the server: a newer pg_restore sends settings
+# it does not know (e2e/restore.sh).
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends postgresql-common ca-certificates \
+    && /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y \
+    && apt-get install -y --no-install-recommends postgresql-client-16 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=dump latest.dump /latest.dump
+COPY preview_entrypoint.sh ./
+
+# One gunicorn worker (its threads serve the requests) and two malloc arenas:
+# generating the images of several pages at once otherwise fills the memory.
+ENV DJANGO_SETTINGS_MODULE=cms.settings.preview \
+    WEB_CONCURRENCY=1 \
+    MALLOC_ARENA_MAX=2
+
+ENTRYPOINT ["./preview_entrypoint.sh"]

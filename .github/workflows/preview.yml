@@ -1,0 +1,183 @@
+name: 🌱 Preview
+
+# The `preview` label on a pull request to main gives it its own environment
+# (infra/envs/preview): a database and a user on the production instance, a
+# media bucket, and a container running the CMS of the PR. The database is
+# restored from the nightly anonymised dump at the first start, then kept:
+# each push only runs the migrations. The media bucket gets a copy of
+# production's images; documents are not copied (private in production).
+# Nothing is destroyed by itself: run this workflow by hand with the number of
+# the pull request once it is closed.
+# The branch must hold these files: rebase one that started before them.
+# Not for forks: they get no secrets. Nobody can log in to the admin of a
+# preview (the dump has no usable password).
+on:
+  pull_request:
+    types: [labeled, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "Destroy the preview of this pull request (its number)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  PR: ${{ inputs.pr_number || github.event.pull_request.number }}
+  SHA: ${{ github.event.pull_request.head.sha }}
+  WORKSPACE: pr-${{ inputs.pr_number || github.event.pull_request.number }}
+  IMAGE: rg.fr-par.scw.cloud/pfat/cms-preview:pr-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}
+  TOFU_VERSION: "1.13.2"
+  AWS_DEFAULT_REGION: fr-par
+  AWS_ENDPOINT_URL: https://s3.fr-par.scw.cloud
+
+jobs:
+  up:
+    name: 🌱 Deploy the preview
+    # Adding another label must not redeploy.
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.base.ref == 'main' &&
+      github.event.pull_request.state == 'open' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      contains(github.event.pull_request.labels.*.name, 'preview') &&
+      (github.event.action != 'labeled' || github.event.label.name == 'preview')
+    # Per job, not per workflow: a skipped run (another label added) must not
+    # take the place of a waiting one. A run in progress is never cancelled; a
+    # waiting one is replaced by the next (a newer push, or the destruction).
+    concurrency:
+      group: preview-pr-${{ github.event.pull_request.number }}
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      # The commit named in the image tag and in the comment, not its merge with main.
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      # The dump is anonymised inside Scaleway (infra/e2e-dump): the only copy
+      # of the database allowed on a runner, as for the e2e tests.
+      - name: Download the anonymised dump
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+        run: aws s3 cp --only-show-errors s3://pfat-e2e-fixtures/cms/latest.dump dump/latest.dump
+
+      - name: Build the preview image
+        run: |
+          docker build -t cms -f apps/cms/Dockerfile --build-arg "BUILD_SHA=sha-$SHA" .
+          docker build -t "$IMAGE" -f apps/cms/Dockerfile.preview --build-arg CMS_IMAGE=cms --build-context dump=dump apps/cms
+
+      - name: Push it to the private registry
+        env:
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+        run: |
+          echo "$SCW_SECRET_KEY" | docker login rg.fr-par.scw.cloud -u nologin --password-stdin
+          docker push "$IMAGE"
+
+      - uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
+        with:
+          tofu_version: ${{ env.TOFU_VERSION }}
+          tofu_wrapper: false
+
+      - name: Create the database, the bucket and the container, or leave them as they are
+        id: tofu
+        working-directory: infra/envs/preview
+        env: &scaleway
+          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_DEFAULT_PROJECT_ID }}
+          SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_DEFAULT_ORGANIZATION_ID }}
+          # The S3 backend of tofu.
+          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+        run: |
+          tofu init -input=false
+          tofu workspace select -or-create "$WORKSPACE"
+          tofu apply -input=false -auto-approve -var "image=$IMAGE"
+          echo "url=$(tofu output -raw url)" >> "$GITHUB_OUTPUT"
+          echo "media_bucket=$(tofu output -raw media_bucket)" >> "$GITHUB_OUTPUT"
+
+      - name: Copy the images of production to the bucket of the preview
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          BUCKET: ${{ steps.tofu.outputs.media_bucket }}
+        run: |
+          for prefix in images original_images; do
+            aws s3 sync --only-show-errors --size-only "s3://pfat-cms-media/$prefix" "s3://$BUCKET/$prefix"
+          done
+
+      # tofu ignores the image of an existing container (modules/serverless-container).
+      # The first start restores the dump before it answers.
+      - name: Roll the image out and wait for the home page
+        env:
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          URL: ${{ steps.tofu.outputs.url }}
+        run: |
+          .github/scripts/scw-container.sh redeploy "cms-$WORKSPACE" "$IMAGE"
+          .github/scripts/scw-container.sh wait_until 10 "Container cms-$WORKSPACE not ready after 10 min" is_ready "cms-$WORKSPACE"
+          curl -fsS -o /dev/null --max-time 60 --retry 30 --retry-delay 10 --retry-all-errors "$URL/"
+
+      - name: Give the URL on the pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          URL: ${{ steps.tofu.outputs.url }}
+        run: |
+          gh pr comment "$PR" --edit-last --create-if-none --body "🌱 Preview : $URL
+
+          Commit \`$SHA\`. Base restaurée du dump anonymisé à la création, puis conservée d'un push à l'autre. Rien n'est détruit à la fermeture de la PR : lancer le workflow « Preview » à la main avec le numéro de la PR."
+
+      - name: Say so on the pull request when the deployment failed
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh pr comment "$PR" --edit-last --create-if-none --body
+          "❌ La preview du commit \`$SHA\` n'a pas pu être déployée, voir $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+
+  down:
+    name: 🪦 Destroy the preview
+    if: github.event_name == 'workflow_dispatch'
+    concurrency:
+      group: preview-pr-${{ inputs.pr_number }}
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
+        with:
+          tofu_version: ${{ env.TOFU_VERSION }}
+          tofu_wrapper: false
+
+      # Refused by the stack unless the workspace is pr-<number>.
+      - name: Destroy the container, the bucket, the database, its user and the workspace
+        working-directory: infra/envs/preview
+        env: *scaleway
+        run: |
+          tofu init -input=false
+          tofu workspace select -or-create "$WORKSPACE"
+          tofu destroy -input=false -auto-approve -var image=unused
+          tofu workspace select default
+          tofu workspace delete "$WORKSPACE"
+
+      # Each one holds a copy of the anonymised dump.
+      - name: Delete the images of the pull request
+        env:
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+        run: .github/scripts/scw-container.sh delete_tags cms-preview "$WORKSPACE-"
+
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh pr comment "$PR" --edit-last --create-if-none --body "🪦 Preview détruite."
