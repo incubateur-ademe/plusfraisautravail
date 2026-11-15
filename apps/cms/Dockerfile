@@ -54,7 +54,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PATH="/app/apps/cms/.venv/bin:$PATH"
 
-# Debian's security fixes published since the base image was built.
+# Debian's security fixes published since the base image was built. After
+# BUILD_SHA on purpose: it changes with each commit, so this layer is never
+# taken from the cache.
 RUN apt-get update \
     && apt-get upgrade -y \
     && rm -rf /var/lib/apt/lists/*
