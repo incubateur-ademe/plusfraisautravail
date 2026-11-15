@@ -10,7 +10,11 @@ ARG DALIBO_REPO_ASC_SHA256=5ed3ea58383868c18b2becf9bb2a344b889af5ab349a62a9fe20e
 
 # Key and package pinned by hash: a change in the Dalibo repository fails the
 # build. The key is trusted for that repository only (signed-by).
+# upgrade: Debian's security fixes published since the base image was built.
+# gosu is removed: its Go runtime is out of date and dump.sh uses runuser.
 RUN apt-get update \
+    && apt-get upgrade -y \
+    && rm /usr/local/bin/gosu \
     && apt-get install -y --no-install-recommends ca-certificates curl awscli \
     && mkdir -p /etc/apt/keyrings \
     && curl -fsSL https://repo.dalibo.com/dalibo_labs.asc -o /etc/apt/keyrings/dalibo_labs.asc \

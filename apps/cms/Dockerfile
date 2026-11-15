@@ -54,6 +54,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PATH="/app/apps/cms/.venv/bin:$PATH"
 
+# Debian's security fixes published since the base image was built.
+RUN apt-get update \
+    && apt-get upgrade -y \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app/apps/cms
 
 COPY --from=builder /app /app
