@@ -25,7 +25,7 @@ psql() { command psql -v ON_ERROR_STOP=1 -q "$@"; }
 
 # The container instance may serve several runs.
 cleanup() {
-    gosu postgres pg_ctl -D "$pgdata" -m immediate -s stop 2>/dev/null || true
+    setpriv --reuid=postgres --regid=postgres --init-groups pg_ctl -D "$pgdata" -m immediate -s stop 2>/dev/null || true
     rm -rf "$work"
 }
 cleanup
@@ -43,9 +43,9 @@ quietly() {
 
 echo "Starting a local Postgres"
 mkdir -p "$pgdata" "$PGHOST" && chown postgres "$work" "$pgdata" "$PGHOST"
-gosu postgres initdb -D "$pgdata" --auth=trust >/dev/null
+setpriv --reuid=postgres --regid=postgres --init-groups initdb -D "$pgdata" --auth=trust >/dev/null
 # Server log in a file, not the container logs: it quotes failing statements.
-gosu postgres pg_ctl -D "$pgdata" -l "$work/postgres.log" -w -s start -o "-c listen_addresses='' -c shared_preload_libraries=anon -c anon.nosuperuser=off"
+setpriv --reuid=postgres --regid=postgres --init-groups pg_ctl -D "$pgdata" -l "$work/postgres.log" -w -s start -o "-c listen_addresses='' -c shared_preload_libraries=anon -c anon.nosuperuser=off"
 createdb e2e
 # The dump (--schema=public) creates the schema itself.
 psql -c 'DROP SCHEMA public'

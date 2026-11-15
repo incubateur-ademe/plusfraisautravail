@@ -59,11 +59,15 @@ jobs:
     # The plan reads the real state, with the repository secrets.
     secrets: inherit # pragma: allowlist secret
 
+  dependencies:
+    name: 🔍 Dependencies
+    uses: ./.github/workflows/dependencies.yml
+
   # The one check to require: a skipped job counts as passed, so requiring the
   # product jobs themselves would let a pull request merge past a failed one.
   ci_passed:
     name: ✅ CI
-    needs: [scope, cms, autodiag, alert_widget, climadiag, infrastructure]
+    needs: [scope, cms, autodiag, alert_widget, climadiag, infrastructure, dependencies]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -76,6 +80,9 @@ jobs:
           NEEDS: ${{ toJSON(needs) }}
           SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: .github/scripts/run-report.sh
+
+      - name: Check the report scripts
+        run: .github/scripts/test-reports.sh
 
       - name: Fail if a product failed
         if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}

@@ -1,0 +1,39 @@
+name: Trivy scan and push
+description: Scan a locally loaded image, then push all its tags unless it has a HIGH or CRITICAL vulnerability with a fix
+inputs:
+  repository:
+    description: Image repository loaded in the local Docker daemon (registry/namespace/name)
+    required: true
+outputs:
+  summary:
+    description: Vulnerability counts by severity, for the run report
+    value: ${{ steps.summary.outputs.summary }}
+runs:
+  using: composite
+  steps:
+    - id: ref
+      shell: bash
+      env:
+        REPOSITORY: ${{ inputs.repository }}
+      run: |
+        ref=$(docker image ls --format '{{.Repository}}:{{.Tag}}' "$REPOSITORY" | head -n1)
+        [ -n "$ref" ] || { echo "::error::No image of $REPOSITORY in the local Docker daemon"; exit 1; }
+        echo "ref=$ref" >> "$GITHUB_OUTPUT"
+
+    - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+      with:
+        image-ref: ${{ steps.ref.outputs.ref }}
+        scanners: vuln
+        format: json
+        output: trivy-image.json
+
+    - id: summary
+      shell: bash
+      env:
+        REPOSITORY: ${{ inputs.repository }}
+      run: .github/scripts/trivy-summary.sh "${REPOSITORY##*/} image" trivy-image.json
+
+    - shell: bash
+      env:
+        REPOSITORY: ${{ inputs.repository }}
+      run: docker push --all-tags "$REPOSITORY"
