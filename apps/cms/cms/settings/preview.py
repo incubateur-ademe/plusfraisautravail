@@ -3,7 +3,7 @@ own database and bucket, without mail, Sentry, PostHog, Notion or API keys
 (none of them is given to the container)."""
 
 from .production import *  # noqa: F403
-from .production import MIDDLEWARE
+from .production import DATABASES, MIDDLEWARE
 
 
 def noindex(get_response):
@@ -18,6 +18,8 @@ def noindex(get_response):
 
 
 MIDDLEWARE = ["cms.settings.preview.noindex", *MIDDLEWARE]
+# The instance is production's: hold none of its connections between requests.
+DATABASES["default"]["CONN_MAX_AGE"] = 0
 # No Sentry here: a 500 leaves its traceback in the container logs.
 LOGGING = {
     "version": 1,

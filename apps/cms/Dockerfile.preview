@@ -17,10 +17,8 @@ RUN apt-get update \
 COPY --from=dump latest.dump /latest.dump
 COPY preview_entrypoint.sh ./
 
-# One gunicorn worker (its threads serve the requests) and two malloc arenas:
-# generating the images of several pages at once otherwise fills the memory.
+# One gunicorn worker: at most eight connections to the production instance.
 ENV DJANGO_SETTINGS_MODULE=cms.settings.preview \
-    WEB_CONCURRENCY=1 \
-    MALLOC_ARENA_MAX=2
+    WEB_CONCURRENCY=1
 
 ENTRYPOINT ["./preview_entrypoint.sh"]

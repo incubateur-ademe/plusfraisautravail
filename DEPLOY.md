@@ -170,16 +170,33 @@ The `preview` label on a pull request to `main` (same repository, not a fork) ru
 | Created per pull request | Name |
 |---|---|
 | Database on the production instance | `preview_pr_<number>` |
-| Its user: not admin, permission `all` on that database, `none` on `cms` | `preview_pr_<number>` |
-| Media bucket, filled with a copy of production's `images/` and `original_images/` | `pfat-preview-pr-<number>` |
+| Its user: not admin, permission `all` on that database and on no other | `preview_pr_<number>` |
+| Media bucket, filled with a copy of production's `images/`, `original_images/` and `documents/` | `pfat-preview-pr-<number>` |
 | Public container, on the database's Private Network, stopped while unused | `cms-pr-<number>` |
 | Image tags in the private registry | `cms-preview:pr-<number>-<sha>` |
 
-The image holds the nightly anonymised dump. At its first start the container restores it into its database; later starts only run the migrations, so what is changed in a preview is kept. At every start it first checks that its user cannot connect to the production database, and refuses to start otherwise.
+The image holds the nightly anonymised dump. At its first start the container restores it into its database; later starts only run the migrations, so what is changed in a preview is kept. A preview gets no mail, Notion, Sentry, PostHog or alert API secret.
 
-A preview gets the key of production's media bucket (`pfat-prod-cms-media-…`) and no other secret: no mail, Notion, Sentry, PostHog or alert API. A key restricted to the preview buckets can replace it in `infra/envs/preview/main.tf`.
+At every start the container first tries to connect to the production database as its own user, and only starts if PostgreSQL answers "permission denied for database". This detects a configuration error (a permission granted by mistake, another instance). It does not contain hostile code: a pull request can remove the check.
 
-**Nothing is destroyed by itself**, not even when the pull request is closed. To destroy a preview: run the `🌱 Preview` workflow by hand with the number of the pull request (`gh workflow run preview.yml -f pr_number=<number>`). It destroys everything in the table above. What stays behind until then: the database (on the production instance's disk), the bucket, the stopped container and the image tags.
+### Before the first preview: its own bucket key
+
+Create two secrets as in 2.3: `pfat-preview-media-access-key-id` and `pfat-preview-media-secret-key`. Without them the plan fails, naming the missing one.
+
+**This key must reach the preview buckets and nothing else.** Never store the account's key or production's media key there. A preview is a public container running code nobody has reviewed, on the network of the production database: a key that can read the state bucket gives the production database password, and with it the database.
+
+Scaleway IAM restricts a key to a project, not to a bucket. Two ways to get such a key, yours to choose:
+
+- a separate Scaleway project holding only the preview buckets, and an IAM application allowed on Object Storage in that project (the buckets of `infra/envs/preview` then need that project);
+- an IAM application allowed on Object Storage in this project, and a bucket policy on every other bucket (state, media, fixtures, sites) that does not admit it.
+
+### What a preview shares with production
+
+- **Connections.** The instance has one pool for every database. Production may open up to 48 (3 instances, 2 workers, 8 threads), plus its two private containers. A preview keeps no connection between requests and opens at most 8 while it serves (one worker). Run `SHOW max_connections` on the instance: with the PostgreSQL default of 100, **keep to 5 previews at once**.
+- **Disk.** 10 GB for everything. A preview takes about 115 MB as soon as it exists, and keeps it until it is destroyed, backups included.
+- **Load.** The first start of each preview restores and indexes on the production instance (about 25 s locally).
+
+**Nothing is destroyed by itself**, not even when the pull request is closed. To destroy a preview: run the `🌱 Preview` workflow by hand with the number of the pull request (`gh workflow run preview.yml -f pr_number=<number>`). It destroys everything in the table above. What stays behind until then: the database, the user, the bucket, the stopped container and the image tags.
 
 **In another Scaleway project**, change: the state bucket and the instance name `cms-prod` in `infra/envs/preview/main.tf`; the bucket names `pfat-preview-…`, `pfat-cms-media`, `pfat-e2e-fixtures` and the registry `rg.fr-par.scw.cloud/pfat` in `preview.yml` and `main.tf`. Create the `preview` label on GitHub.
 
