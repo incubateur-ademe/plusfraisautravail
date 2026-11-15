@@ -16,4 +16,4 @@ infra/
 └── scalingo-proxy/            # nginx in front of the public hostname
 ```
 
-Secrets: one Scaleway Secret Manager secret, `pfat-prod`, read by the stack. GitHub only holds the Scaleway key.
+Secrets: Scaleway Secret Manager secrets named `pfat-prod-…`, one per value, read by the stack. GitHub only holds the Scaleway key.

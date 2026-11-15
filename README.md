@@ -105,7 +105,7 @@ Voir [`DEPLOY.md`](./DEPLOY.md) pour la procédure de bootstrap initiale.
 **Secrets :**
 - `SCW_ACCESS_KEY`, `SCW_SECRET_KEY`, `SCW_DEFAULT_PROJECT_ID`, `SCW_DEFAULT_ORGANIZATION_ID`
 
-Les secrets de l'application (Vigilance, RTE, Climadiag, Notion, clés S3) ne sont pas dans GitHub : ils sont dans le secret `pfat-prod` de Scaleway Secret Manager, lu par OpenTofu (voir [`DEPLOY.md`](./DEPLOY.md)).
+Les secrets de l'application (Vigilance, RTE, Climadiag, Notion, clés S3) ne sont pas dans GitHub : ils sont dans Scaleway Secret Manager (secrets `pfat-prod-…`, un par valeur), lus par OpenTofu (voir [`DEPLOY.md`](./DEPLOY.md)).
 
 **Variables :**
 - `API_BASE_URL` - base de l'API utilisée au build des frontends : `/api` (même origine, le proxy l'envoie au CMS)
