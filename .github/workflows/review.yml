@@ -81,6 +81,9 @@ jobs:
           SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: .github/scripts/run-report.sh
 
+      - name: Check the report scripts
+        run: .github/scripts/test-reports.sh
+
       - name: Fail if a product failed
         if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
         run: exit 1

@@ -3,6 +3,9 @@ name: 🔍 Dependencies
 # Trivy on the lockfiles (uv.lock, package-lock.json): a HIGH or CRITICAL
 # vulnerability that has a fix fails the job. The images are scanned where they
 # are built (cms.yml), before their push.
+# On every pull request on purpose, not only when a lockfile changes: a
+# vulnerability can be published without any change here. To let one through,
+# list its id in a .trivyignore at the root (Trivy reads it by default).
 on:
   workflow_call:
     outputs:

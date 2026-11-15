@@ -15,7 +15,10 @@ runs:
       shell: bash
       env:
         REPOSITORY: ${{ inputs.repository }}
-      run: echo "ref=$(docker image ls --format '{{.Repository}}:{{.Tag}}' "$REPOSITORY" | head -n1)" >> "$GITHUB_OUTPUT"
+      run: |
+        ref=$(docker image ls --format '{{.Repository}}:{{.Tag}}' "$REPOSITORY" | head -n1)
+        [ -n "$ref" ] || { echo "::error::No image of $REPOSITORY in the local Docker daemon"; exit 1; }
+        echo "ref=$ref" >> "$GITHUB_OUTPUT"
 
     - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
       with:

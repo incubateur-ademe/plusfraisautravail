@@ -13,8 +13,8 @@ hasnt() { ! grep -qF -- "$1" "$2" || { echo "FAILED: '$1' in $2" >&2; exit 1; };
 # No vulnerability, and a report without any result: passes.
 echo '{"Results": [{"Target": "uv.lock"}]}' > "$dir/clean.json"
 ./trivy-summary.sh lockfiles "$dir/clean.json"
-has "summary=✅ lockfiles: 0 critical, 0 high, 0 medium, 0 low" "$GITHUB_OUTPUT"
-echo '{}' > "$dir/empty.json"
+has "summary=✅ lockfiles: 0 critical, 0 high, 0 medium, 0 low, 0 unknown" "$GITHUB_OUTPUT"
+echo '{}' > "$dir/empty.json" # an object without results: nothing to scan
 ./trivy-summary.sh lockfiles "$dir/empty.json"
 
 # A HIGH without a fix and a MEDIUM with one are counted, and pass.
@@ -22,14 +22,28 @@ echo '{"Results": [{"Target": "uv.lock", "Vulnerabilities": [
     {"Severity": "HIGH", "PkgName": "a", "InstalledVersion": "1", "VulnerabilityID": "CVE-1"},
     {"Severity": "MEDIUM", "PkgName": "b", "InstalledVersion": "1", "FixedVersion": "2", "VulnerabilityID": "CVE-2"}]}]}' > "$dir/unfixed.json"
 ./trivy-summary.sh lockfiles "$dir/unfixed.json"
-has "summary=✅ lockfiles: 0 critical, 1 high, 1 medium, 0 low" "$GITHUB_OUTPUT"
+has "summary=✅ lockfiles: 0 critical, 1 high, 1 medium, 0 low, 0 unknown" "$GITHUB_OUTPUT"
 
 # A HIGH with a fix fails, and is listed.
 echo '{"Results": [{"Target": "uv.lock", "Vulnerabilities": [
     {"Severity": "HIGH", "PkgName": "django", "InstalledVersion": "5.0", "FixedVersion": "5.1", "VulnerabilityID": "CVE-3"}]}]}' > "$dir/fixable.json"
 if ./trivy-summary.sh "cms image" "$dir/fixable.json"; then echo "FAILED: a fixable HIGH passed" >&2; exit 1; fi
-has "summary=❌ cms image: 0 critical, 1 high, 0 medium, 0 low, 1 to fix" "$GITHUB_OUTPUT"
+has "summary=❌ cms image: 0 critical, 1 high, 0 medium, 0 low, 0 unknown, 1 to fix" "$GITHUB_OUTPUT"
 has "| uv.lock | django | 5.0 | 5.1 | HIGH | CVE-3 |" "$GITHUB_STEP_SUMMARY"
+
+# So does a CRITICAL with a fix; a "|" in a name stays in its cell.
+echo '{"Results": [{"Target": "uv.lock", "Vulnerabilities": [
+    {"Severity": "CRITICAL", "PkgName": "a|b", "InstalledVersion": "1", "FixedVersion": "2", "VulnerabilityID": "CVE-4"}]}]}' > "$dir/critical.json"
+if ./trivy-summary.sh lockfiles "$dir/critical.json"; then echo "FAILED: a fixable CRITICAL passed" >&2; exit 1; fi
+has "summary=❌ lockfiles: 1 critical, 0 high, 0 medium, 0 low, 0 unknown, 1 to fix" "$GITHUB_OUTPUT"
+has "| uv.lock | a b | 1 | 2 | CRITICAL | CVE-4 |" "$GITHUB_STEP_SUMMARY"
+
+# An empty report, or one that is not an object, fails: nothing was scanned.
+: > "$dir/nothing.json"
+echo '[]' > "$dir/array.json"
+for report in nothing array; do
+    if ./trivy-summary.sh lockfiles "$dir/$report.json" 2> /dev/null; then echo "FAILED: $report.json passed" >&2; exit 1; fi
+done
 
 # The report of a production run where everything ran.
 : > "$GITHUB_STEP_SUMMARY"

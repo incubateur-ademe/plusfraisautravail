@@ -6,26 +6,31 @@
 set -euo pipefail
 name=$1 file=$2
 
+# An empty or truncated report must not read as "no vulnerability".
+jq -e 'type == "object"' "$file" > /dev/null || { echo "::error::$file is not a Trivy report" >&2; exit 1; }
+
 counts=$(jq -r '
     [.Results[]?.Vulnerabilities[]?.Severity] as $found
-    | ["CRITICAL", "HIGH", "MEDIUM", "LOW"]
+    | ["CRITICAL", "HIGH", "MEDIUM", "LOW", "UNKNOWN"]
     | map(. as $severity | "\($found | map(select(. == $severity)) | length) \($severity | ascii_downcase)")
     | join(", ")' "$file")
-to_fix=$(jq -r '
+# One table row per vulnerability to fix; a cell cannot break the table.
+to_fix=$(jq -c '[
     .Results[]? | .Target as $target | .Vulnerabilities[]?
     | select((.Severity == "HIGH" or .Severity == "CRITICAL") and (.FixedVersion // "") != "")
-    | "| \($target) | \(.PkgName) | \(.InstalledVersion) | \(.FixedVersion) | \(.Severity) | \(.VulnerabilityID) |"' "$file")
+    | [$target, .PkgName, .InstalledVersion, .FixedVersion, .Severity, .VulnerabilityID]
+    | map(tostring | gsub("[|\n]"; " ")) | "| \(join(" | ")) |"]' "$file")
 
-if [ -z "$to_fix" ]; then
+if [ "$to_fix" = "[]" ]; then
     echo "summary=✅ $name: $counts" >> "$GITHUB_OUTPUT"
     exit 0
 fi
-echo "summary=❌ $name: $counts, $(wc -l <<< "$to_fix" | tr -d ' ') to fix" >> "$GITHUB_OUTPUT"
+echo "summary=❌ $name: $counts, $(jq length <<< "$to_fix") to fix" >> "$GITHUB_OUTPUT"
 {
     echo "### 🔍 Trivy, $name: HIGH and CRITICAL vulnerabilities with a fix"
     echo
     echo "| Where | Package | Installed | Fixed in | Severity | Id |"
     echo "| --- | --- | --- | --- | --- | --- |"
-    echo "$to_fix"
+    jq -r '.[]' <<< "$to_fix"
 } >> "$GITHUB_STEP_SUMMARY"
 exit 1

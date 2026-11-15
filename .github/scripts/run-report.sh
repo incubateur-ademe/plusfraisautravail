@@ -2,7 +2,7 @@
 # Report at the end of review.yml and cd.yml, on the run's summary page: what
 # ran for each product, the Python coverage, the e2e coverage (cd.yml) or
 # where to find it (review.yml), the vulnerabilities Trivy found and the
-# infrastructure plan. Each line shows when the job that measures it ran.
+# infrastructure plan. A line is only printed if the job that measures it ran.
 #   NEEDS  toJSON(needs) of the calling job
 #   SHA    the commit that was checked
 set -euo pipefail
@@ -33,9 +33,10 @@ set -euo pipefail
     trivy=$(jq -r '[.[].outputs // {} | to_entries[] | select(.key | endswith("trivy")) | .value | select(. != "") | "- \(.)"] | join("\n")' <<< "$NEEDS")
     if [ -n "$trivy" ]; then
         echo
-        echo "🔍 Vulnerabilities (Trivy). A HIGH or CRITICAL one that has a fix fails its job, which lists them further down this page."
+        echo "🔍 Vulnerabilities (Trivy). ❌: a HIGH or CRITICAL one has a fix, listed further down this page; the lockfiles job fails and the image is not pushed."
         echo "$trivy"
     fi
+    # The `plan` output of infrastructure.yml: nothing until that workflow exposes it.
     plan=$(jq -r '.infrastructure.outputs.plan // empty' <<< "$NEEDS")
     if [ -n "$plan" ]; then
         echo
