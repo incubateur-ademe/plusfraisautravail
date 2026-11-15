@@ -4,8 +4,8 @@ locals {
   base_domain = "plusfraisautravail.beta.gouv.fr"
 
   # Every hand-provided secret, as { ENV_VAR_NAME = value }: see DEPLOY.md.
-  # A secret left out, null or empty is not passed at all: an empty variable
-  # would still be set, and the API would try to use it.
+  # A secret left out, null or empty is not passed at all: an empty S3 key
+  # fails the plan, and the output secret_names only lists usable keys.
   secrets = {
     for name, value in jsondecode(base64decode(data.scaleway_secret_version.app.data)) :
     name => value if value != null && value != ""
