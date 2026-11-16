@@ -1,9 +1,18 @@
 """Preview of a pull request (infra/envs/preview): production settings on its
-own database and bucket, without mail, Sentry, PostHog, Notion or API keys
-(none of them is given to the container)."""
+own database, without mail, Sentry, PostHog, Notion, API or bucket keys (none
+of them is given to the container)."""
 
 from .production import *  # noqa: F403
-from .production import DATABASES, MIDDLEWARE
+from .production import DATABASES, MIDDLEWARE, STORAGES
+
+# Media in the preview's database, production's read from its public URL (cms/preview.py).
+STORAGES = {
+    **STORAGES,
+    "default": {
+        "BACKEND": "cms.preview.PreviewStorage",
+        "OPTIONS": {"production_url": "https://plusfraisautravail.beta.gouv.fr/media/"},
+    },
+}
 
 
 def noindex(get_response):

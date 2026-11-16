@@ -14,3 +14,5 @@ wagtailsearch_indexentry
 # Leftovers of wagtail-localize, uninstalled: empty in production and unknown
 # to the code, so the CI test cannot check their columns.
 wagtail_localize_*
+# Media of a preview (apps/cms/cms/preview.py): empty in production.
+sites_conformes_db_storage_storedfile

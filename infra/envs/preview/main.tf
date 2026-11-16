@@ -1,5 +1,5 @@
-# Preview of a pull request: its own database, user and media bucket, and one
-# public container running the CMS of the PR (apps/cms/Dockerfile.preview).
+# Preview of a pull request: its own database and user, and one public
+# container running the CMS of the PR (apps/cms/Dockerfile.preview).
 # One workspace per pull request (pr-<number>), applied by
 # .github/workflows/preview.yml, destroyed by a manual run of it.
 terraform {
@@ -35,12 +35,6 @@ terraform {
 provider "scaleway" {
   region = "fr-par"
   zone   = "fr-par-1"
-}
-
-variable "ci_access_key_id" {
-  type        = string
-  sensitive   = true
-  description = "Access key ID (not the secret) of the key that applies this stack: the preview must not get that one."
 }
 
 variable "image" {
@@ -109,34 +103,6 @@ resource "scaleway_rdb_privilege" "preview" {
   }
 }
 
-# ── Media: its own bucket, filled from production's by preview.yml ───────
-module "media" {
-  source               = "../../modules/object-bucket"
-  app_name             = "cms"
-  environment          = terraform.workspace
-  bucket_name          = "pfat-preview-${terraform.workspace}"
-  public_read          = true
-  public_read_prefixes = ["images/*", "original_images/*"] # as production's
-  force_destroy        = true
-}
-
-# A key that reaches the preview buckets only (DEPLOY.md 4): never the
-# account's key nor production's media key, in a container running unreviewed
-# code next to the production database.
-data "scaleway_secret_version" "media" {
-  for_each    = toset(["access-key-id", "secret-key"])
-  secret_name = "pfat-preview-media-${each.key}"
-  # Disabling a version rolls back to the one before.
-  revision = "latest_enabled"
-
-  lifecycle {
-    postcondition {
-      condition     = !contains(["", var.ci_access_key_id], trimspace(base64decode(self.data)))
-      error_message = "The secret pfat-preview-media-${each.key} is empty or holds the key of the CI: it must hold a key restricted to the preview buckets."
-    }
-  }
-}
-
 resource "random_password" "django_secret_key" {
   length  = 64
   special = false
@@ -156,20 +122,14 @@ module "cms" {
   memory_limit = 2048
   environment_variables = {
     # Scaleway's probes do not send the container's domain as Host (see prod).
-    ALLOWED_HOSTS           = jsonencode(["*"])
-    AWS_STORAGE_BUCKET_NAME = module.media.bucket_name
-    AWS_S3_ENDPOINT_URL     = module.media.endpoint
-    AWS_S3_REGION_NAME      = "fr-par"
-    # Media straight from the bucket: production's go through its nginx proxy.
-    AWS_S3_CUSTOM_DOMAIN = "${module.media.bucket_name}.s3.fr-par.scw.cloud"
+    ALLOWED_HOSTS = jsonencode(["*"])
   }
-  # No API, Notion, e-mail, Sentry or PostHog secret.
+  # No API, Notion, e-mail, Sentry, PostHog or bucket key: media go to the
+  # database (apps/cms/cms/preview.py).
   secret_environment_variables = {
     DATABASE_URL            = format(local.database_url, local.name)
     PRODUCTION_DATABASE_URL = format(local.database_url, local.production_database)
     DJANGO_SECRET_KEY       = random_password.django_secret_key.result
-    AWS_ACCESS_KEY_ID       = trimspace(base64decode(data.scaleway_secret_version.media["access-key-id"].data))
-    AWS_SECRET_ACCESS_KEY   = trimspace(base64decode(data.scaleway_secret_version.media["secret-key"].data))
   }
   # The user exists and has its permissions before the container starts.
   depends_on = [scaleway_rdb_privilege.preview]
@@ -177,8 +137,4 @@ module "cms" {
 
 output "url" {
   value = trimsuffix(module.cms.public_endpoint, "/")
-}
-
-output "media_bucket" {
-  value = module.media.bucket_name
 }

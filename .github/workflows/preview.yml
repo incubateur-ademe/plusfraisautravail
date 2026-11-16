@@ -1,11 +1,11 @@
 name: 🌱 Preview
 
 # The `preview` label on a pull request to main gives it its own environment
-# (infra/envs/preview): a database and a user on the production instance, a
-# media bucket, and a container running the CMS of the PR. The database is
-# restored from the nightly anonymised dump at the first start, then kept:
-# each push only runs the migrations. The media bucket gets a copy of
-# production's images and documents (documents stay private there too).
+# (infra/envs/preview): a database and a user on the production instance, and
+# a container running the CMS of the PR. The database is restored from the
+# nightly anonymised dump at the first start, then kept: each push only runs
+# the migrations. No bucket: media go to that database, production's are read
+# from its public URL (apps/cms/cms/preview.py).
 # Nothing is destroyed by itself: run this workflow by hand with the number of
 # the pull request once it is closed.
 # The branch must hold these files: rebase one that started before them.
@@ -86,7 +86,7 @@ jobs:
           tofu_version: ${{ env.TOFU_VERSION }}
           tofu_wrapper: false
 
-      - name: Create the database, the bucket and the container, or leave them as they are
+      - name: Create the database and the container, or leave them as they are
         id: tofu
         working-directory: infra/envs/preview
         env: &scaleway
@@ -94,8 +94,6 @@ jobs:
           SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
           SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_DEFAULT_PROJECT_ID }}
           SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_DEFAULT_ORGANIZATION_ID }}
-          # The preview must not be given this key (infra/envs/preview).
-          TF_VAR_ci_access_key_id: ${{ secrets.SCW_ACCESS_KEY }}
           # The S3 backend of tofu.
           AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
@@ -104,17 +102,6 @@ jobs:
           tofu workspace select -or-create "$WORKSPACE"
           tofu apply -input=false -auto-approve -var "image=$IMAGE"
           echo "url=$(tofu output -raw url)" >> "$GITHUB_OUTPUT"
-          echo "media_bucket=$(tofu output -raw media_bucket)" >> "$GITHUB_OUTPUT"
-
-      - name: Copy the media of production to the bucket of the preview
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
-          BUCKET: ${{ steps.tofu.outputs.media_bucket }}
-        run: |
-          for prefix in images original_images documents; do
-            aws s3 sync --only-show-errors --size-only "s3://pfat-cms-media/$prefix" "s3://$BUCKET/$prefix"
-          done
 
       # tofu ignores the image of an existing container (modules/serverless-container).
       # The first start restores the dump before it answers.
@@ -167,7 +154,7 @@ jobs:
           tofu_version: ${{ env.TOFU_VERSION }}
           tofu_wrapper: false
 
-      - name: Destroy the container, the bucket, the database, its user and the workspace
+      - name: Destroy the container, the database, its user and the workspace
         working-directory: infra/envs/preview
         env: *scaleway
         run: |
