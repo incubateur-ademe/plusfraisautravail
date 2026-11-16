@@ -13,6 +13,8 @@
       {% if header_logo.logo %}
         {% image header_logo.logo height-80 as header_logo_img %}{# 2.5rem, twice for HiDPI screens #}
         <img src="{{ header_logo_img.url }}"
+             width="{{ header_logo_img.width }}"
+             height="{{ header_logo_img.height }}"
              alt="{{ header_logo.alt }}"
              style="max-height: 2.5rem; max-width: 100%; height: auto; width: auto;" />
       {% else %}
@@ -37,11 +39,13 @@
 
 {% block operator_logo %}
   {% if settings.sites_conformes_core.CmsDsfrConfig.operator_logo_file %}
-    {% image settings.sites_conformes_core.CmsDsfrConfig.operator_logo_file original as logo_img %}
+    {% image settings.sites_conformes_core.CmsDsfrConfig.operator_logo_file width-320 format-webp preserve-svg as logo_img %}{# 10rem at most, twice for HiDPI screens #}
 
     <div class="fr-header__operator">
       <img class="fr-responsive-img"
            src="{{ logo_img.url }}"
+           width="{{ logo_img.width }}"
+           height="{{ logo_img.height }}"
            alt="{{ settings.sites_conformes_core.CmsDsfrConfig.operator_logo_alt }}"
            {% if settings.sites_conformes_core.CmsDsfrConfig.operator_logo_width >= 1 %}style="max-width:{{ settings.sites_conformes_core.CmsDsfrConfig.operator_logo_width|floatformat:"1u" }}rem;"{% endif %} />
     </div>
