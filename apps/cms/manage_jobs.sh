@@ -25,3 +25,7 @@ connection.cursor().execute("""
     END $$
 """)
 PYTHON
+# Renders each live page with this deploy's templates, before the rollout, so
+# visitors don't wait for new image renditions. Not worth failing the deploy:
+# a rendition missed here is made on its first visit.
+python manage.py warm_renditions || echo "warm_renditions failed, renditions will be made on first visit" >&2
