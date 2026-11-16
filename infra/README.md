@@ -1,6 +1,6 @@
 # Infrastructure (OpenTofu / Scaleway)
 
-Every Scaleway resource of the monorepo, in one stack: `envs/prod`. `envs/preview` adds, per pull request labelled `preview`, a database, a user, a bucket and a container.
+Every Scaleway resource of the monorepo, in one stack: `envs/prod`. `envs/preview` adds, per pull request labelled `preview`, a database, a user and a container.
 
 See **[`../DEPLOY.md`](../DEPLOY.md)** to bootstrap it on a new project and for the day-to-day flow.
 

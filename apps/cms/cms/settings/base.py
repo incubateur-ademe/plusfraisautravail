@@ -273,6 +273,7 @@ INSTALLED_APPS.extend(
         "sites_conformes_posthog",
         "sites_conformes",
         "sites_conformes.customimages",
+        "sites_conformes.db_storage",  # media of a preview (cms/preview.py)
         "sites_conformes.blog",
         "sites_conformes.core",
         "sites_conformes.events",

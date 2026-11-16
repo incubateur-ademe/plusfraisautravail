@@ -171,43 +171,26 @@ The `preview` label on a pull request to `main` (same repository, not a fork) ru
 |---|---|
 | Database on the production instance | `preview_pr_<number>` |
 | Its user: not admin, permission `all` on that database and on no other | `preview_pr_<number>` |
-| Media bucket, filled with a copy of production's `images/`, `original_images/` and `documents/` | `pfat-preview-pr-<number>` |
 | Public container, on the database's Private Network, stopped while unused | `cms-pr-<number>` |
 | Image tags in the private registry | `cms-preview:pr-<number>-<sha>` |
 
-The image holds the nightly anonymised dump. At its first start the container restores it into its database; later starts only run the migrations, so what is changed in a preview is kept. A preview gets no mail, Notion, Sentry, PostHog or alert API secret.
+The image holds the nightly anonymised dump. At its first start the container restores it into its database; later starts only run the migrations, so what is changed in a preview is kept. A preview gets no mail, Notion, Sentry, PostHog, alert API or bucket key.
+
+**Media.** A preview has no bucket (`apps/cms/cms/preview.py`). What it uploads, and the renditions it makes, go to its own database (the `db_storage` of sites-conformes) and are destroyed with it. The images of production are read from their public URL (`/media/images/`, `/media/original_images/`). Documents are not public: a preview has none, their links answer an error.
 
 At every start the container first tries to connect to the production database as its own user, and only starts if PostgreSQL answers "permission denied for database". This detects a configuration error (a permission granted by mistake, another instance). It does not contain hostile code: a pull request can remove the check.
 
-### Before the first preview: its own bucket key
-
-Create two secrets as in 2.3: `pfat-preview-media-access-key-id` and `pfat-preview-media-secret-key`. Without them the plan fails, naming the missing one; it also refuses the key of the CI.
-
-**This key must reach the preview buckets and nothing else.** Never store the account's key or production's media key there. A preview is a public container running code nobody has reviewed, on the network of the production database: a key that can read the state bucket gives the production database password, and with it the database.
-
-Scaleway IAM restricts a key to a project, not to a bucket. Two ways to get such a key, not chosen yet:
-
-- **Bucket policies, in this project.** An IAM application allowed on Object Storage objects in this project reaches every bucket that does not refuse it. Rewrite the policy of `pfat-cms-media` (it admits any key of the project), give one to `pfat-terraform` and `pfat-e2e-fixtures`, which have none, check those of the three site buckets, and do the same for every bucket created later.
-- **A separate project** holding only the preview buckets, and an IAM application allowed on Object Storage there. `infra/envs/preview` does not support it as it stands: its bucket and the policy of `modules/object-bucket` would need that project's ID.
-
-With the new key, before the first preview, both of these must be refused:
-
-```bash
-aws --endpoint-url=https://s3.fr-par.scw.cloud s3 ls s3://pfat-terraform
-aws --endpoint-url=https://s3.fr-par.scw.cloud s3 cp README.md s3://pfat-cms-media/preview-key-check
-```
-
-Every preview holds that same key, the password of its database user and its Django key, in its container and in clear in its state (`env:/pr-<number>/` in `pfat-terraform`): the code of one pull request can read and write the bucket of another. Documents copied to a preview bucket are readable by that code too, which is harmless only while production has no private collection.
+Every preview holds the password of its database user and its Django key, in its container and in clear in its state (`env:/pr-<number>/` in `pfat-terraform`).
 
 ### What a preview shares with production
 
 - **Connections.** The instance has one pool for every database. Production may open up to 48 (3 instances, 2 workers, 8 threads), plus its two private containers. A preview keeps no connection between requests and opens at most 8 while it serves (one worker). Run `SHOW max_connections` on the instance: with the PostgreSQL default of 100, **keep to 5 previews at once**. This assumes Scaleway reserves no more connections than PostgreSQL's three, and that production stays at 48 (two revisions overlap during one of its deploys). Nothing enforces the ceiling, and a stopped preview wakes up at the first request.
-- **Disk.** 10 GB for everything. A preview takes about 115 MB as soon as it exists, and keeps it until it is destroyed, backups included.
+- **Disk.** 10 GB for everything. A preview takes about 115 MB as soon as it exists, plus what it uploads and the renditions it makes, and keeps it until it is destroyed, backups included.
 - **Load.** The first start of each preview restores and indexes on the production instance (about 25 s locally).
 
-**Nothing is destroyed by itself**, not even when the pull request is closed. To destroy a preview: run the `🌱 Preview` workflow by hand with the number of the pull request (`gh workflow run preview.yml -f pr_number=<number>`). It destroys everything in the table above. What stays behind until then: the database, the user, the bucket, the stopped container and the image tags.
+**Nothing is destroyed by itself**, not even when the pull request is closed. To destroy a preview: run the `🌱 Preview` workflow by hand with the number of the pull request (`gh workflow run preview.yml -f pr_number=<number>`). It destroys everything in the table above. What stays behind until then: the database, the user, the stopped container and the image tags.
 
-**In another Scaleway project**, change: the state bucket and the instance name `cms-prod` in `infra/envs/preview/main.tf`; the bucket names `pfat-preview-…`, `pfat-cms-media`, `pfat-e2e-fixtures` and the registry `rg.fr-par.scw.cloud/pfat` in `preview.yml` and `main.tf`. Create the `preview` label on GitHub.
+**In another Scaleway project**, change: the state bucket and the instance name `cms-prod` in `infra/envs/preview/main.tf`; the bucket `pfat-e2e-fixtures` and the registry `rg.fr-par.scw.cloud/pfat` in `preview.yml`; the production URL of the media in `apps/cms/cms/settings/preview.py`. Create the `preview` label on GitHub.
 
 ---
 

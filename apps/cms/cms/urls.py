@@ -52,6 +52,8 @@ urlpatterns = [
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Media of a preview (cms/preview.py); elsewhere, its table is empty: 404.
+urlpatterns.append(path("storage/", include("sites_conformes.db_storage.urls")))
 urlpatterns += i18n_patterns(
     path("", include("sites_conformes.core.urls")),
     prefix_default_language=False,
