@@ -63,6 +63,10 @@ proxy_cache_valid 404 1m;
 server {
     listen <%= ENV["PORT"] %>;
     server_name _;
+    # Behind Scalingo's router, our own scheme and port are not the public
+    # ones: keep nginx's trailing-slash redirects (/cms-admin -> /cms-admin/)
+    # relative, or they point to http://<host>:$PORT/.
+    absolute_redirect off;
 
     set $cms      <%= ENV.fetch("CMS_HOST") %>;
     set $media    <%= ENV["MEDIA_HOST"] || "pfat-cms-media.s3.fr-par.scw.cloud" %>;
