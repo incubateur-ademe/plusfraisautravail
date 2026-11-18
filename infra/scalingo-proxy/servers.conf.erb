@@ -40,6 +40,13 @@ upstream climadiag { zone climadiag 1m; server <%= ENV["CLIMADIAG_HOST"] || "pfa
 upstream posthog        { zone posthog 1m;        server eu.i.posthog.com:443 resolve;        keepalive 8; }
 upstream posthog_assets { zone posthog_assets 1m; server eu-assets.i.posthog.com:443 resolve; keepalive 8; }
 
+# The PostHog SDK sends its project key as a Bearer token on some calls
+# (session recordings, surveys): forward that, strip any other credentials.
+map $http_authorization $posthog_authorization {
+    "~^Bearer ph[csx]_" $http_authorization;
+    default "";
+}
+
 # Headers shared by every upstream; each location sets $up to the hostname
 # it targets (Host header + TLS SNI).
 proxy_set_header Host $up;
@@ -156,23 +163,41 @@ server {
         proxy_cache pfat;
     }
 
-    # ── PostHog, first-party path (lifted from quefairedemesobjets). Assets
-    # from the assets host, everything else to the ingest host with Origin/
-    # Referer stripped so PostHog doesn't reject unknown domains.
-    location /ph/static/ {
+    # ── PostHog, first-party path, laid out as PostHog documents it
+    # (https://posthog.com/docs/advanced/proxy/nginx, same as
+    # quefairedemesobjets): SDK files and remote config from the assets host,
+    # everything else to the ingest host. Our cookies (Django session, CSRF)
+    # never leave for PostHog, and its certificate is verified - depth 3
+    # because the Let's Encrypt chain is longer than nginx's default of 1.
+    # A location-level proxy_set_header drops the inherited set, so Host and
+    # Connection are restated.
+    location ~ ^/ph/(static|array)/ {
         set $up eu-assets.i.posthog.com;
-        proxy_pass https://posthog_assets/static/;
+        rewrite ^/ph(/.*)$ $1 break;
+        proxy_pass https://posthog_assets;
+        proxy_set_header Host $up;
+        proxy_set_header Connection "";
+        proxy_set_header Cookie "";
+        proxy_set_header Authorization "";
+        proxy_ssl_verify on;
+        proxy_ssl_verify_depth 3;
+        proxy_ssl_trusted_certificate /etc/ssl/certs/ca-certificates.crt;
     }
     location /ph/ {
         set $up eu.i.posthog.com;
         proxy_pass https://posthog/;
-        # A location-level proxy_set_header drops the inherited set - restate.
         proxy_set_header Host $up;
         proxy_set_header Connection "";
+        proxy_set_header Cookie "";
+        proxy_set_header Authorization $posthog_authorization;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Real-IP $remote_addr;
+        # Stripped so PostHog doesn't reject unknown domains.
         proxy_set_header Origin "";
         proxy_set_header Referer "";
+        proxy_ssl_verify on;
+        proxy_ssl_verify_depth 3;
+        proxy_ssl_trusted_certificate /etc/ssl/certs/ca-certificates.crt;
     }
 
     # ── Wagtail admin (WAGTAILADMIN_PATH): never cached, longer timeouts for
