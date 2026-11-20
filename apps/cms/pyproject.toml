@@ -20,6 +20,7 @@ dependencies = [
     "sites-conformes-posthog",
     "sites-conformes-rgaa",
     "sites-conformes-faq",
+    "wagtail-block-clipboard>=0.1.0",
     "wagtail-in-a-tree>=0.1.0",
     "pfat-api",
 ]
@@ -84,6 +85,7 @@ source_pkgs = [
     "sites_conformes_header_logo",
     "sites_conformes_posthog",
     "sites_conformes_rgaa",
+    "wagtail_block_clipboard",
     "wagtail_notion_form",
 ]
 omit = ["*/migrations/*", "*/tests/*", "*/settings/*"]

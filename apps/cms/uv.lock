@@ -2425,6 +2425,7 @@ dependencies = [
     { name = "sites-conformes-header-logo" },
     { name = "sites-conformes-posthog" },
     { name = "sites-conformes-rgaa" },
+    { name = "wagtail-block-clipboard" },
     { name = "wagtail-in-a-tree" },
     { name = "wagtail-notion-form" },
     { name = "whitenoise" },
@@ -2462,6 +2463,7 @@ requires-dist = [
     { name = "sites-conformes-header-logo", editable = "../../packages/sites-conformes-header-logo" },
     { name = "sites-conformes-posthog", editable = "../../packages/sites-conformes-posthog" },
     { name = "sites-conformes-rgaa", editable = "../../packages/sites-conformes-rgaa" },
+    { name = "wagtail-block-clipboard", specifier = ">=0.1.0" },
     { name = "wagtail-in-a-tree", specifier = ">=0.1.0" },
     { name = "wagtail-notion-form", editable = "../../packages/wagtail-notion-form" },
     { name = "whitenoise", specifier = ">=6.8" },
@@ -2736,6 +2738,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/12/9a/b7166a0f7cee7121f61d5c002203bc46a7e2a472bf563adf9a60ee32614c/wagtail_2fa-1.8.0.tar.gz", hash = "sha256:cd38f66a4d0ea6d63f3fa3d963ab24095f12f55c12340eab92df06a2339ce3a6", size = 25272, upload-time = "2026-03-02T15:38:11.114Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c1/bb/6f14801cacee011c696b4f12de5ff28e11556ae996ab46d06dbc3f72d915/wagtail_2fa-1.8.0-py3-none-any.whl", hash = "sha256:cfd3d2678c53f16f3af4b0f7587c1fd0508488cbf70bc0176151bcf2369a093f", size = 41064, upload-time = "2026-03-02T15:38:10.039Z" },
+]
+
+[[package]]
+name = "wagtail-block-clipboard"
+version = "0.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "django" },
+    { name = "wagtail" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/0a/46/21efd2e2a4818d9de87d3451698020c7b88f632a17a7cd9577f3d8117f9e/wagtail_block_clipboard-0.1.0.tar.gz", hash = "sha256:3299e64dcffa19bb9f8af27e8dedeefde3dea9e881984b2a03ea1a7597449328", size = 12185, upload-time = "2026-11-20T14:04:41.796Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6f/db/a815c3dc1739a42f73801144b3fdef6bf20926c3ca5fd9842c29b00cc898/wagtail_block_clipboard-0.1.0-py3-none-any.whl", hash = "sha256:a5674741ed1c73b9ef5fef7df1a3b4b6b7d49b601547711741fbdd8ac553d8b1", size = 15886, upload-time = "2026-11-20T14:04:40.456Z" },
 ]
 
 [[package]]
