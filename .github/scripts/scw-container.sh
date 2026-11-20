@@ -5,6 +5,8 @@
 #   scw-container.sh redeploy NAME IMAGE   roll IMAGE out on NAME
 #   scw-container.sh run NAME [BUILD]      POST /run once NAME is ready (and its
 #                                          GET / answers BUILD), print the answer
+#   scw-container.sh serving NAME BUILD    wait until the public NAME answers BUILD
+#                                          on /healthz/: its new revision serves
 #   scw-container.sh delete_tags IMAGE PREFIX   delete the registry tags PREFIX* of IMAGE
 set -euo pipefail
 
@@ -58,6 +60,16 @@ run() {
     # Longer than the container's own timeout (timeout_seconds), so its answer
     # arrives rather than a client-side cut.
     curl --fail-with-body -sS --max-time 1900 -X POST "$url/run" -H "$auth"
+}
+
+healthz() { [ "$(curl -fsS --max-time 10 "$1/healthz/" || true)" = "$2" ]; }
+
+# Scaleway accepts an image before it starts: only the answer of the container
+# tells that the rollout worked.
+serving() {
+    local name=$1 build=$2 url
+    url=$(field "$name" public_endpoint)
+    wait_until 10 "Container $name does not serve $build: its rollout failed" healthz "${url%/}" "$build"
 }
 
 delete_tags() {

@@ -34,8 +34,10 @@ jobs:
 
   cms:
     name: 📰 CMS
-    needs: scope
-    if: ${{ needs.scope.outputs.cms != 'false' || needs.scope.outputs.ci == 'true' }}
+    # After the infrastructure: code that needs a new variable or resource
+    # finds it there. Not when its apply failed; a skipped one does not count.
+    needs: [scope, infrastructure]
+    if: ${{ !cancelled() && needs.scope.result == 'success' && needs.infrastructure.result != 'failure' && (needs.scope.outputs.cms != 'false' || needs.scope.outputs.ci == 'true') }}
     uses: ./.github/workflows/cms.yml
     secrets: inherit # pragma: allowlist secret
     with:
