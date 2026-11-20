@@ -33,7 +33,8 @@ permissions:
 
 # The plan of a pull request and the apply read the same things: the Scaleway
 # key (repository secrets) and three repository variables. Every other secret
-# is in Scaleway Secret Manager, read by tofu (DEPLOY.md).
+# is in Scaleway Secret Manager, read by tofu (DEPLOY.md); so is the passphrase
+# of the encrypted state, read by infra/tofu.sh.
 env:
   TOFU_VERSION: "1.13.2"
   SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
@@ -71,7 +72,7 @@ jobs:
       - run: tofu fmt -check -recursive
         working-directory: infra
 
-      - run: tofu init -input=false
+      - run: ../../tofu.sh init -input=false
 
       - run: tofu validate
 
@@ -83,7 +84,7 @@ jobs:
           set -o pipefail
           status=0
           # Read-only: without the state lock, so it never makes an apply wait or fail.
-          tofu plan -no-color -input=false -lock=false ${TOFU_REPLACE:+-replace="$TOFU_REPLACE"} 2>&1 | tee plan.txt || status=$?
+          ../../tofu.sh plan -no-color -input=false -lock=false ${TOFU_REPLACE:+-replace="$TOFU_REPLACE"} 2>&1 | tee plan.txt || status=$?
           # A plan that only changes outputs prints neither "Plan:" nor "No changes".
           summary=$(grep -m1 -E '^(Plan:|No changes)' plan.txt) ||
             summary=$(grep -m1 '^Changes to Outputs' plan.txt | sed 's/:$/ only./') ||
@@ -120,11 +121,11 @@ jobs:
           tofu_version: ${{ env.TOFU_VERSION }}
           tofu_wrapper: false
 
-      - run: tofu init -input=false
+      - run: ../../tofu.sh init -input=false
 
       # Not the plan file of the job above: it holds the secret values, and the
       # artifacts of a public repository can be downloaded by anyone.
       - name: tofu apply
         env:
           TOFU_REPLACE: ${{ inputs.tofu_replace }}
-        run: tofu apply -input=false -no-color -auto-approve ${TOFU_REPLACE:+-replace="$TOFU_REPLACE"}
+        run: ../../tofu.sh apply -input=false -no-color -auto-approve ${TOFU_REPLACE:+-replace="$TOFU_REPLACE"}

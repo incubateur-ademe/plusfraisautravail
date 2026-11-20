@@ -49,6 +49,7 @@ venv/
 *.tfstate.*
 *.tfplan
 *.tfvars
+secrets.json
 !*.tfvars.example
 
 # Claude

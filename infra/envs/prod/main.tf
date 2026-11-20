@@ -4,15 +4,13 @@ locals {
   base_domain = "plusfraisautravail.beta.gouv.fr"
 
   # Every hand-provided secret is one Secret Manager secret, named
-  # pfat-prod-<name> (DEPLOY.md). All of them must exist: a missing one fails
-  # the plan, naming it. Each use has its own, so that the buckets and the
-  # e-mail can each get a restricted key.
+  # pfat-prod-<name>. secrets.example.json lists them, `just secrets-push`
+  # creates them from a filled copy (DEPLOY.md). All of them must exist: a
+  # missing one fails the plan, naming it. Each use has its own, so that the
+  # buckets and the e-mail can each get a restricted key.
   # A third-party credential we do not have is an empty secret: it is not
-  # passed at all, and its feature is off.
-  optional_secret_names = [
-    "vigilance-app-id", "rte-client-id", "rte-client-secret", "climadiag-api-token",
-    "notion-token", "email-host-password",
-  ]
+  # passed at all, and its feature is off. Not these: they must hold a key.
+  secret_names = keys(jsondecode(file("${path.module}/secrets.example.json")))
   key_secret_names = [
     "cms-media-access-key-id", "cms-media-secret-key",
     "e2e-fixtures-access-key-id", "e2e-fixtures-secret-key",
@@ -79,7 +77,7 @@ locals {
 data "scaleway_account_project" "current" {}
 
 data "scaleway_secret_version" "app" {
-  for_each    = toset(concat(local.optional_secret_names, local.key_secret_names))
+  for_each    = toset(local.secret_names)
   secret_name = "pfat-${local.environment}-${each.key}"
   # Disabling a version rolls back to the one before.
   revision = "latest_enabled"

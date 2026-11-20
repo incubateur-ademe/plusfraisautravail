@@ -11,10 +11,11 @@ infra/
 │   ├── object-bucket/         # private bucket, optional public read on prefixes
 │   ├── managed-postgres/      # RDB instance on its Private Network
 │   └── serverless-container/  # container namespace + container (+ custom domain)
-├── envs/prod/                 # the stack
+├── envs/prod/                 # the stack; secrets.example.json lists its secrets
+├── tofu.sh                    # tofu on envs/prod, with the passphrase of its state
 ├── envs/preview/              # preview of a pull request, one workspace each (DEPLOY.md 4)
 ├── e2e-dump/                  # image of the nightly anonymised dump
 └── scalingo-proxy/            # nginx in front of the public hostname
 ```
 
-Secrets: Scaleway Secret Manager secrets named `pfat-prod-…`, one per value, read by the stack. GitHub only holds the Scaleway key.
+Secrets: Scaleway Secret Manager secrets named `pfat-prod-…`, one per value, read by the stack and pushed from one file with `just secrets-push`. The state is encrypted with the passphrase `pfat-prod-state-passphrase`. GitHub only holds the Scaleway key.

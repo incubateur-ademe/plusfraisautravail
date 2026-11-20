@@ -20,3 +20,39 @@ terraform {
     use_path_style              = true
   }
 }
+
+# The state holds every secret of the stack. OpenTofu encrypts it, and the
+# plans saved with -out, before they leave the machine: the bucket only ever
+# holds ciphertext. The passphrase is the Secret Manager secret
+# pfat-prod-state-passphrase, read by infra/tofu.sh.
+variable "state_passphrase" {
+  type      = string
+  sensitive = true
+}
+
+terraform {
+  encryption {
+    key_provider "pbkdf2" "passphrase" {
+      passphrase = var.state_passphrase
+    }
+
+    method "aes_gcm" "passphrase" {
+      keys = key_provider.pbkdf2.passphrase
+    }
+
+    # TODO: remove with the fallback below once the state has been written
+    # encrypted (the first apply), and set `enforced = true`.
+    method "unencrypted" "migration" {}
+
+    state {
+      method = method.aes_gcm.passphrase
+      fallback {
+        method = method.unencrypted.migration
+      }
+    }
+
+    plan {
+      method = method.aes_gcm.passphrase
+    }
+  }
+}
