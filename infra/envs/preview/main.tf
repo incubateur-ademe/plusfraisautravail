@@ -76,8 +76,15 @@ resource "scaleway_rdb_database" "preview" {
 }
 
 resource "random_password" "database" {
-  length  = 32
-  special = false # goes into a URL as it is
+  length = 32
+  # Scaleway wants a digit, an upper case, a lower case and a special
+  # character. Only specials that go into a URL as they are.
+  special          = true
+  override_special = "-_.~!*"
+  min_special      = 1
+  min_numeric      = 1
+  min_lower        = 1
+  min_upper        = 1
 }
 
 resource "scaleway_rdb_user" "preview" {

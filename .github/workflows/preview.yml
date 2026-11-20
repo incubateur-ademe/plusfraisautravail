@@ -6,19 +6,22 @@ name: 🌱 Preview
 # nightly anonymised dump at the first start, then kept: each push only runs
 # the migrations. No bucket: media go to that database, production's are read
 # from its public URL (apps/cms/cms/preview.py).
-# Nothing is destroyed by itself: run this workflow by hand with the number of
-# the pull request once it is closed.
+# Every night, the previews nobody wants any more are destroyed: those of pull
+# requests closed for more than a day, or open without the label. A manual run
+# does the same at once, or destroys the preview of the pull request it is given.
 # The branch must hold these files: rebase one that started before them.
 # Not for forks: they get no secrets. Nobody can log in to the admin of a
 # preview (the dump has no usable password).
 on:
   pull_request:
     types: [labeled, synchronize, reopened]
+  schedule:
+    - cron: "0 3 * * *" # 03:00 UTC
   workflow_dispatch:
     inputs:
       pr_number:
-        description: "Destroy the preview of this pull request (its number)"
-        required: true
+        description: "Destroy the preview of this pull request (its number). Empty: the nightly cleanup, now."
+        required: false
         type: number
 
 permissions:
@@ -121,7 +124,7 @@ jobs:
         run: |
           gh pr comment "$PR" --edit-last --create-if-none --body "🌱 Preview : $URL
 
-          Commit \`$SHA\`. Base restaurée du dump anonymisé à la création, puis conservée d'un push à l'autre. Rien n'est détruit à la fermeture de la PR : lancer le workflow « Preview » à la main avec le numéro de la PR."
+          Commit \`$SHA\`. Base restaurée du dump anonymisé à la création, puis conservée d'un push à l'autre. Détruite la nuit qui suit le retrait du label, ou un jour après la fermeture de la PR."
 
       - name: Say so on the pull request when the deployment failed
         if: failure()
@@ -131,17 +134,75 @@ jobs:
           gh pr comment "$PR" --edit-last --create-if-none --body
           "❌ La preview du commit \`$SHA\` n'a pas pu être déployée, voir $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
+  stale:
+    name: 🧹 Find the previews nobody wants any more
+    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && !inputs.pr_number)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      prs: ${{ steps.find.outputs.prs }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
+        with:
+          tofu_version: ${{ env.TOFU_VERSION }}
+          tofu_wrapper: false
+
+      # Every preview has its workspace, pr-<number>.
+      - name: List them
+        id: find
+        working-directory: infra/envs/preview
+        env: *scaleway
+        run: |
+          set -euo pipefail
+          tofu init -input=false > /dev/null
+          day_ago=$(( $(date +%s) - 24 * 3600 ))
+          prs=()
+          for pr in $(tofu workspace list | sed -n 's/^[* ]*pr-\([0-9]*\)$/\1/p'); do
+            info=$(gh pr view "$pr" --repo "$GITHUB_REPOSITORY" --json state,closedAt,labels)
+            state=$(jq -r .state <<< "$info")
+            if [ "$state" = OPEN ]; then
+              if jq -e '[.labels[].name] | index("preview")' <<< "$info" > /dev/null; then
+                echo "pr-$pr: open with the label, kept"
+                continue
+              fi
+              echo "pr-$pr: open without the label, to destroy"
+            elif [ "$(date -d "$(jq -r .closedAt <<< "$info")" +%s)" -lt "$day_ago" ]; then
+              echo "pr-$pr: $state for more than a day, to destroy"
+            else
+              echo "pr-$pr: $state for less than a day, kept"
+              continue
+            fi
+            prs+=("$pr")
+          done
+          echo "prs=$(jq -cn '$ARGS.positional | map(tonumber)' --args "${prs[@]}")" >> "$GITHUB_OUTPUT"
+
   down:
     name: 🪦 Destroy the preview
-    if: github.event_name == 'workflow_dispatch'
+    needs: stale
+    # A manual run with a number skips `stale`.
+    if: ${{ !cancelled() && (inputs.pr_number || (needs.stale.result == 'success' && needs.stale.outputs.prs != '[]')) }}
+    strategy:
+      fail-fast: false
+      matrix:
+        pr: ${{ fromJSON(inputs.pr_number && format('[{0}]', inputs.pr_number) || needs.stale.outputs.prs) }}
     concurrency:
-      group: preview-pr-${{ inputs.pr_number }}
+      group: preview-pr-${{ matrix.pr }}
       cancel-in-progress: false
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
       contents: read
       pull-requests: write
+    env:
+      PR: ${{ matrix.pr }}
+      WORKSPACE: pr-${{ matrix.pr }}
     steps:
       # The stack only guards the creation: nothing else stops a destroy.
       - name: Refuse anything but the number of a pull request

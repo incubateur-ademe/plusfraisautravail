@@ -198,7 +198,7 @@ Every preview holds the password of its database user and its Django key, in its
 - **Disk.** 10 GB for everything. A preview takes about 115 MB as soon as it exists, plus what it uploads and the renditions it makes, and keeps it until it is destroyed, backups included.
 - **Load.** The first start of each preview restores and indexes on the production instance (about 25 s locally).
 
-**Nothing is destroyed by itself**, not even when the pull request is closed. To destroy a preview: run the `🌱 Preview` workflow by hand with the number of the pull request (`gh workflow run preview.yml -f pr_number=<number>`). It destroys everything in the table above. What stays behind until then: the database, the user, the stopped container and the image tags.
+**Cleanup.** Every night at 03:00 UTC, `preview.yml` destroys the previews of pull requests closed for more than a day, and of open ones that no longer carry the `preview` label; an open pull request with the label keeps its preview. `gh workflow run preview.yml` does the same at once, and `gh workflow run preview.yml -f pr_number=<number>` destroys one preview whatever its pull request. A destruction removes everything in the table above.
 
 **In another Scaleway project**, change: the state bucket and the instance name `cms-prod` in `infra/envs/preview/main.tf`; the bucket `pfat-e2e-fixtures` and the registry `rg.fr-par.scw.cloud/pfat` in `preview.yml`; the production URL of the media in `apps/cms/cms/settings/preview.py`. `just bootstrap-environments` creates the `preview` label.
 
