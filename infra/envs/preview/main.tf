@@ -115,6 +115,13 @@ resource "random_password" "django_secret_key" {
   special = false
 }
 
+# The only account that can log in to the admin of this preview, as `preview`
+# (apps/cms/preview_entrypoint.sh). The URL is public: never a shared or known password.
+resource "random_password" "admin" {
+  length  = 32
+  special = false
+}
+
 module "cms" {
   source             = "../../modules/serverless-container"
   app_name           = "cms"
@@ -137,6 +144,7 @@ module "cms" {
     DATABASE_URL            = format(local.database_url, local.name)
     PRODUCTION_DATABASE_URL = format(local.database_url, local.production_database)
     DJANGO_SECRET_KEY       = random_password.django_secret_key.result
+    PREVIEW_ADMIN_PASSWORD  = random_password.admin.result
   }
   # The user exists and has its permissions before the container starts.
   depends_on = [scaleway_rdb_privilege.preview]
@@ -144,4 +152,10 @@ module "cms" {
 
 output "url" {
   value = trimsuffix(module.cms.public_endpoint, "/")
+}
+
+# `just preview-admin-password <number>`. Never printed by the workflow: the pull request is public.
+output "admin_password" {
+  value     = random_password.admin.result
+  sensitive = true
 }

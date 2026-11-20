@@ -10,8 +10,9 @@ name: 🌱 Preview
 # requests closed for more than a day, or open without the label. A manual run
 # does the same at once, or destroys the preview of the pull request it is given.
 # The branch must hold these files: rebase one that started before them.
-# Not for forks: they get no secrets. Nobody can log in to the admin of a
-# preview (the dump has no usable password).
+# Not for forks: they get no secrets. The admin of a preview has one account,
+# `preview`, with a password of its own that this workflow never prints
+# (`just preview-admin-password <number>`).
 on:
   pull_request:
     types: [labeled, synchronize, reopened]
@@ -124,7 +125,9 @@ jobs:
         run: |
           gh pr comment "$PR" --edit-last --create-if-none --body "🌱 Preview : $URL
 
-          Commit \`$SHA\`. Base restaurée du dump anonymisé à la création, puis conservée d'un push à l'autre. Détruite la nuit qui suit le retrait du label, ou un jour après la fermeture de la PR."
+          Commit \`$SHA\`. Base restaurée du dump anonymisé à la création, puis conservée d'un push à l'autre. Détruite la nuit qui suit le retrait du label, ou un jour après la fermeture de la PR.
+
+          Admin : \`$URL/cms-admin/\`, compte \`preview\`, mot de passe donné par \`just preview-admin-password $PR\`."
 
       - name: Say so on the pull request when the deployment failed
         if: failure()
