@@ -1,3 +1,4 @@
+import os
 from functools import partial
 
 from django.conf import settings
@@ -27,7 +28,8 @@ api_router.register_endpoint("documents", DocumentsAPIViewSet)
 def healthz(request):
     with connection.cursor() as cursor:
         cursor.execute("SELECT 1")
-    return HttpResponse("ok")
+    # The build of the image: the deploy waits for it to know the new revision serves (cms.yml).
+    return HttpResponse(os.environ.get("BUILD_SHA", "unknown"))
 
 
 urlpatterns = [

@@ -238,7 +238,10 @@ jobs:
         env:
           SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
           IMAGE: ${{ needs.build.outputs.image }}
-        run: .github/scripts/scw-container.sh redeploy cms-prod "$IMAGE" # module.cms, infra/envs/prod
+          BUILD: sha-${{ github.sha }}
+        run: |
+          .github/scripts/scw-container.sh redeploy cms-prod "$IMAGE" # module.cms, infra/envs/prod
+          .github/scripts/scw-container.sh serving cms-prod "$BUILD"
 
       # Not run here: e2e-dump.yml calls it every night. The dump itself
       # refuses to upload if rules.sql misses a column of the schema.

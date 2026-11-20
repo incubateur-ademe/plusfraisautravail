@@ -40,15 +40,10 @@ terraform {
       keys = key_provider.pbkdf2.passphrase
     }
 
-    # TODO: remove with the fallback below once the state has been written
-    # encrypted (the first apply), and set `enforced = true`.
-    method "unencrypted" "migration" {}
-
     state {
       method = method.aes_gcm.passphrase
-      fallback {
-        method = method.unencrypted.migration
-      }
+      # A state in clear is refused, read or written.
+      enforced = true
     }
 
     plan {
