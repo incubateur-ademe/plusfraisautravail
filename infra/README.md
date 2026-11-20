@@ -19,3 +19,5 @@ infra/
 ```
 
 Secrets: Scaleway Secret Manager secrets named `pfat-prod-…`, one per value, read by the stack and pushed from one file with `just secrets-push`. The state is encrypted with the passphrase `pfat-prod-state-passphrase`. GitHub only holds the Scaleway key.
+
+<!-- test de la preview -->
