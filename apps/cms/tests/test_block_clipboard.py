@@ -5,6 +5,15 @@ from wagtail import blocks
 from wagtail.admin.telepath import JSContext
 
 
+@pytest.fixture(autouse=True)
+def static_files_without_collectstatic(settings):
+    """The production storage needs collectstatic to have run, which the tests do not do."""
+    settings.STORAGES = {
+        **settings.STORAGES,
+        "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+    }
+
+
 class CardBlock(blocks.StructBlock):
     title = blocks.CharBlock()
 
@@ -25,13 +34,7 @@ def test_the_admin_receives_the_python_class_of_each_block(block, class_path):
     assert packed["_args"][-1]["blockClass"] == class_path
 
 
-def test_the_admin_loads_the_clipboard_script_with_its_french_strings(admin_client, settings):
-    # The production storage needs collectstatic to have run, which the tests do not do.
-    settings.STORAGES = {
-        **settings.STORAGES,
-        "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
-    }
-
+def test_the_admin_loads_the_clipboard_script_with_its_french_strings(admin_client):
     response = admin_client.get("/cms-admin/")
 
     assert "wagtail_block_clipboard/block-clipboard" in response.text
