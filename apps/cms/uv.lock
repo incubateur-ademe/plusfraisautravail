@@ -2331,7 +2331,7 @@ django = [
 [[package]]
 name = "sites-conformes"
 version = "4.3.1"
-source = { url = "https://github.com/fabienheureux/sites-conformes/archive/25012fa6b10b67d95ef9f2782e291038e3dbbbd9.tar.gz" }
+source = { url = "https://github.com/fabienheureux/sites-conformes/archive/32c223765650d451d188edd4519a9b1b91a8f52e.tar.gz" }
 dependencies = [
     { name = "beautifulsoup4" },
     { name = "boto3" },
@@ -2367,7 +2367,7 @@ dependencies = [
     { name = "wand" },
     { name = "whitenoise" },
 ]
-sdist = { hash = "sha256:77b1649724a2988ccb4d7536d8427b591ce2c6b3a4b15f78fc10383e785f392e" }
+sdist = { hash = "sha256:c186da3a59c6904e2975087dbeafe124bac268dc84157c37509ec089956cf703" }
 
 [package.metadata]
 requires-dist = [
@@ -2456,7 +2456,7 @@ requires-dist = [
     { name = "python-dotenv", specifier = ">=1.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.7" },
     { name = "sentry-sdk", extras = ["django"], specifier = ">=2.35" },
-    { name = "sites-conformes", url = "https://github.com/fabienheureux/sites-conformes/archive/25012fa6b10b67d95ef9f2782e291038e3dbbbd9.tar.gz" },
+    { name = "sites-conformes", url = "https://github.com/fabienheureux/sites-conformes/archive/32c223765650d451d188edd4519a9b1b91a8f52e.tar.gz" },
     { name = "sites-conformes-faq", editable = "../../packages/sites-conformes-faq" },
     { name = "sites-conformes-footer-partners", editable = "../../packages/sites-conformes-footer-partners" },
     { name = "sites-conformes-header-logo", editable = "../../packages/sites-conformes-header-logo" },
