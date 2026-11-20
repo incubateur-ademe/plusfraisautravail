@@ -39,6 +39,21 @@ run -c "UPDATE wagtailcore_pageviewrestriction SET password = gen_random_uuid() 
     -c "UPDATE wagtailcore_collectionviewrestriction SET password = gen_random_uuid() WHERE password = 'e2e'"
 # The migrations of the pull request.
 python manage.py migrate --noinput
+# Nobody of the dump can log in (their passwords are unusable): one account for
+# the reviewers, whose password is generated for this preview
+# (infra/envs/preview; read it with `just preview-admin-password <number>`).
+# At every start: the password of the state wins over one changed in the admin.
+python manage.py shell -c '
+import os
+from django.contrib.auth import get_user_model
+user, _ = get_user_model().objects.get_or_create(
+    username="preview", defaults={"email": "preview@example.test"}
+)
+user.is_staff = user.is_superuser = user.is_active = True
+user.set_password(os.environ["PREVIEW_ADMIN_PASSWORD"])
+user.save()
+' > /dev/null
+unset PREVIEW_ADMIN_PASSWORD # not for the served application
 # The dump has no search index (built from raw content).
 [ "$(run -At -c 'SELECT count(*) FROM wagtailsearch_indexentry')" != 0 ] || python manage.py update_index > /dev/null
 

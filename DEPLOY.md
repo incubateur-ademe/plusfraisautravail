@@ -186,11 +186,13 @@ The `preview` label on a pull request to `main` (same repository, not a fork) ru
 
 The image holds the nightly anonymised dump. At its first start the container restores it into its database; later starts only run the migrations, so what is changed in a preview is kept. A preview gets no mail, Notion, Sentry, PostHog, alert API or bucket key.
 
+**Admin.** The users of the dump cannot log in (their passwords are removed by the anonymisation). Each preview has one superuser, `preview`, whose password is generated for it and set again at every start of the container. Read it with `just preview-admin-password <number>` (needs the Scaleway keys of `.env`); it is never posted on the pull request, which is public.
+
 **Media.** A preview has no bucket (`apps/cms/cms/preview.py`). What it uploads, and the renditions it makes, go to its own database (the `db_storage` of sites-conformes) and are destroyed with it. The images of production are read from their public URL (`/media/images/`, `/media/original_images/`). Documents are not public: a preview has none, their links answer an error.
 
 At every start the container first tries to connect to the production database as its own user, and only starts if PostgreSQL answers "permission denied for database". This detects a configuration error (a permission granted by mistake, another instance). It does not contain hostile code: a pull request can remove the check.
 
-Every preview holds the password of its database user and its Django key, in its container and in clear in its state (`env:/pr-<number>/` in `pfat-terraform`).
+Every preview holds the password of its database user, the password of its `preview` admin and its Django key, in its container and in clear in its state (`env:/pr-<number>/` in `pfat-terraform`).
 
 ### What a preview shares with production
 

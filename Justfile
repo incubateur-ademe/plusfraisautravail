@@ -291,6 +291,17 @@ state-passphrase:
     scw secret secret protect "$id" > /dev/null
     echo "$name created. Keep a copy in the team's password manager: \`just secrets-show state-passphrase\`."
 
+# Print the password of the `preview` admin account of a pull request's preview
+# (infra/envs/preview). The login is `preview`, at <preview URL>/cms-admin/.
+preview-admin-password pr:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cd "{{justfile_directory()}}/infra/envs/preview"
+    export AWS_ACCESS_KEY_ID="$SCW_ACCESS_KEY" AWS_SECRET_ACCESS_KEY="$SCW_SECRET_KEY"
+    tofu init -input=false > /dev/null
+    TF_WORKSPACE="pr-{{pr}}" tofu output -raw admin_password
+    echo
+
 # Print secrets of the stack as JSON, from Scaleway Secret Manager: those of
 # infra/envs/prod/secrets.example.json, or the ones named.
 #   just secrets-show > infra/envs/prod/secrets.json   (gitignored; delete it after secrets-push)
