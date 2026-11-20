@@ -9,22 +9,9 @@ variable "environment" {
   default     = "prod"
 }
 
-variable "region" {
-  type        = string
-  description = "Scaleway region."
-  default     = "fr-par"
-}
-
 variable "registry_image" {
   type        = string
-  description = "Full image reference. Must already exist in the registry, even on first apply - Scaleway validates the image at container-create time regardless of `deploy`."
-  default     = ""
-}
-
-variable "deploy" {
-  type        = bool
-  description = "Whether to roll the container out to traffic. Does not affect image validation - `registry_image` must exist in the registry either way."
-  default     = false
+  description = "Image the container is created with: it must already be in the registry. Ignored afterwards (the deploys roll images out)."
 }
 
 variable "port" {

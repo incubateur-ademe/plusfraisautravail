@@ -13,6 +13,10 @@ on:
         description: "Resource address to force-replace"
         type: string
         default: ""
+    outputs:
+      plan:
+        description: "What the plan would do, in one line"
+        value: ${{ jobs.plan.outputs.plan }}
   workflow_dispatch:
     inputs:
       apply:
@@ -27,30 +31,36 @@ on:
 permissions:
   contents: read
 
+# The plan of a pull request and the apply read the same things: the Scaleway
+# key (repository secrets) and three repository variables. Every other secret
+# is in Scaleway Secret Manager, read by tofu (DEPLOY.md); so is the passphrase
+# of the encrypted state, read by infra/tofu.sh.
 env:
-  TOFU_VERSION: "1.8.5"
+  TOFU_VERSION: "1.13.2"
+  SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+  SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+  SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_DEFAULT_PROJECT_ID }}
+  SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_DEFAULT_ORGANIZATION_ID }}
+  # The S3 state backend.
+  AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+  # Empty = https://<production domain>. Set the CMS_BASE_URL repository variable
+  # to the Scalingo proxy URL while testing before the DNS cutover, unset after.
+  TF_VAR_cms_base_url: ${{ vars.CMS_BASE_URL }}
+  TF_VAR_posthog_key: ${{ vars.POSTHOG_KEY }}
+  TF_VAR_sentry_dsn: ${{ vars.SENTRY_DSN }}
+
+defaults:
+  run:
+    working-directory: infra/envs/prod
 
 jobs:
   plan:
     name: 📋 Plan
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    defaults:
-      run:
-        working-directory: infra/envs/prod
-    env:
-      SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
-      SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
-      SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_DEFAULT_PROJECT_ID }}
-      SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_DEFAULT_ORGANIZATION_ID }}
-      AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
-      TF_VAR_vigilance_app_id: ${{ secrets.VIGILANCE_APP_ID }}
-      TF_VAR_rte_client_id: ${{ secrets.RTE_CLIENT_ID }}
-      TF_VAR_rte_client_secret: ${{ secrets.RTE_CLIENT_SECRET }}
-      TF_VAR_climadiag_api_token: ${{ secrets.CLIMADIAG_API_TOKEN }}
-      TF_VAR_django_secret_key: ${{ secrets.DJANGO_SECRET_KEY }}
-      TF_VAR_sentry_dsn: ${{ vars.SENTRY_DSN }}
+    outputs:
+      plan: ${{ steps.plan.outputs.summary }}
     steps:
       - uses: actions/checkout@v7.0.1
 
@@ -62,11 +72,34 @@ jobs:
       - run: tofu fmt -check -recursive
         working-directory: infra
 
-      - run: tofu init -input=false
+      - run: ../../tofu.sh init -input=false
 
       - run: tofu validate
 
-      - run: tofu plan -no-color -input=false
+      - name: tofu plan
+        id: plan
+        env:
+          TOFU_REPLACE: ${{ inputs.tofu_replace }}
+        run: |
+          set -o pipefail
+          status=0
+          # Read-only: without the state lock, so it never makes an apply wait or fail.
+          ../../tofu.sh plan -no-color -input=false -lock=false ${TOFU_REPLACE:+-replace="$TOFU_REPLACE"} 2>&1 | tee plan.txt || status=$?
+          # A plan that only changes outputs prints neither "Plan:" nor "No changes".
+          summary=$(grep -m1 -E '^(Plan:|No changes)' plan.txt) ||
+            summary=$(grep -m1 '^Changes to Outputs' plan.txt | sed 's/:$/ only./') ||
+            summary="see the plan."
+          [ "$status" = 0 ] || summary="Plan failed."
+          echo "summary=$summary" >> "$GITHUB_OUTPUT"
+          # A failed plan shows on the summary page too.
+          {
+            echo "## 🏗️ OpenTofu plan: $summary"
+            echo
+            echo '```'
+            cat plan.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
 
   apply:
     name: 🧱 Apply
@@ -76,57 +109,10 @@ jobs:
     timeout-minutes: 30
     environment:
       name: tofu-apply
-    # Never two applies at once (Tofu's state lock would block the second anyway),
-    # and serializing keeps the deployment history clear.
+    # Never two applies at once: the state lock would refuse the second.
     concurrency:
       group: tofu-apply
       cancel-in-progress: false
-    defaults:
-      run:
-        working-directory: infra/envs/prod
-    env:
-      SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
-      SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
-      SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_DEFAULT_PROJECT_ID }}
-      SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_DEFAULT_ORGANIZATION_ID }}
-      AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
-      TF_VAR_vigilance_app_id: ${{ secrets.VIGILANCE_APP_ID }}
-      TF_VAR_rte_client_id: ${{ secrets.RTE_CLIENT_ID }}
-      TF_VAR_rte_client_secret: ${{ secrets.RTE_CLIENT_SECRET }}
-      TF_VAR_climadiag_api_token: ${{ secrets.CLIMADIAG_API_TOKEN }}
-      TF_VAR_django_secret_key: ${{ secrets.DJANGO_SECRET_KEY }}
-      TF_VAR_notion_token: ${{ secrets.NOTION_TOKEN }}
-      TF_VAR_email_host_password: ${{ secrets.EMAIL_HOST_PASSWORD }}
-      # Dedicated S3 credentials for cms's media access (private pfat-cms-media
-      # bucket) - separate from the account-wide SCW_ACCESS_KEY/SCW_SECRET_KEY.
-      TF_VAR_s3_bucket_scw_access_key_id: ${{ secrets.S3_BUCKET_SCW_ACCESS_KEY_ID }}
-      TF_VAR_s3_bucket_scw_secret_key: ${{ secrets.S3_BUCKET_SCW_SECRET_KEY }}
-      # Pin the image to whatever's currently deployed via the lifecycle ignore.
-      # cms_deploy must be true here; the bootstrap (cms_deploy=false)
-      # flow is a one-time local thing.
-      TF_VAR_cms_deploy: "true"
-      TF_VAR_cms_image: "rg.fr-par.scw.cloud/pfat/cms:latest"
-      # TODO: ALLOWED_HOSTS is wide open ("*") - confirmed root cause of the
-      # cms-prod container never passing its Scaleway health check: the
-      # platform's internal probe traffic doesn't reliably present the
-      # container's own domain as the Host header, so Django's ALLOWED_HOSTS
-      # check was 400-ing every single probe request (silently - no view is
-      # ever reached, so nothing shows in app logs). qfdmo's preview
-      # containers use the same "*" workaround for the same reason.
-      # This is broader than ideal for a production app - narrow it once a
-      # real fix is known, e.g.:
-      #   - ask Scaleway support what Host header their probe actually sends
-      #     and allowlist that specific value alongside the real domain
-      #   - or move health-checking behind a lightweight proxy (like qfdmo's
-      #     nginx layer) that doesn't enforce Host validation, keeping
-      #     Django's own ALLOWED_HOSTS strict for real traffic
-      TF_VAR_cms_extra_allowed_hosts: '["*"]'
-      # Empty = https://<base_domain>. Set the CMS_BASE_URL repo variable to
-      # the Scalingo proxy URL while testing before the DNS cutover, unset after.
-      TF_VAR_cms_base_url: ${{ vars.CMS_BASE_URL }}
-      TF_VAR_posthog_key: ${{ vars.POSTHOG_KEY }}
-      TF_VAR_sentry_dsn: ${{ vars.SENTRY_DSN }}
     steps:
       - uses: actions/checkout@v7.0.1
 
@@ -135,25 +121,11 @@ jobs:
           tofu_version: ${{ env.TOFU_VERSION }}
           tofu_wrapper: false
 
-      - name: tofu init
-        run: tofu init -input=false
+      - run: ../../tofu.sh init -input=false
 
-      - name: tofu plan
+      # Not the plan file of the job above: it holds the secret values, and the
+      # artifacts of a public repository can be downloaded by anyone.
+      - name: tofu apply
         env:
           TOFU_REPLACE: ${{ inputs.tofu_replace }}
-        run: |
-          replace_flag=()
-          if [ -n "$TOFU_REPLACE" ]; then
-            replace_flag=(-replace="$TOFU_REPLACE")
-          fi
-          tofu plan -no-color -input=false "${replace_flag[@]}" -out=tfplan | tee plan.txt
-          {
-            echo '## OpenTofu plan'
-            echo
-            echo '```'
-            cat plan.txt
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
-
-      - name: tofu apply
-        run: tofu apply -input=false -no-color tfplan
+        run: ../../tofu.sh apply -input=false -no-color -auto-approve ${TOFU_REPLACE:+-replace="$TOFU_REPLACE"}

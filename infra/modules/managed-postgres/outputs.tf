@@ -19,10 +19,6 @@ output "database_name" {
   value = scaleway_rdb_database.this.name
 }
 
-output "user" {
-  value = var.db_user
-}
-
 output "password" {
   value     = random_password.db.result
   sensitive = true
@@ -31,7 +27,7 @@ output "password" {
 # Password is percent-encoded: the generated one contains URL-reserved
 # characters and consumers (dj-database-url, libpq) decode a URI password.
 output "private_database_url" {
-  value       = "postgresql://${var.db_user}:${urlencode(random_password.db.result)}@${scaleway_rdb_instance.this.private_network[0].ip}:${scaleway_rdb_instance.this.private_network[0].port}/${scaleway_rdb_database.this.name}?sslmode=require"
+  value       = "postgresql://${scaleway_rdb_instance.this.user_name}:${urlencode(random_password.db.result)}@${scaleway_rdb_instance.this.private_network[0].ip}:${scaleway_rdb_instance.this.private_network[0].port}/${scaleway_rdb_database.this.name}?sslmode=require"
   sensitive   = true
   description = "Private-network DSN — use when the container is attached to the same VPC as the RDB instance."
 }

@@ -1,38 +1,17 @@
-output "autodiag_bucket" {
-  value = module.autodiag_site.bucket_name
-}
-
 output "autodiag_url" {
-  value = "https://${module.autodiag_site.website_endpoint}"
-}
-
-output "alert_widget_bucket" {
-  value = module.alert_widget_site.bucket_name
+  value = "https://${module.site["autodiag"].website_endpoint}"
 }
 
 output "alert_widget_url" {
-  value = "https://${module.alert_widget_site.website_endpoint}"
-}
-
-output "climadiag_bucket" {
-  value = module.climadiag_site.bucket_name
+  value = "https://${module.site["alert-widget"].website_endpoint}"
 }
 
 output "climadiag_url" {
-  value = "https://${module.climadiag_site.website_endpoint}"
-}
-
-output "cms_registry" {
-  value = "${scaleway_registry_namespace.pfat.endpoint}/cms"
+  value = "https://${module.site["climadiag"].website_endpoint}"
 }
 
 output "cms_url" {
   value = trimsuffix(module.cms.public_endpoint, "/")
-}
-
-output "cms_container_id" {
-  value       = module.cms.container_id
-  description = "Scaleway serverless container ID."
 }
 
 output "cms_db_host" {
@@ -58,14 +37,6 @@ output "bastion_ip" {
   description = "SSH bastion to the database's Private Network, while `just bastion-up` keeps it (port 61000)."
 }
 
-output "cms_media_bucket" {
-  value = module.cms_media.bucket_name
-}
-
-output "cms_manage_container_id" {
-  value = module.cms_manage.container_id
-}
-
 output "cms_manage_url" {
   value       = module.cms_manage.public_endpoint
   description = "Private container: POST /run with an X-Auth-Token header (Scaleway IAM secret key) runs manage_jobs.sh."
@@ -84,26 +55,7 @@ output "cms_manage_url" {
 # purpose-built apex-alias mechanism, not a workaround.
 output "dns_records_to_create" {
   value = {
-    (var.base_domain) = "HTTPS record, priority 0 (Alias Mode) -> ${module.cms.cname_target}"
+    (local.base_domain) = "HTTPS record, priority 0 (Alias Mode) -> ${module.cms.cname_target}"
   }
   description = "Hostname -> required DNS record. Create these in the OVH DNS zone for plusfraisautravail.beta.gouv.fr."
-}
-
-output "e2e_fixtures_bucket" {
-  value = module.e2e_fixtures.bucket_name
-}
-
-output "e2e_dump_database_url" {
-  value       = local.e2e_dump_dsn
-  sensitive   = true
-  description = "Read-only DSN over the Private Network, for the e2e dump container."
-}
-
-output "e2e_dump_container_id" {
-  value = module.e2e_dump.container_id
-}
-
-output "e2e_dump_url" {
-  value       = module.e2e_dump.public_endpoint
-  description = "Private container: POST /run with an X-Auth-Token header (Scaleway IAM secret key), or the e2e-dump workflow."
 }

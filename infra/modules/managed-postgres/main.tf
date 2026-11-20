@@ -2,7 +2,7 @@ terraform {
   required_providers {
     scaleway = {
       source  = "scaleway/scaleway"
-      version = "~> 2.50"
+      version = ">= 2.73"
     }
     random = {
       source  = "hashicorp/random"
@@ -27,20 +27,18 @@ resource "random_password" "db" {
 }
 
 resource "scaleway_vpc_private_network" "this" {
-  name   = "${var.app_name}-${var.environment}"
-  region = var.region
+  name = "${var.app_name}-${var.environment}"
 }
 
 resource "scaleway_rdb_instance" "this" {
   name              = "${var.app_name}-${var.environment}"
-  node_type         = var.node_type
-  engine            = var.engine
+  node_type         = "DB-DEV-S" # the smallest class: fine for a low-traffic CMS
+  engine            = "PostgreSQL-16"
   is_ha_cluster     = false
   disable_backup    = false
-  volume_type       = var.volume_type
-  volume_size_in_gb = var.volume_size_in_gb
-  region            = var.region
-  user_name         = var.db_user
+  volume_type       = "sbs_5k"
+  volume_size_in_gb = 10
+  user_name         = "cms" # changing it recreates the instance
   password          = random_password.db.result
 
   # Private Network only, no load_balancer (public endpoint): the CMS
@@ -50,9 +48,19 @@ resource "scaleway_rdb_instance" "this" {
     pn_id       = scaleway_vpc_private_network.this.id
     enable_ipam = true
   }
+
+  # The production data: a plan that would destroy or replace it fails.
+  # Removing the whole module block is not caught (the rule goes with it).
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "scaleway_rdb_database" "this" {
   instance_id = scaleway_rdb_instance.this.id
-  name        = var.db_name
+  name        = "cms"
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }

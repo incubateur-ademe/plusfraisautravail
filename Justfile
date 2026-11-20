@@ -59,15 +59,15 @@ cms-shell-prod *ARGS:
     cd "{{justfile_directory()}}/infra/envs/prod"
     set -a && source ../../../.env && set +a
     # The database has no public endpoint: tunnel through the SSH bastion.
-    bastion="$(tofu output -raw bastion_ip 2>/dev/null || true)"
+    bastion="$(../../tofu.sh output -raw bastion_ip 2>/dev/null || true)"
     if [ -z "$bastion" ] || [ "$bastion" = null ]; then
       echo "No SSH bastion: run 'just bastion-up' first (and 'just bastion-down' after)." >&2
       exit 1
     fi
-    host="$(tofu output -raw cms_db_host)"
-    port="$(tofu output -raw cms_db_port)"
-    name="$(tofu output -raw cms_db_name)"
-    pw="$(tofu output -raw cms_db_password)"
+    host="$(../../tofu.sh output -raw cms_db_host)"
+    port="$(../../tofu.sh output -raw cms_db_port)"
+    name="$(../../tofu.sh output -raw cms_db_name)"
+    pw="$(../../tofu.sh output -raw cms_db_password)"
     # The RDB password contains % ) + < = - dj_database_url parses
     # DATABASE_URL as a URI, so the raw password can't be interpolated
     # (% starts an escape, + decodes to a space). Percent-encode it.
@@ -217,36 +217,37 @@ run-cms-container: build-cms
 
 # Init the prod stack. Run once; needs SCW_* env vars set.
 tf-init:
-    cd infra/envs/prod && tofu init
+    infra/tofu.sh init
 
 # Plan the prod stack.
 tf-plan:
-    cd infra/envs/prod && tofu plan
+    infra/tofu.sh plan
 
 # Apply the prod stack (interactive confirm).
 tf-apply:
-    cd infra/envs/prod && tofu apply
+    infra/tofu.sh apply
 
 # About EUR 0.03/hour, SSH keys of the Scaleway project. Only `ip` (or the
 # bastion_allowed_ip_ranges of terraform.tfvars) can reach it: `just bastion-up 203.0.113.7`.
 # Remove it after the session: `just bastion-down`.
 # Create the SSH bastion to the database's Private Network (occasional admin session).
 bastion-up ip="":
-    cd infra/envs/prod && tofu apply -var bastion_enabled=true {{ if ip != "" { "-var 'bastion_allowed_ip_ranges=[\"" + ip + "/32\"]'" } else { "" } }} -target=scaleway_vpc_gateway_network.bastion
-    @echo "Bastion: ssh -p 61000 bastion@$(cd infra/envs/prod && tofu output -raw bastion_ip) (just cms-shell-prod uses it)"
+    infra/tofu.sh apply -var bastion_enabled=true {{ if ip != "" { "-var 'bastion_allowed_ip_ranges=[\"" + ip + "/32\"]'" } else { "" } }} -target=scaleway_vpc_gateway_network.bastion
+    @echo "Bastion: ssh -p 61000 bastion@$(infra/tofu.sh output -raw bastion_ip) (just cms-shell-prod uses it)"
 
 # Remove the SSH bastion. Any infrastructure apply from main removes it too.
 bastion-down:
-    cd infra/envs/prod && tofu destroy -target=scaleway_vpc_public_gateway_ip.bastion
+    infra/tofu.sh destroy -target=scaleway_vpc_public_gateway_ip.bastion
 
 # ── bootstrap (one-time, run from a fresh Scaleway account) ──────────────
 #
 # Order is documented in DEPLOY.md. Each recipe is idempotent / safe to
 # re-run except where noted.
 
-# Create the OpenTofu state bucket on Scaleway Object Storage.
+# Create the OpenTofu state bucket on Scaleway Object Storage, then the
+# passphrase that encrypts the state.
 # Requires AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY = your SCW access/secret key.
-bootstrap-state:
+bootstrap-state: && state-passphrase
     #!/usr/bin/env bash
     set -euo pipefail
     if [[ -z "${AWS_ACCESS_KEY_ID:-}" || -z "${AWS_SECRET_ACCESS_KEY:-}" ]]; then
@@ -267,18 +268,66 @@ bootstrap-state:
     [[ "$ans" =~ ^[Yy]$ ]] || { echo "Aborted."; exit 1; }
     aws --endpoint-url=https://s3.fr-par.scw.cloud s3 mb s3://pfat-terraform --region fr-par
 
-# Copy terraform.tfvars.example to terraform.tfvars (if missing) and open it.
-bootstrap-tfvars:
+# Create the passphrase that encrypts the OpenTofu state (infra/envs/prod/backend.tf),
+# in Scaleway Secret Manager. Never replaces it: the state cannot be read without it.
+state-passphrase:
     #!/usr/bin/env bash
     set -euo pipefail
-    cd infra/envs/prod
-    if [[ -f terraform.tfvars ]]; then
-      echo "infra/envs/prod/terraform.tfvars already exists - opening it."
-    else
-      cp terraform.tfvars.example terraform.tfvars
-      echo "Created infra/envs/prod/terraform.tfvars from the example."
+    name=pfat-prod-state-passphrase
+    # A failed listing stops here: it must not be taken for a missing secret.
+    id=$(scw secret secret list project-id="${SCW_DEFAULT_PROJECT_ID:?}" name="$name" -o json | jq -r --arg n "$name" '[.[] | select(.name == $n)][0].id // empty')
+    # Left without a version by a run that failed halfway: carry on. Anything else is kept.
+    if [ -n "$id" ] && ! scw secret secret get "$id" -o json | jq -e '.version_count == 0' > /dev/null; then
+      echo "$name exists: left as it is."
+      exit 0
     fi
-    "${EDITOR:-vi}" terraform.tfvars
+    [ -n "$id" ] || id=$(scw secret secret create name="$name" -o json | jq -er .id)
+    # From a file: an argument would show in the process list.
+    value=$(mktemp)
+    trap 'rm -f "$value"' EXIT
+    openssl rand -hex 32 > "$value"
+    scw secret version create "$id" data=@"$value" > /dev/null
+    # Protected: it can no longer be deleted.
+    scw secret secret protect "$id" > /dev/null
+    echo "$name created. Keep a copy in the team's password manager: \`just secrets-show state-passphrase\`."
+
+# Print secrets of the stack as JSON, from Scaleway Secret Manager: those of
+# infra/envs/prod/secrets.example.json, or the ones named.
+#   just secrets-show > infra/envs/prod/secrets.json   (gitignored; delete it after secrets-push)
+secrets-show *names:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    # For the file the output is redirected to.
+    umask 077
+    for name in {{ if names == "" { "$(jq -r 'keys[]' infra/envs/prod/secrets.example.json)" } else { names } }}; do
+      scw secret version access-by-path secret-path=/ secret-name="pfat-prod-$name" revision=latest_enabled -o json |
+        jq --arg n "$name" '{($n): (.data | @base64d | rtrimstr("\n"))}'
+    done | jq -s add
+
+# Create or update the secrets of the stack from a filled copy of
+# secrets.example.json: one Secret Manager secret per key, named pfat-prod-<key>.
+# A secret whose value is unchanged gets no new version. Then apply
+# (`just deploy infrastructure`) for the containers to get the new values.
+secrets-push file="infra/envs/prod/secrets.json":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    example=infra/envs/prod/secrets.example.json
+    [ "$(jq -c 'keys' "$example")" = "$(jq -c 'keys' "{{file}}")" ] || { echo "{{file}}: keys differ from $example" >&2; exit 1; }
+    value=$(mktemp)
+    trap 'rm -f "$value"' EXIT
+    for name in $(jq -r 'keys[]' "$example"); do
+      secret="pfat-prod-$name"
+      # With a final newline, which the stack trims: an empty value is still a version.
+      jq -er --arg n "$name" '.[$n] | strings' "{{file}}" > "$value" || { echo "{{file}}: $name is not a string" >&2; exit 1; }
+      if current=$(scw secret version access-by-path secret-path=/ secret-name="$secret" revision=latest_enabled -o json 2> /dev/null | jq -er '.data | @base64d') && [ "$current" = "$(cat "$value")" ]; then
+        echo "  same    $secret"
+        continue
+      fi
+      id=$(scw secret secret list project-id="${SCW_DEFAULT_PROJECT_ID:?}" name="$secret" -o json | jq -r --arg n "$secret" '[.[] | select(.name == $n)][0].id // empty')
+      [ -n "$id" ] || id=$(scw secret secret create name="$secret" -o json | jq -er .id)
+      scw secret version create "$id" data=@"$value" disable-previous=true > /dev/null
+      echo "  pushed  $secret"
+    done
 
 # Push repo-level secrets used by the infrastructure plan (runs on PRs from
 # any branch and can't read environment-scoped secrets). For the deploy
@@ -313,20 +362,14 @@ bootstrap-secrets:
     set_secret SCW_SECRET_KEY              "${SCW_SECRET_KEY:-}"
     set_secret SCW_DEFAULT_PROJECT_ID      "${SCW_DEFAULT_PROJECT_ID:-}"
     set_secret SCW_DEFAULT_ORGANIZATION_ID "${SCW_DEFAULT_ORGANIZATION_ID:-}"
-    set_secret VIGILANCE_APP_ID            "${VIGILANCE_APP_ID:-}"
-    set_secret RTE_CLIENT_ID               "${RTE_CLIENT_ID:-}"
-    set_secret RTE_CLIENT_SECRET           "${RTE_CLIENT_SECRET:-}"
-    set_secret CLIMADIAG_API_TOKEN         "${CLIMADIAG_API_TOKEN:-}"
-    set_secret DJANGO_SECRET_KEY           "${DJANGO_SECRET_KEY:-}"
 
     echo
     echo "Done. Run \`just bootstrap-environments\` next to push deploy-time secrets."
 
 # Create (or update) the cms / autodiag / alert-widget / climadiag
 # GitHub Environments and push the right secrets and variables to each. Reads
-# SCW_*, S3_BUCKET_SCW_*, VIGILANCE_APP_ID, RTE_*, CLIMADIAG_API_TOKEN,
-# DJANGO_SECRET_KEY from your shell and cms_url / *_url
-# from `tofu output`.
+# SCW_* from your shell and cms_url / *_url from `tofu output`. The application
+# secrets are not in GitHub: Scaleway Secret Manager holds them (DEPLOY.md).
 # Restricts each environment to the `main` branch so only main-branch deploys
 # can read them. Idempotent.
 bootstrap-environments:
@@ -386,19 +429,19 @@ bootstrap-environments:
     autodiag_url=""
     alert_widget_url=""
     climadiag_url=""
-    if (cd infra/envs/prod && tofu output -raw autodiag_url) >/dev/null 2>&1; then
-      autodiag_url=$(cd infra/envs/prod && tofu output -raw autodiag_url)
-      alert_widget_url=$(cd infra/envs/prod && tofu output -raw alert_widget_url)
-      climadiag_url=$(cd infra/envs/prod && tofu output -raw climadiag_url)
+    if (infra/tofu.sh output -raw autodiag_url) >/dev/null 2>&1; then
+      autodiag_url=$(infra/tofu.sh output -raw autodiag_url)
+      alert_widget_url=$(infra/tofu.sh output -raw alert_widget_url)
+      climadiag_url=$(infra/tofu.sh output -raw climadiag_url)
     else
       echo "  warn   tofu output unavailable - *_URL will be skipped."
       echo "         Run \`just tf-apply\`, then re-run this."
     fi
-    if (cd infra/envs/prod && tofu output -raw cms_url) >/dev/null 2>&1; then
-      cms_url=$(cd infra/envs/prod && tofu output -raw cms_url)
+    if (infra/tofu.sh output -raw cms_url) >/dev/null 2>&1; then
+      cms_url=$(infra/tofu.sh output -raw cms_url)
     else
       echo "  warn   tofu output unavailable - CMS_URL will be skipped."
-      echo "         Run \`just tf-apply\` (with cms_deploy=true), then re-run this."
+      echo "         Run \`just tf-apply\`, then re-run this."
     fi
 
     echo
@@ -407,7 +450,6 @@ bootstrap-environments:
     set_env_secret   cms SCW_ACCESS_KEY         "${SCW_ACCESS_KEY:-}"
     set_env_secret   cms SCW_SECRET_KEY         "${SCW_SECRET_KEY:-}"
     set_env_secret   cms SCW_DEFAULT_PROJECT_ID "${SCW_DEFAULT_PROJECT_ID:-}"
-    set_env_secret   cms DJANGO_SECRET_KEY      "${DJANGO_SECRET_KEY:-}"
     set_env_variable cms CMS_URL                "$cms_url"
 
     echo
@@ -436,20 +478,16 @@ bootstrap-environments:
 
     echo
     echo "── tofu-apply environment ───────────────────────────────────"
-    # Used by the infrastructure apply (infrastructure.yml). Needs the full set of Scaleway creds
-    # plus the TF_VAR_* secrets that drive the runtime configuration.
+    # Used by the infrastructure apply (infrastructure.yml).
     create_env_main_only tofu-apply
     set_env_secret   tofu-apply SCW_ACCESS_KEY              "${SCW_ACCESS_KEY:-}"
     set_env_secret   tofu-apply SCW_SECRET_KEY              "${SCW_SECRET_KEY:-}"
     set_env_secret   tofu-apply SCW_DEFAULT_PROJECT_ID      "${SCW_DEFAULT_PROJECT_ID:-}"
     set_env_secret   tofu-apply SCW_DEFAULT_ORGANIZATION_ID "${SCW_DEFAULT_ORGANIZATION_ID:-}"
-    set_env_secret   tofu-apply VIGILANCE_APP_ID            "${VIGILANCE_APP_ID:-}"
-    set_env_secret   tofu-apply RTE_CLIENT_ID               "${RTE_CLIENT_ID:-}"
-    set_env_secret   tofu-apply RTE_CLIENT_SECRET           "${RTE_CLIENT_SECRET:-}"
-    set_env_secret   tofu-apply CLIMADIAG_API_TOKEN         "${CLIMADIAG_API_TOKEN:-}"
-    set_env_secret   tofu-apply DJANGO_SECRET_KEY           "${DJANGO_SECRET_KEY:-}"
-    set_env_secret   tofu-apply S3_BUCKET_SCW_ACCESS_KEY_ID "${S3_BUCKET_SCW_ACCESS_KEY_ID:-}"
-    set_env_secret   tofu-apply S3_BUCKET_SCW_SECRET_KEY    "${S3_BUCKET_SCW_SECRET_KEY:-}"
+
+    echo
+    echo "── preview label (preview.yml) ──────────────────────────────"
+    gh label create preview --description "Déploie une preview de cette PR" --force
 
     echo
     echo "Done. Verify in the GitHub UI:"
@@ -457,7 +495,8 @@ bootstrap-environments:
 
 # ── deploy (manual triggers) ─────────────────────────────────────────────
 
-# One-time first image push for the CMS, before the second tf-apply.
+# One-time first image push for the CMS, once the registry exists and before
+# the first full tf-apply: containers are created with this image.
 # Requires SCW_SECRET_KEY in env (used as docker registry password).
 deploy-cms-bootstrap:
     #!/usr/bin/env bash
@@ -468,20 +507,17 @@ deploy-cms-bootstrap:
     fi
     REGISTRY="rg.fr-par.scw.cloud"
     NAMESPACE="pfat"
-    IMAGE="$REGISTRY/$NAMESPACE/cms:bootstrap"
+    IMAGE="$REGISTRY/$NAMESPACE/cms:latest"
     echo "About to:"
     echo "  1. docker login $REGISTRY (user=nologin, password=\$SCW_SECRET_KEY)"
-    echo "  2. docker buildx build --platform linux/amd64 --push apps/cms/ -t $IMAGE"
+    echo "  2. docker buildx build --platform linux/amd64 --push -f apps/cms/Dockerfile -t $IMAGE ."
     read -r -p "Proceed? [y/N] " ans
     [[ "$ans" =~ ^[Yy]$ ]] || { echo "Aborted."; exit 1; }
     echo "$SCW_SECRET_KEY" | docker login "$REGISTRY" --username nologin --password-stdin
-    docker buildx build --platform linux/amd64 --push -t "$IMAGE" apps/cms/
+    # The repository root as context: the Dockerfile copies packages/.
+    docker buildx build --platform linux/amd64 --push -f apps/cms/Dockerfile -t "$IMAGE" .
     echo
     echo "Pushed: $IMAGE"
-    echo
-    echo "Now edit infra/envs/prod/terraform.tfvars:"
-    echo "  cms_image  = \"$IMAGE\""
-    echo "  cms_deploy = true"
     echo "Then run: just tf-apply"
 
 # Check and deploy one product (or all) with the cd.yml workflow on GitHub.
@@ -503,7 +539,7 @@ status:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "── tofu outputs ───────────────────────────────────────────────"
-    (cd infra/envs/prod && tofu output) || echo "(tofu output failed - did you run \`just tf-init\` + \`just tf-apply\`?)"
+    (infra/tofu.sh output) || echo "(tofu output failed - did you run \`just tf-init\` + \`just tf-apply\`?)"
     echo
     echo "── last GitHub Actions runs ───────────────────────────────────"
     gh run list --workflow=cd.yml --limit 5 \
