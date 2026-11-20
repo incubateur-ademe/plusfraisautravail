@@ -17,5 +17,7 @@ TF_VAR_state_passphrase=$(
     exit 1
 }
 export TF_VAR_state_passphrase
+# GitHub does not know this value: without the mask, an error quoting it would show in the log.
+[ -z "${GITHUB_ACTIONS:-}" ] || echo "::add-mask::$TF_VAR_state_passphrase"
 
 exec tofu "$@"

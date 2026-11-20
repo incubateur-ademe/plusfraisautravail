@@ -276,9 +276,17 @@ state-passphrase:
     name=pfat-prod-state-passphrase
     # A failed listing stops here: it must not be taken for a missing secret.
     id=$(scw secret secret list project-id="${SCW_DEFAULT_PROJECT_ID:?}" name="$name" -o json | jq -r --arg n "$name" '[.[] | select(.name == $n)][0].id // empty')
-    [ -z "$id" ] || { echo "$name exists: left as it is."; exit 0; }
-    id=$(scw secret secret create name="$name" -o json | jq -er .id)
-    scw secret version create "$id" data="$(openssl rand -hex 32)" > /dev/null
+    # Left without a version by a run that failed halfway: carry on. Anything else is kept.
+    if [ -n "$id" ] && ! scw secret secret get "$id" -o json | jq -e '.version_count == 0' > /dev/null; then
+      echo "$name exists: left as it is."
+      exit 0
+    fi
+    [ -n "$id" ] || id=$(scw secret secret create name="$name" -o json | jq -er .id)
+    # From a file: an argument would show in the process list.
+    value=$(mktemp)
+    trap 'rm -f "$value"' EXIT
+    openssl rand -hex 32 > "$value"
+    scw secret version create "$id" data=@"$value" > /dev/null
     # Protected: it can no longer be deleted.
     scw secret secret protect "$id" > /dev/null
     echo "$name created. Keep a copy in the team's password manager: \`just secrets-show state-passphrase\`."
@@ -289,6 +297,8 @@ state-passphrase:
 secrets-show *names:
     #!/usr/bin/env bash
     set -euo pipefail
+    # For the file the output is redirected to.
+    umask 077
     for name in {{ if names == "" { "$(jq -r 'keys[]' infra/envs/prod/secrets.example.json)" } else { names } }}; do
       scw secret version access-by-path secret-path=/ secret-name="pfat-prod-$name" revision=latest_enabled -o json |
         jq --arg n "$name" '{($n): (.data | @base64d | rtrimstr("\n"))}'
@@ -308,7 +318,7 @@ secrets-push file="infra/envs/prod/secrets.json":
     for name in $(jq -r 'keys[]' "$example"); do
       secret="pfat-prod-$name"
       # With a final newline, which the stack trims: an empty value is still a version.
-      jq -r --arg n "$name" '.[$n]' "{{file}}" > "$value"
+      jq -er --arg n "$name" '.[$n] | strings' "{{file}}" > "$value" || { echo "{{file}}: $name is not a string" >&2; exit 1; }
       if current=$(scw secret version access-by-path secret-path=/ secret-name="$secret" revision=latest_enabled -o json 2> /dev/null | jq -er '.data | @base64d') && [ "$current" = "$(cat "$value")" ]; then
         echo "  same    $secret"
         continue

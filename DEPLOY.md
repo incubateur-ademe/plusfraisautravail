@@ -33,7 +33,7 @@ CI/CD lives under `.github/workflows/`:
 
 - Scaleway account with a project, plus an API key (access key + secret key) allowed on containers, registry, Object Storage, RDB, VPC and Secret Manager. For these secrets, the IAM permission sets `SecretManagerReadOnly` (find them by name) and `SecretManagerSecretAccess` (read their values); `SecretManagerFullAccess` for the key that creates or changes them (2.2, 2.3), which need not be the one of the CI.
 - The secrets of the third parties, each optional: Météo-France [Vigilance API](https://portail-api.meteofrance.fr/) application ID, RTE Ecowatt OAuth2 client ID and secret, PlusFraîcheMaVille Climadiag token, Notion token. Without one, the matching feature answers 503 or is off; everything else works.
-- [GitHub CLI](https://cli.github.com/) (`gh auth login`), [AWS CLI v2](https://docs.aws.amazon.com/cli/) (S3 client), [Scaleway CLI](https://cli.scaleway.com/), [OpenTofu](https://opentofu.org/) 1.10+, Docker, [`just`](https://github.com/casey/just), `jq`.
+- [GitHub CLI](https://cli.github.com/) (`gh auth login`), [AWS CLI v2](https://docs.aws.amazon.com/cli/) (S3 client), [Scaleway CLI](https://cli.scaleway.com/), [OpenTofu](https://opentofu.org/) 1.10+, Docker, [`just`](https://github.com/casey/just), `jq`, `curl`, `openssl`.
 
 ---
 
@@ -71,7 +71,7 @@ OpenTofu can't manage its own state bucket:
 just bootstrap-state
 ```
 
-It also creates the secret `pfat-prod-state-passphrase`, a random passphrase, unless it exists (`just state-passphrase` does only that). The state holds every secret of the stack: OpenTofu encrypts it with a key derived from this passphrase before it leaves the machine, so the bucket only holds ciphertext. `infra/tofu.sh` reads the passphrase at each run, in CI and for the `just` recipes: nothing to export. Run a bare `tofu` in `infra/envs/prod` and it asks for `var.state_passphrase`: use `infra/tofu.sh <command>` instead.
+It also creates the secret `pfat-prod-state-passphrase`, a random passphrase, unless it exists (`just state-passphrase` does only that). The state holds every secret of the stack: OpenTofu encrypts it with a key derived from this passphrase before it leaves the machine, so the bucket only holds ciphertext. `infra/tofu.sh` reads the passphrase at each run, in CI and for the `just` recipes: nothing to export. A bare `tofu` in `infra/envs/prod` stops on the missing `var.state_passphrase`: use `infra/tofu.sh <command>` instead.
 
 **The state cannot be read without the passphrase.** The secret is protected against deletion; never disable its version, and keep a copy in the team's password manager (`just secrets-show state-passphrase`).
 
@@ -135,7 +135,7 @@ just bootstrap-environments   # cms / autodiag / alert-widget / climadiag / tofu
 
 GitHub only holds the Scaleway key: `SCW_ACCESS_KEY`, `SCW_SECRET_KEY`, `SCW_DEFAULT_PROJECT_ID`, `SCW_DEFAULT_ORGANIZATION_ID`, at repository level and in each environment (restricted to `main`). Not secret, as repository variables: `SENTRY_DSN`, `POSTHOG_KEY`, and `CMS_BASE_URL` while testing before a DNS cutover.
 
-**On a repository set up before Secret Manager**, create the passphrase (`just state-passphrase`) and the ten secrets (2.3) before merging. GitHub does not give a secret back: take the values from where they came from (Scaleway console, Météo-France, RTE, PlusFraîcheMaVille and Notion accounts). Give the Scaleway key of the CI the two Secret Manager permission sets (section 1). Until the first apply from CI is over, `just bastion-up` fails ("Moved resource instances excluded by targeting"). That apply also writes the state encrypted, even if it changes nothing else: from then on a branch that started before the encryption fails its plan until it is rebased.
+**On a repository set up before Secret Manager**, create the passphrase (`just state-passphrase`) and the ten secrets (2.3) before merging. GitHub does not give a secret back: take the values from where they came from (Scaleway console, Météo-France, RTE, PlusFraîcheMaVille and Notion accounts). Give the Scaleway key of the CI the two Secret Manager permission sets (section 1). Until the first apply from CI is over, `just bastion-up` fails ("Moved resource instances excluded by targeting"). That apply also writes the state encrypted, even if it changes nothing else: from then on a local checkout from before the encryption can no longer read it. Until then the stack still accepts a state in clear: once that apply is over, remove the `unencrypted` method and the `fallback` block from `infra/envs/prod/backend.tf` and add `enforced = true` to its `state` block, in a pull request.
 
 The first apply replaces the Django key by the generated one: every admin is logged out once, and pending signed links stop working. After that apply, the GitHub secrets of the table in 2.3 and `DJANGO_SECRET_KEY` are no longer read and can be deleted, at repository level and in the `tofu-apply` and `cms` environments.
 
@@ -269,7 +269,7 @@ The containers are created with `pfat/cms:latest`: push it first (2.4).
 **`infra/tofu.sh` fails with "Cannot read the secret pfat-prod-state-passphrase".**
 The secret does not exist (`just state-passphrase`), its version is disabled, or the Scaleway key cannot read Secret Manager (section 1).
 
-**`tofu` fails with "decryption failed for all provided methods" or asks for `var.state_passphrase`.**
+**`tofu` fails with "decryption failed for all provided methods" or stops on `var.state_passphrase`.**
 The second: use `infra/tofu.sh`, not a bare `tofu`. The first: the enabled version of `pfat-prod-state-passphrase` is not the one the state was written with. Enable that version again (`scw secret version list <secret-id>`), or take the passphrase from the password manager.
 
 **The plan fails on `data.scaleway_secret_version.app["…"]`.**
